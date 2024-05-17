@@ -20,53 +20,10 @@ import os
 import struct
 
 
-def decode_cfp_values(file, count):
-    values = list()
-
-    previous_value = 0.0
-
-    while len(values) < count:
-        compression_type = struct.unpack('<B', file.read(1))[0]
-
-        if compression_type == 0xFF: # full 4 byte float
-            values.append(struct.unpack('<f', file.read(4))[0])
-        elif compression_type == 0xFE: # repeat previous
-            repeat_count = struct.unpack('<H', file.read(2))[0]
-            for i in range(repeat_count + 1):
-                values.append(previous_value)
-        else:
-            values.append(previous_value + 3.9676e-10 * math.pow(float(compression_type) - 126.0, 3) * abs(float(compression_type) - 126.0))
-
-        previous_value = values[-1]
-
-    return values
+BONE_SCALE = 3.0
 
 
-def load_cfp(file_path, position_count, rotation_count):
-
-    values = {}
-
-    file = open(file_path, mode='rb')
-
-    values["positions_x"] = decode_cfp_values(file, position_count)
-    values["positions_y"] = decode_cfp_values(file, position_count)
-    values["positions_z"] = decode_cfp_values(file, position_count)
-
-    values["rotations_x"] = decode_cfp_values(file, rotation_count)
-    values["rotations_y"] = decode_cfp_values(file, rotation_count)
-    values["rotations_z"] = decode_cfp_values(file, rotation_count)
-    values["rotations_w"] = decode_cfp_values(file, rotation_count)
-
-    try:
-        file.read(1)
-        raise Exception("data left unread at end of cfp file")
-    except:
-        pass
-
-    return values
-
-
-def load_cmx_bcf(file_path):
+def cmx_bcf_struct():
     import construct
 
     prop = construct.Struct(
@@ -161,7 +118,7 @@ def load_cmx_bcf(file_path):
         "bones" / construct.Array(construct.this.bone_count, bone),
     )
 
-    cmx_bcf_file = construct.Struct(
+    cmx_bcf_struct = construct.Struct(
         "skeleton_count" / construct.Int32ul,
         "skeletons" / construct.Array(construct.this.skeleton_count, skeleton),
         "suit_count" / construct.Int32ul,
@@ -170,16 +127,59 @@ def load_cmx_bcf(file_path):
         "skills" / construct.Array(construct.this.skill_count, skill),
     )
 
+    return cmx_bcf_struct
+
+
+def decode_cfp_values(file, count):
+    values = list()
+
+    previous_value = 0.0
+
+    while len(values) < count:
+        compression_type = struct.unpack('<B', file.read(1))[0]
+
+        if compression_type == 0xFF: # full 4 byte float
+            values.append(struct.unpack('<f', file.read(4))[0])
+        elif compression_type == 0xFE: # repeat previous
+            repeat_count = struct.unpack('<H', file.read(2))[0]
+            for i in range(repeat_count + 1):
+                values.append(previous_value)
+        else: # delta
+            values.append(previous_value + 3.9676e-10 * math.pow(float(compression_type) - 126.0, 3) * abs(float(compression_type) - 126.0))
+
+        previous_value = values[-1]
+
+    return values
+
+
+def load_cfp(file_path, position_count, rotation_count):
+    values = {}
+
     file = open(file_path, mode='rb')
-    return cmx_bcf_file.parse(file.read())
+
+    values["positions_x"] = decode_cfp_values(file, position_count)
+    values["positions_y"] = decode_cfp_values(file, position_count)
+    values["positions_z"] = decode_cfp_values(file, position_count)
+
+    values["rotations_x"] = decode_cfp_values(file, rotation_count)
+    values["rotations_y"] = decode_cfp_values(file, rotation_count)
+    values["rotations_z"] = decode_cfp_values(file, rotation_count)
+    values["rotations_w"] = decode_cfp_values(file, rotation_count)
+
+    try:
+        file.read(1)
+        raise Exception("data left unread at end of cfp file")
+    except:
+        pass
+
+    return values
 
 
 def import_files(context, file_paths):
     bcf_files = []
     for file_path in file_paths:
-        bcf_files.append(load_cmx_bcf(file_path))
-
-    BONE_SCALE = 3.0
+        file = open(file_path, mode='rb')
+        bcf_files.append(cmx_bcf_struct().parse(file.read()))
 
     for bcf_file in bcf_files:
         for skeleton in bcf_file.skeletons:
@@ -286,11 +286,11 @@ def import_files(context, file_paths):
                     for time_prop in time_props.properties:
                         for event in time_prop.events:
                             marker = action.pose_markers.new(name=motion.bone_name + " " + event.name + " " + event.value)
-                            marker.frame = int(time_prop.time / 33) + 1
+                            marker.frame = int(round(time_prop.time / 33.3333333)) + 1
 
             track = armature_object.animation_data.nla_tracks.new(prev=None)
-            track.name = action.name
-            strip = track.strips.new(action.name, 1, action)
+            track.name = skill.animation_name
+            strip = track.strips.new(skill.skill_name, 1, action)
             armature_object.animation_data.action = None
 
 
@@ -339,12 +339,199 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         pass
 
 
+def write_cfp_entries(file, entries):
+    for entry in entries:
+        file.write(bytes([0xFF]))
+        file.write(struct.pack('<f', entry))
+
+
+def write_cfp_file(file_path, positions_x, positions_y, positions_z, rotations_x, rotations_y, rotations_z, rotations_w):
+    file = open(file_path, "wb")
+    write_cfp_entries(file, positions_x)
+    write_cfp_entries(file, positions_y)
+    write_cfp_entries(file, positions_z)
+    write_cfp_entries(file, rotations_x)
+    write_cfp_entries(file, rotations_y)
+    write_cfp_entries(file, rotations_z)
+    write_cfp_entries(file, rotations_w)
+
+
+def export_files(context, file_path):
+    animation_file = {}
+
+    animation_file["skeletons"] = list()
+    animation_file["suits"] = list()
+    animation_file["skills"] = list()
+
+    for armature in bpy.data.armatures:
+        armature_object = bpy.data.objects[armature.name]
+
+        for track in armature_object.animation_data.nla_tracks:
+            for strip in track.strips:
+                armature_object.animation_data.action = strip.action
+
+                positions_x = list()
+                positions_y = list()
+                positions_z = list()
+
+                rotations_x = list()
+                rotations_y = list()
+                rotations_z = list()
+                rotations_w = list()
+
+                skill = {}
+                skill["skill_name"] = strip.action.name
+                skill["animation_name"] = track.name
+                skill["duration"] = math.floor((strip.action.frame_end - 1) * 33.3333333)
+                skill["distance"] = strip.action["distance"]
+                skill["moving_flag"] = 1 if strip.action["distance"] != 0.0 else 0
+                skill["motions"] = list()
+
+                for bone in armature_object.pose.bones:
+                    motion = {}
+                    motion["bone_name"] = bone.name
+                    motion["frame_count"] = int(strip.action.frame_end - 1)
+                    motion["duration"] = skill["duration"]
+                    motion["positions_used_flag"] = 0
+                    motion["rotations_used_flag"] = 0
+                    motion["property_count"] = 0
+                    motion["properties"] = list()
+                    motion["time_properties"] = list()
+
+                    for frame in range(motion["frame_count"]):
+                        for fcu in strip.action.fcurves:
+                            if fcu.data_path == bone.path_from_id("location"):
+                                if frame + 1 in (p.co.x for p in fcu.keyframe_points):
+                                    motion["positions_used_flag"] = 1
+                            if fcu.data_path == bone.path_from_id("rotation_quaternion"):
+                                if frame + 1 in (p.co.x for p in fcu.keyframe_points):
+                                    motion["rotations_used_flag"] = 1
+
+                    if not motion["positions_used_flag"] and not motion["rotations_used_flag"]:
+                        continue
+
+                    for frame in range(motion["frame_count"]):
+                        bpy.context.scene.frame_set(frame + 1)
+                        parent_matrix = mathutils.Matrix()
+                        if bone.parent != None:
+                            parent_matrix = bone.parent.bone.matrix.to_4x4().inverted()
+
+                        if motion["positions_used_flag"]:
+                            position = bone.bone.matrix.to_4x4() @ bone.location
+                            if bone.name == "ROOT":
+                                position += bone.bone.head
+                            position *= BONE_SCALE
+                            positions_x.append(position.x)
+                            positions_y.append(position.z) # swap y and z
+                            positions_z.append(position.y)
+                        if motion["rotations_used_flag"]:
+                            rotation = bone.rotation_quaternion.to_matrix().to_4x4()
+                            rotation = bone.bone.matrix.to_4x4() @ rotation
+                            rotation = rotation.to_quaternion()
+                            rotations_x.append(rotation.x)
+                            rotations_y.append(rotation.z) # swap y and z
+                            rotations_z.append(rotation.y)
+                            rotations_w.append(rotation.w)
+
+                    time_properties = {}
+                    time_properties["properties"] = list()
+
+                    for marker in strip.action.pose_markers:
+                        marker_components = marker.name.split()
+                        if marker_components[0] == bone.name:
+                            event = {}
+                            event["name"] = marker_components[1]
+                            event["value"] = marker_components[2]
+
+                            time_property = {}
+                            time_property["time"] = int(round((marker.frame - 1) * 33.33333))
+                            time_property["event_count"] = 1
+                            time_property["events"] = [event]
+
+                            time_properties["properties"].append(time_property)
+
+                    if len(time_properties["properties"]) > 0:
+                        time_properties["count"] = len(time_properties["properties"])
+                        motion["time_properties"].append(time_properties)
+
+                    motion["time_property_count"] = len(motion["time_properties"])
+
+                    motion["position_offset"] = 4294967295
+                    motion["rotation_offset"] = 4294967295
+
+                    skill["motions"].append(motion)
+
+                position_offset = 0
+                rotation_offset = 0
+                for motion in skill["motions"]:
+                    if motion["positions_used_flag"]:
+                        motion["position_offset"] = position_offset
+                        position_offset += motion["frame_count"]
+                    if motion["rotations_used_flag"]:
+                        motion["rotation_offset"] = rotation_offset
+                        rotation_offset += motion["frame_count"]
+
+                skill["position_count"] = len(positions_x)
+                skill["rotation_count"] = len(rotations_x)
+
+                skill["motion_count"] = len(skill["motions"])
+                animation_file["skills"].append(skill)
+
+                cfp_file_path = os.path.join(os.path.dirname(file_path), track.name + ".cfp")
+                write_cfp_file(
+                    cfp_file_path,
+                    positions_x,
+                    positions_y,
+                    positions_z,
+                    rotations_x,
+                    rotations_y,
+                    rotations_z,
+                    rotations_w
+                )
+
+    animation_file["skeleton_count"] = len(animation_file["skeletons"])
+    animation_file["suit_count"] = len(animation_file["suits"])
+    animation_file["skill_count"] = len(animation_file["skills"])
+
+    file = open(file_path + ".bcf", "wb")
+    file.write(cmx_bcf_struct().build(animation_file))
+
+
+class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
+    bl_idname = "export.cmx"
+    bl_label = "Export The Sims 1 meshes and animations"
+    bl_description = ""
+
+    filename_ext = ".cmx"
+
+    filter_glob: bpy.props.StringProperty(
+        default="*.cmx.bcf",
+        options={'HIDDEN'},
+    )
+
+    def execute(self, context):
+        try:
+            export_files(context, self.properties.filepath)
+        except Exception as exception:
+             self.report({"ERROR"}, exception.args[0])
+
+        return {'FINISHED'}
+
+    def draw(self, context):
+        pass
+
+
 def menu_import(self, context):
     self.layout.operator(ImportTS1.bl_idname, text="The Sims 1 (.cmx.bcf)")
 
 
+def menu_export(self, context):
+    self.layout.operator(ExportTS1.bl_idname, text="The Sims 1 (.cmx.bcf)")
+
+
 classes = (
     ImportTS1,
+    ExportTS1,
 )
 
 
@@ -353,6 +540,7 @@ def register():
         bpy.utils.register_class(cls)
 
     bpy.types.TOPBAR_MT_file_import.append(menu_import)
+    bpy.types.TOPBAR_MT_file_export.append(menu_export)
 
 
 def unregister():
@@ -360,6 +548,7 @@ def unregister():
         bpy.utils.unregister_class(cls)
 
     bpy.types.TOPBAR_MT_file_import.remove(menu_import)
+    bpy.types.TOPBAR_MT_file_export.remove(menu_export)
 
 
 if __name__ == "__main__":
