@@ -244,7 +244,7 @@ def import_files(context, file_paths):
             armature_object.animation_data.action = bpy.data.actions.new(name=skill.skill_name)
             action = armature_object.animation_data.action
 
-            action.frame_range = (1.0, skill.motions[0].frame_count + 1)
+            action.frame_range = (1.0, skill.motions[0].frame_count)
 
             action["distance"] = skill.distance
 
@@ -390,7 +390,7 @@ def export_files(context, file_path):
                 for bone in armature_object.pose.bones:
                     motion = {}
                     motion["bone_name"] = bone.name
-                    motion["frame_count"] = int(strip.action.frame_end - 1)
+                    motion["frame_count"] = int(strip.action.frame_end - strip.action.frame_start) + 1
                     motion["duration"] = skill["duration"]
                     motion["positions_used_flag"] = 0
                     motion["rotations_used_flag"] = 0
@@ -398,20 +398,22 @@ def export_files(context, file_path):
                     motion["properties"] = list()
                     motion["time_properties"] = list()
 
-                    for frame in range(motion["frame_count"]):
+                    for frame in range(int(strip.action.frame_start), int(strip.action.frame_end) + 1):
                         for fcu in strip.action.fcurves:
                             if fcu.data_path == bone.path_from_id("location"):
-                                if frame + 1 in (p.co.x for p in fcu.keyframe_points):
+                                if frame in (p.co.x for p in fcu.keyframe_points):
                                     motion["positions_used_flag"] = 1
                             if fcu.data_path == bone.path_from_id("rotation_quaternion"):
-                                if frame + 1 in (p.co.x for p in fcu.keyframe_points):
+                                if frame in (p.co.x for p in fcu.keyframe_points):
                                     motion["rotations_used_flag"] = 1
 
                     if not motion["positions_used_flag"] and not motion["rotations_used_flag"]:
                         continue
 
-                    for frame in range(motion["frame_count"]):
-                        bpy.context.scene.frame_set(frame + 1)
+                    original_current_frame = bpy.context.scene.frame_current
+
+                    for frame in range(int(strip.action.frame_start), int(strip.action.frame_end) + 1):
+                        bpy.context.scene.frame_set(frame)
                         parent_matrix = mathutils.Matrix()
                         if bone.parent != None:
                             parent_matrix = bone.parent.bone.matrix.to_4x4().inverted()
@@ -433,6 +435,8 @@ def export_files(context, file_path):
                             rotations_z.append(rotation.y)
                             rotations_w.append(rotation.w)
 
+                    bpy.context.scene.frame_set(original_current_frame)
+
                     time_properties = {}
                     time_properties["properties"] = list()
 
@@ -444,7 +448,7 @@ def export_files(context, file_path):
                             event["value"] = marker_components[2]
 
                             time_property = {}
-                            time_property["time"] = int(round((marker.frame - 1) * 33.33333))
+                            time_property["time"] = int(round((marker.frame - int(strip.action.frame_start)) * 33.33333))
                             time_property["event_count"] = 1
                             time_property["events"] = [event]
 
