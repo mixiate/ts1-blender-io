@@ -16,8 +16,57 @@ import bpy
 import bpy_extras
 import math
 import mathutils
+import os
+import struct
 
-def load_cmx_bcf(context, file_bytes):
+
+def decode_cfp_values(file, count):
+    values = list()
+
+    previous_value = 0.0
+
+    while len(values) < count:
+        compression_type = struct.unpack('<B', file.read(1))[0]
+
+        if compression_type == 0xFF: # full 4 byte float
+            values.append(struct.unpack('<f', file.read(4))[0])
+        elif compression_type == 0xFE: # repeat previous
+            repeat_count = struct.unpack('<H', file.read(2))[0]
+            for i in range(repeat_count + 1):
+                values.append(previous_value)
+        else:
+            values.append(previous_value + 3.9676e-10 * math.pow(float(compression_type) - 126.0, 3) * abs(float(compression_type) - 126.0))
+
+        previous_value = values[-1]
+
+    return values
+
+
+def load_cfp(file_path, position_count, rotation_count):
+
+    values = {}
+
+    file = open(file_path, mode='rb')
+
+    values["positions_x"] = decode_cfp_values(file, position_count)
+    values["positions_y"] = decode_cfp_values(file, position_count)
+    values["positions_z"] = decode_cfp_values(file, position_count)
+
+    values["rotations_x"] = decode_cfp_values(file, rotation_count)
+    values["rotations_y"] = decode_cfp_values(file, rotation_count)
+    values["rotations_z"] = decode_cfp_values(file, rotation_count)
+    values["rotations_w"] = decode_cfp_values(file, rotation_count)
+
+    try:
+        file.read(1)
+        raise Exception("data left unread at end of cfp file")
+    except:
+        pass
+
+    return values
+
+
+def load_cmx_bcf(file_path):
     import construct
 
     prop = construct.Struct(
@@ -121,70 +170,128 @@ def load_cmx_bcf(context, file_bytes):
         "skills" / construct.Array(construct.this.skill_count, skill),
     )
 
-    animation_file = cmx_bcf_file.parse(file_bytes)
+    file = open(file_path, mode='rb')
+    return cmx_bcf_file.parse(file.read())
 
-    for skeleton in animation_file.skeletons:
-        armature = bpy.data.armatures.new(name=skeleton.name)
-        armature_obj = bpy.data.objects.new(name=skeleton.name, object_data=armature)
-        context.collection.objects.link(armature_obj)
 
-        context.view_layer.objects.active = armature_obj
-        bpy.ops.object.mode_set(mode='EDIT')
+def import_files(context, file_paths):
+    bcf_files = []
+    for file_path in file_paths:
+        bcf_files.append(load_cmx_bcf(file_path))
 
-        for bone in skeleton.bones:
-            armature_bone = armature.edit_bones.new(name=bone.name)
+    BONE_SCALE = 3.0
 
-            parent_matrix = mathutils.Matrix()
-            if bone.parent != "NULL":
-                armature_bone.parent = armature.edit_bones[bone.parent]
-                parent_matrix = armature.edit_bones[bone.parent].matrix
+    for bcf_file in bcf_files:
+        for skeleton in bcf_file.skeletons:
+            if skeleton.name in bpy.data.armatures:
+                continue
+            armature = bpy.data.armatures.new(name=skeleton.name)
+            armature_obj = bpy.data.objects.new(name=skeleton.name, object_data=armature)
+            context.collection.objects.link(armature_obj)
 
-            armature_bone.head = mathutils.Vector((0.0, 0.0, 0.0))
-            armature_bone.tail = mathutils.Vector((1.0, 0.0, 0.0))
+            context.view_layer.objects.active = armature_obj
+            bpy.ops.object.mode_set(mode='EDIT')
 
-            BONE_SCALE = 3.0
+            for bone in skeleton.bones:
+                armature_bone = armature.edit_bones.new(name=bone.name)
 
-            rotation = mathutils.Quaternion(
-                (bone.rotation_w, bone.rotation_x, bone.rotation_z, bone.rotation_y)
-            ).to_matrix().to_4x4()
+                parent_matrix = mathutils.Matrix()
+                if bone.parent != "NULL":
+                    armature_bone.parent = armature.edit_bones[bone.parent]
+                    parent_matrix = armature.edit_bones[bone.parent].matrix
 
-            translation = mathutils.Matrix.Translation(mathutils.Vector(
-                (bone.position_x, bone.position_z, bone.position_y)
-            ) / BONE_SCALE)
+                armature_bone.head = mathutils.Vector((0.0, 0.0, 0.0))
+                armature_bone.tail = mathutils.Vector((0.1, 0.0, 0.0))
 
-            armature_bone.matrix = parent_matrix @ (translation @ rotation)
+                rotation = mathutils.Quaternion(
+                    (bone.rotation_w, bone.rotation_x, bone.rotation_z, bone.rotation_y)
+                ).to_matrix().to_4x4()
 
-            armature_bone["ts1_translate"] = bone.translate
-            armature_bone["ts1_rotate"] = bone.rotate
-            armature_bone["ts1_blend"] = bone.blend_suits
-            armature_bone["ts1_wiggle_value"] = bone.wiggle_value
-            armature_bone["ts1_wiggle_power"] = bone.wiggle_power
+                translation = mathutils.Matrix.Translation(mathutils.Vector(
+                    (bone.position_x, bone.position_z, bone.position_y)
+                ) / BONE_SCALE)
 
-            for property_list in bone.properties:
-                for prop in property_list.properties:
-                    armature_bone["ts1_" + prop.name] = prop.value
+                armature_bone.matrix = parent_matrix @ (translation @ rotation)
 
-        parent_bones = set()
-        quat_final_rotation = mathutils.Matrix.Rotation(math.radians(-90.0), 4, 'Z')
-        for bone in skeleton.bones:
-            armature_bone = armature.edit_bones[bone.name]
-            # this is probably wrong ultimately
-            armature_bone.matrix @= quat_final_rotation
-            if bone.parent != "NULL":
-                parent_bones.add(bone.parent)
-                armature.edit_bones[bone.parent].tail = armature_bone.head
+                armature_bone["ts1_translate"] = bone.translate
+                armature_bone["ts1_rotate"] = bone.rotate
+                armature_bone["ts1_blend"] = bone.blend_suits
+                armature_bone["ts1_wiggle_value"] = bone.wiggle_value
+                armature_bone["ts1_wiggle_power"] = bone.wiggle_power
 
-        for bone in skeleton.bones:
-            if bone.name not in parent_bones:
-                armature.edit_bones[bone.name].length = armature.edit_bones[bone.parent].length
-            if bone.name == "SPINE":
-                armature.edit_bones[bone.parent].tail = armature.edit_bones[bone.name].head
+                for property_list in bone.properties:
+                    for prop in property_list.properties:
+                        armature_bone["ts1_" + prop.name] = prop.value
 
-        for bone in skeleton.bones:
-            if bone.parent != "NULL" and armature.edit_bones[bone.parent].tail == armature.edit_bones[bone.name].head:
-                armature.edit_bones[bone.name].use_connect = True
+            bpy.ops.object.mode_set(mode='OBJECT')
 
-        bpy.ops.object.mode_set(mode='OBJECT')
+    for bcf_file in bcf_files:
+        for skill in bcf_file.skills:
+            cfp_file_path = os.path.join(os.path.dirname(file_path), skill.animation_name + ".cfp")
+            cfp_file = load_cfp(cfp_file_path, skill.position_count, skill.rotation_count)
+
+            armature = None
+            try:
+                armature = next(x for x in bpy.data.armatures if x.name[0] == skill.skill_name[0])
+            except:
+                raise Exception("no skeleton found. please import the " + skill.skill_name[0] + " skeleton")
+            armature_object = bpy.data.objects[armature.name]
+
+            if skill.skill_name in bpy.data.actions:
+                continue
+
+            armature_object.animation_data_create()
+            armature_object.animation_data.action = bpy.data.actions.new(name=skill.skill_name)
+            action = armature_object.animation_data.action
+
+            action.frame_range = (1.0, skill.motions[0].frame_count + 1)
+
+            action["distance"] = skill.distance
+
+            for motion in skill.motions:
+                for frame in range(motion.frame_count):
+                    bone = next(x for x in armature_object.pose.bones if x.name == motion.bone_name)
+
+                    translation = mathutils.Matrix()
+                    if motion.positions_used_flag:
+                        translation = mathutils.Matrix.Translation(mathutils.Vector((
+                            cfp_file["positions_x"][motion.position_offset + frame] / BONE_SCALE,
+                            cfp_file["positions_z"][motion.position_offset + frame] / BONE_SCALE,
+                            cfp_file["positions_y"][motion.position_offset + frame] / BONE_SCALE,
+                        )))
+
+                    rotation = mathutils.Matrix()
+                    if motion.rotations_used_flag:
+                        rotation = (mathutils.Quaternion((
+                            cfp_file["rotations_w"][motion.rotation_offset + frame],
+                            cfp_file["rotations_x"][motion.rotation_offset + frame],
+                            cfp_file["rotations_z"][motion.rotation_offset + frame],
+                            cfp_file["rotations_y"][motion.rotation_offset + frame],
+                        ))).normalized().to_matrix().to_4x4()
+
+                    parent = mathutils.Matrix()
+                    if bone.parent != None:
+                        parent = bone.parent.matrix
+
+                    bone.matrix = parent @ (translation @ rotation)
+
+                    if motion.positions_used_flag:
+                        bone.keyframe_insert("location", frame=frame + 1)
+                    else:
+                        bone.location = (0.0, 0.0, 0.0)
+                    if motion.rotations_used_flag:
+                        bone.keyframe_insert("rotation_quaternion", frame=frame + 1)
+
+                for time_props in motion.time_properties:
+                    for time_prop in time_props.properties:
+                        for event in time_prop.events:
+                            marker = action.pose_markers.new(name=motion.bone_name + " " + event.name + " " + event.value)
+                            marker.frame = int(time_prop.time / 33) + 1
+
+            track = armature_object.animation_data.nla_tracks.new(prev=None)
+            track.name = action.name
+            strip = track.strips.new(action.name, 1, action)
+            armature_object.animation_data.action = None
 
 
 class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
@@ -221,10 +328,10 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         if bpy.ops.object.select_all.poll():
             bpy.ops.object.select_all(action='DESELECT')
 
-        for path in paths:
-            with open(path, mode='rb') as file:
-                file_bytes = file.read()
-                load_cmx_bcf(context, file_bytes)
+        try:
+            import_files(context, paths)
+        except Exception as exception:
+             self.report({"ERROR"}, exception.args[0])
 
         return {'FINISHED'}
 
