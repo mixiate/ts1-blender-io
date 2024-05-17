@@ -14,6 +14,7 @@ bl_info = {
 
 import bpy
 import bpy_extras
+import copy
 import math
 import mathutils
 import os
@@ -181,6 +182,8 @@ def import_files(context, file_paths):
         file = open(file_path, mode='rb')
         bcf_files.append(cmx_bcf_struct().parse(file.read()))
 
+    BONE_ROTATION_OFFSET = mathutils.Matrix.Rotation(math.radians(-90.0), 4, 'Z')
+
     for bcf_file in bcf_files:
         for skeleton in bcf_file.skeletons:
             if skeleton.name in bpy.data.armatures:
@@ -198,7 +201,7 @@ def import_files(context, file_paths):
                 parent_matrix = mathutils.Matrix()
                 if bone.parent != "NULL":
                     armature_bone.parent = armature.edit_bones[bone.parent]
-                    parent_matrix = armature.edit_bones[bone.parent].matrix
+                    parent_matrix = armature.edit_bones[bone.parent].matrix @ BONE_ROTATION_OFFSET.inverted()
 
                 armature_bone.head = mathutils.Vector((0.0, 0.0, 0.0))
                 armature_bone.tail = mathutils.Vector((0.1, 0.0, 0.0))
@@ -211,7 +214,7 @@ def import_files(context, file_paths):
                     (bone.position_x, bone.position_z, bone.position_y)
                 ) / BONE_SCALE)
 
-                armature_bone.matrix = parent_matrix @ (translation @ rotation)
+                armature_bone.matrix = (parent_matrix @ (translation @ rotation)) @ BONE_ROTATION_OFFSET
 
                 armature_bone["ts1_translate"] = bone.translate
                 armature_bone["ts1_rotate"] = bone.rotate
@@ -222,6 +225,19 @@ def import_files(context, file_paths):
                 for property_list in bone.properties:
                     for prop in property_list.properties:
                         armature_bone["ts1_" + prop.name] = prop.value
+
+            for bone in armature.edit_bones:
+                if bone.parent != None:
+                    previous_parent_tail = copy.copy(bone.parent.tail)
+                    previous_parent_quat = bone.parent.matrix.to_4x4().to_quaternion()
+                    bone.parent.tail = bone.head
+                    if bone.parent.matrix.to_4x4().to_quaternion().dot(previous_parent_quat) < 0.9999999:
+                        bone.parent.tail = previous_parent_tail
+                    else:
+                        bone.use_connect = True
+
+                if len(bone.children) == 0:
+                    bone.length = bone.parent.length
 
             bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -269,11 +285,11 @@ def import_files(context, file_paths):
                             cfp_file["rotations_y"][motion.rotation_offset + frame],
                         ))).normalized().to_matrix().to_4x4()
 
-                    parent = mathutils.Matrix()
+                    parent_matrix = mathutils.Matrix()
                     if bone.parent != None:
-                        parent = bone.parent.matrix
+                        parent_matrix = bone.parent.matrix @ BONE_ROTATION_OFFSET.inverted()
 
-                    bone.matrix = parent @ (translation @ rotation)
+                    bone.matrix = (parent_matrix @ (translation @ rotation)) @ BONE_ROTATION_OFFSET
 
                     if motion.positions_used_flag:
                         bone.keyframe_insert("location", frame=frame + 1)
