@@ -22,6 +22,7 @@ import struct
 
 
 BONE_SCALE = 3.0
+BONE_ROTATION_OFFSET = mathutils.Matrix.Rotation(math.radians(-90.0), 4, 'Z')
 
 
 def cmx_bcf_struct():
@@ -181,8 +182,6 @@ def import_files(context, file_paths):
     for file_path in file_paths:
         file = open(file_path, mode='rb')
         bcf_files.append(cmx_bcf_struct().parse(file.read()))
-
-    BONE_ROTATION_OFFSET = mathutils.Matrix.Rotation(math.radians(-90.0), 4, 'Z')
 
     for bcf_file in bcf_files:
         for skeleton in bcf_file.skeletons:
@@ -430,9 +429,6 @@ def export_files(context, file_path):
 
                     for frame in range(int(strip.action.frame_start), int(strip.action.frame_end) + 1):
                         bpy.context.scene.frame_set(frame)
-                        parent_matrix = mathutils.Matrix()
-                        if bone.parent != None:
-                            parent_matrix = bone.parent.bone.matrix.to_4x4().inverted()
 
                         if motion["positions_used_flag"]:
                             position = bone.bone.matrix.to_4x4() @ bone.location
@@ -443,9 +439,18 @@ def export_files(context, file_path):
                             positions_y.append(position.z) # swap y and z
                             positions_z.append(position.y)
                         if motion["rotations_used_flag"]:
-                            rotation = bone.rotation_quaternion.to_matrix().to_4x4()
-                            rotation = bone.bone.matrix.to_4x4() @ rotation
-                            rotation = rotation.to_quaternion()
+                            # there must be a proper way to calculate reversing the bone rotation...
+                            rotation = bone.rotation_quaternion
+                            bone_matrix = bone.bone.matrix.to_4x4()
+                            if bone.name == "ROOT":
+                                bone_matrix @= BONE_ROTATION_OFFSET.inverted()
+                            rotation.x, rotation.y = rotation.y, -rotation.x
+                            bone_rotation = bone_matrix.to_quaternion()
+                            if bone.name == "ROOT":
+                                bone_rotation.x, bone_rotation.y = -bone_rotation.y, -bone_rotation.x
+                            else:
+                                bone_rotation.x, bone_rotation.y = bone_rotation.y, -bone_rotation.x
+                            rotation = bone_rotation @ rotation
                             rotations_x.append(rotation.x)
                             rotations_y.append(rotation.z) # swap y and z
                             rotations_z.append(rotation.y)
