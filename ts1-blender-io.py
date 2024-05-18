@@ -256,6 +256,9 @@ def import_files(context, file_paths):
                 continue
 
             armature_object.animation_data_create()
+
+            original_action = armature_object.animation_data.action if armature_object.animation_data.action is not None else None
+
             armature_object.animation_data.action = bpy.data.actions.new(name=skill.skill_name)
             action = armature_object.animation_data.action
 
@@ -306,7 +309,7 @@ def import_files(context, file_paths):
             track = armature_object.animation_data.nla_tracks.new(prev=None)
             track.name = skill.animation_name
             strip = track.strips.new(skill.skill_name, 1, action)
-            armature_object.animation_data.action = None
+            armature_object.animation_data.action = original_action
 
 
 class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
