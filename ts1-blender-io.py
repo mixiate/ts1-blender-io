@@ -440,18 +440,10 @@ def export_files(context, file_path):
                             positions_y.append(position.z) # swap y and z
                             positions_z.append(position.y)
                         if motion["rotations_used_flag"]:
-                            # there must be a proper way to calculate reversing the bone rotation...
-                            rotation = bone.rotation_quaternion
-                            bone_matrix = bone.bone.matrix.to_4x4()
-                            if bone.name == "ROOT":
-                                bone_matrix @= BONE_ROTATION_OFFSET.inverted()
-                            rotation.x, rotation.y = rotation.y, -rotation.x
-                            bone_rotation = bone_matrix.to_quaternion()
-                            if bone.name == "ROOT":
-                                bone_rotation.x, bone_rotation.y = -bone_rotation.y, -bone_rotation.x
-                            else:
-                                bone_rotation.x, bone_rotation.y = bone_rotation.y, -bone_rotation.x
-                            rotation = bone_rotation @ rotation
+                            rotation = bone.matrix @ BONE_ROTATION_OFFSET.inverted()
+                            if bone.parent is not None:
+                                rotation = (bone.parent.matrix @ BONE_ROTATION_OFFSET.inverted()).inverted() @ rotation
+                            rotation = rotation.to_quaternion()
                             rotations_x.append(rotation.x)
                             rotations_y.append(rotation.z) # swap y and z
                             rotations_z.append(rotation.y)
