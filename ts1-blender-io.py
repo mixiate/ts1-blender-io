@@ -431,9 +431,11 @@ def export_files(context, file_path):
                         bpy.context.scene.frame_set(frame)
 
                         if motion["positions_used_flag"]:
-                            position = bone.bone.matrix.to_4x4() @ bone.location
-                            if bone.name == "ROOT":
-                                position += bone.bone.head
+                            position = copy.copy(bone.head)
+                            if bone.parent is not None:
+                                position = (bone.parent.matrix.inverted() @ bone.matrix).to_translation()
+                                position.x, position.y = position.y, -position.x
+                                position.z = -position.z
                             position *= BONE_SCALE
                             positions_x.append(position.x)
                             positions_y.append(position.z) # swap y and z
