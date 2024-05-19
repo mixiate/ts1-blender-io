@@ -357,24 +357,66 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         pass
 
 
-def write_cfp_entries(file, entries):
-    for entry in entries:
-        file.write(bytes([0xFF]))
-        file.write(struct.pack('<f', entry))
+def cfp_encode_value_full(value):
+    return bytes([0xFF]) + struct.pack('<f', value)
 
 
-def write_cfp_file(file_path, positions_x, positions_y, positions_z, rotations_x, rotations_y, rotations_z, rotations_w):
+def cfp_encode_value_repeat(repeat_count):
+    return bytes([0xFE]) + struct.pack('<H', repeat_count - 1)
+
+
+def cfp_encode_values(values, compress):
+    encoded_bytes = bytes()
+
+    if compress:
+        previous_value = float('inf')
+        repeat_count = 0
+        for value in values:
+            if value == previous_value and repeat_count < 65535:
+                repeat_count += 1
+                continue
+
+            if repeat_count > 0:
+                encoded_bytes += cfp_encode_value_repeat(repeat_count)
+                repeat_count = 0
+
+            encoded_bytes += cfp_encode_value_full(value)
+
+            previous_value = value
+
+        if repeat_count > 0:
+            encoded_bytes += cfp_encode_value_repeat(repeat_count)
+    else:
+        for value in values:
+            encoded_bytes += cfp_encode_value_full(value)
+
+    return encoded_bytes
+
+
+def write_cfp_file(
+    file_path,
+    compress,
+    positions_x,
+    positions_y,
+    positions_z,
+    rotations_x,
+    rotations_y,
+    rotations_z,
+    rotations_w
+):
+    import itertools
+    values = itertools.chain(positions_x, positions_y)
+    values = itertools.chain(values, positions_z)
+    values = itertools.chain(values, rotations_x)
+    values = itertools.chain(values, rotations_y)
+    values = itertools.chain(values, rotations_z)
+    values = itertools.chain(values, rotations_w)
+
     file = open(file_path, "wb")
-    write_cfp_entries(file, positions_x)
-    write_cfp_entries(file, positions_y)
-    write_cfp_entries(file, positions_z)
-    write_cfp_entries(file, rotations_x)
-    write_cfp_entries(file, rotations_y)
-    write_cfp_entries(file, rotations_z)
-    write_cfp_entries(file, rotations_w)
+    file.write(cfp_encode_values(values, compress))
 
 
-def export_files(context, file_path):
+def export_files(context, file_path, compress_cfp):
     animation_file = {}
 
     animation_file["skeletons"] = list()
@@ -501,6 +543,7 @@ def export_files(context, file_path):
                 cfp_file_path = os.path.join(os.path.dirname(file_path), track.name + ".cfp")
                 write_cfp_file(
                     cfp_file_path,
+                    compress_cfp,
                     positions_x,
                     positions_y,
                     positions_z,
@@ -530,16 +573,23 @@ class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
         options={'HIDDEN'},
     )
 
+    compress_cfp: bpy.props.BoolProperty(
+        name="Compress CFP file",
+        description="Compress the values in the CFP file",
+        default=True,
+    )
+
     def execute(self, context):
         try:
-            export_files(context, self.properties.filepath)
+            export_files(context, self.properties.filepath, self.compress_cfp)
         except Exception as exception:
              self.report({"ERROR"}, exception.args[0])
 
         return {'FINISHED'}
 
     def draw(self, context):
-        pass
+        col = self.layout.column()
+        col.prop(self, "compress_cfp")
 
 
 def menu_import(self, context):
