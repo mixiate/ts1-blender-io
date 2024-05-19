@@ -64,20 +64,23 @@ def read_file(file_path, position_count, rotation_count):
 
     file = open(file_path, mode='rb')
 
-    values["positions_x"] = decode_values(file, position_count)
-    values["positions_y"] = decode_values(file, position_count)
-    values["positions_z"] = decode_values(file, position_count)
-
-    values["rotations_x"] = decode_values(file, rotation_count)
-    values["rotations_y"] = decode_values(file, rotation_count)
-    values["rotations_z"] = decode_values(file, rotation_count)
-    values["rotations_w"] = decode_values(file, rotation_count)
+    decoded_values = decode_values(file, (position_count * 3) + (rotation_count * 4))
 
     try:
         file.read(1)
         raise Exception("data left unread at end of cfp file")
     except:
         pass
+
+    values["positions_x"] = decoded_values[:position_count]
+    values["positions_y"] = decoded_values[position_count:position_count * 2]
+    values["positions_z"] = decoded_values[position_count * 2:position_count * 3]
+
+    rotation_offset = position_count * 3
+    values["rotations_x"] = decoded_values[rotation_offset:rotation_offset + rotation_count]
+    values["rotations_y"] = decoded_values[rotation_offset + rotation_count:rotation_offset + (rotation_count * 2)]
+    values["rotations_z"] = decoded_values[rotation_offset + (rotation_count * 2):rotation_offset + (rotation_count * 3)]
+    values["rotations_w"] = decoded_values[rotation_offset + (rotation_count * 3):rotation_offset + (rotation_count * 4)]
 
     return values
 
