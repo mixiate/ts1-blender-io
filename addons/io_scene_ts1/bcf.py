@@ -45,7 +45,7 @@ def bcf_struct():
         "skill_name" / construct.PascalString(construct.Int8ul, "ascii"),
         "animation_name" / construct.PascalString(construct.Int8ul, "ascii"),
         "duration" / construct.Float32l,
-        "distance" / construct.Int32ul,
+        "distance" / construct.Float32l,
         "moving_flag" / construct.Int32ul,
         "position_count" / construct.Int32ul,
         "rotation_count" / construct.Int32ul,
