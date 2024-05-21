@@ -217,6 +217,14 @@ def import_files(context, logger, file_paths, cleanup_meshes):
                         )
                     )
 
+                armature_object = bpy.data.objects[armature.name]
+                bpy.ops.object.select_all(action='DESELECT')
+                obj.select_set(True)
+                armature_object.select_set(True)
+                context.view_layer.objects.active = armature_object
+                bpy.ops.object.parent_set(type='ARMATURE')
+                obj.select_set(False)
+
     for bcf_file in bcf_files:
         for skill in bcf_file.skills:
             cfp_file_path = os.path.join(os.path.dirname(file_path), skill.animation_name + ".cfp")
