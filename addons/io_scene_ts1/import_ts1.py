@@ -194,16 +194,18 @@ def import_files(context, logger, file_paths, cleanup_meshes):
                     if material is None:
                         material = bpy.data.materials.new(name=bmf_file.default_texture_name)
 
-                    image = bpy.data.images.load(texture_file_path)
-                    material.use_nodes = True
+                        image = bpy.data.images.get(texture_file_path)
+                        if image is None:
+                            image = bpy.data.images.load(texture_file_path)
+                        material.use_nodes = True
 
-                    image_node = material.node_tree.nodes.new('ShaderNodeTexImage')
-                    image_node.image = image
+                        image_node = material.node_tree.nodes.new('ShaderNodeTexImage')
+                        image_node.image = image
 
-                    principled_BSDF = material.node_tree.nodes.get('Principled BSDF')
-                    material.node_tree.links.new(image_node.outputs[0], principled_BSDF.inputs[0])
-                    principled_BSDF.inputs[2].default_value = 1.0
-                    principled_BSDF.inputs[12].default_value = 0.0
+                        principled_BSDF = material.node_tree.nodes.get('Principled BSDF')
+                        material.node_tree.links.new(image_node.outputs[0], principled_BSDF.inputs[0])
+                        principled_BSDF.inputs[2].default_value = 1.0
+                        principled_BSDF.inputs[12].default_value = 0.0
 
                     obj.data.materials.append(material)
 
