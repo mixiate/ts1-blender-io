@@ -162,7 +162,13 @@ def import_files(context, logger, file_paths, cleanup_meshes):
 
                 mesh = bpy.data.meshes.new(bmf_file.skin_name)
                 obj = bpy.data.objects.new(bmf_file.skin_name, mesh)
-                context.collection.objects.link(obj)
+
+                mesh_collection = bpy.data.collections.get(suit.name)
+                if mesh_collection is None:
+                    mesh_collection = bpy.data.collections.new(suit.name)
+                mesh_collection.objects.link(obj)
+                if mesh_collection.name not in context.collection.children:
+                    context.collection.children.link(mesh_collection)
 
                 import bmesh
                 b_mesh = bmesh.new()
