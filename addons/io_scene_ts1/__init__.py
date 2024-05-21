@@ -52,8 +52,15 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     )
 
     def execute(self, context):
+        import io
+        import logging
         import os
         from . import import_ts1
+
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.DEBUG)
+        log_stream = io.StringIO()
+        logger.addHandler(logging.StreamHandler(stream=log_stream))
 
         paths = [os.path.join(self.directory, name.name) for name in self.files]
 
@@ -66,10 +73,11 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         if bpy.ops.object.select_all.poll():
             bpy.ops.object.select_all(action='DESELECT')
 
-        try:
-            import_ts1.import_files(context, paths, self.cleanup_meshes)
-        except Exception as exception:
-             self.report({"ERROR"}, exception.args[0])
+        import_ts1.import_files(context, logger, paths, self.cleanup_meshes)
+
+        log_output = log_stream.getvalue()
+        if log_output != "":
+            self.report({"ERROR"}, log_output)
 
         return {'FINISHED'}
 

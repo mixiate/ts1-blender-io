@@ -9,7 +9,7 @@ from . import bmf
 from . import cfp
 from . import utils
 
-def import_files(context, file_paths, cleanup_meshes):
+def import_files(context, logger, file_paths, cleanup_meshes):
     bcf_files = []
     for file_path in file_paths:
         file = open(file_path, mode='rb')
@@ -76,18 +76,25 @@ def import_files(context, file_paths, cleanup_meshes):
             armature_obj.select_set(True)
 
     for bcf_file in bcf_files:
+        if context.active_object.name not in bpy.data.armatures:
+            logger.info("Please select an armature to apply the mesh to.")
+            break
+
         for suit in bcf_file.suits:
             for skin in suit.skins:
-                if context.active_object.name not in bpy.data.armatures:
-                    raise Exception("please select the armature you want to add the meshes to")
                 armature = bpy.data.armatures[context.active_object.name]
 
                 bmf_file_path = os.path.join(os.path.dirname(file_path), skin.skin_name + ".bmf")
                 bmf_file = bmf.read_file(bmf_file_path)
 
-                for bone in bmf_file.bones:
-                    if bone not in armature.bones:
-                        raise Exception("could not apply mesh to this armature, bones do not match")
+                if not all(bone in armature.bones for bone in bmf_file.bones):
+                    logger.info(
+                        "Could not apply mesh {} to armature {}. The bones do not match.".format(
+                            bmf_file.skin_name,
+                            armature.name
+                        )
+                    )
+                    continue
 
                 mesh = bpy.data.meshes.new(bmf_file.skin_name)
                 obj = bpy.data.objects.new(bmf_file.skin_name, mesh)
@@ -113,7 +120,8 @@ def import_files(context, file_paths, cleanup_meshes):
                         position = mathutils.Vector(vertex.position).xzy / utils.BONE_SCALE
                         b_mesh_vertex = b_mesh.verts.new(bone_matrix @ position)
 
-                        normal = bone_matrix.to_quaternion().to_matrix().to_4x4() @ mathutils.Vector(vertex.normal).xzy
+                        bone_matrix_normal = bone_matrix.to_quaternion().to_matrix().to_4x4()
+                        normal = bone_matrix_normal @ mathutils.Vector(vertex.normal).xzy
                         normals.append(normal)
 
                         b_mesh_vertex[deform_layer][vertex_group.index] = 1.0
@@ -139,11 +147,14 @@ def import_files(context, file_paths, cleanup_meshes):
                         b_mesh.verts[blend.vertex_index][deform_layer][original_vertex_group.index] = 1 - weight
                         b_mesh.verts[blend.vertex_index][deform_layer][vertex_group.index] = weight
 
+                invalid_face_count = 0
                 for face in bmf_file.faces:
                     try:
                         b_mesh.faces.new((b_mesh.verts[face[2]], b_mesh.verts[face[1]], b_mesh.verts[face[0]]))
                     except:
-                        continue
+                        invalid_face_count += 1
+                if invalid_face_count > 0:
+                    logger.info("Skipped {} invalid faces in mesh {}".format(invalid_face_count, bmf_file.skin_name))
 
                 uv_layer = b_mesh.loops.layers.uv.verify()
                 for face in b_mesh.faces:
@@ -166,7 +177,7 @@ def import_files(context, file_paths, cleanup_meshes):
                     bpy.ops.mesh.select_all(action='SELECT')
 
                     bpy.ops.mesh.merge_normals()
-                    bpy.ops.mesh.remove_doubles(threshold=0.0001, use_unselected=False, use_sharp_edge_from_normals=True)
+                    bpy.ops.mesh.remove_doubles(use_sharp_edge_from_normals=True)
                     bpy.ops.mesh.customdata_custom_splitnormals_clear()
                     bpy.ops.mesh.faces_shade_smooth()
 
@@ -196,6 +207,15 @@ def import_files(context, file_paths, cleanup_meshes):
 
                     obj.data.materials.append(material)
 
+                elif bmf_file.default_texture_name != "x":
+                    logger.info(
+                        "Could not load texture {} for mesh {}".format(
+                            bmf_file.default_texture_name,
+                            bmf_file.skin_name
+                        )
+                    )
+
+    for bcf_file in bcf_files:
         for skill in bcf_file.skills:
             cfp_file_path = os.path.join(os.path.dirname(file_path), skill.animation_name + ".cfp")
             cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
@@ -204,7 +224,13 @@ def import_files(context, file_paths, cleanup_meshes):
             try:
                 armature = next(x for x in bpy.data.armatures if x.name[0] == skill.skill_name[0])
             except:
-                raise Exception("no skeleton found. please import the " + skill.skill_name[0] + " skeleton")
+                logger.info(
+                    "Could not find {} armature used by animation {}".format(
+                        skill.skill_name[0],
+                        skill.skill_name,
+                    )
+                )
+                break
             armature_object = bpy.data.objects[armature.name]
 
             if skill.skill_name in bpy.data.actions:
