@@ -45,6 +45,12 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         subtype='DIR_PATH',
     )
 
+    cleanup_meshes: bpy.props.BoolProperty(
+        name="Cleanup Meshes (Lossy)",
+        description="Merge the vertices of the mesh, add sharp edges, remove original normals and shade smooth",
+        default=False,
+    )
+
     def execute(self, context):
         import os
         from . import import_ts1
@@ -61,14 +67,15 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             bpy.ops.object.select_all(action='DESELECT')
 
         try:
-            import_ts1.import_files(context, paths)
+            import_ts1.import_files(context, paths, self.cleanup_meshes)
         except Exception as exception:
              self.report({"ERROR"}, exception.args[0])
 
         return {'FINISHED'}
 
     def draw(self, context):
-        pass
+        col = self.layout.column()
+        col.prop(self, "cleanup_meshes")
 
 
 class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
@@ -84,7 +91,7 @@ class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
     )
 
     compress_cfp: bpy.props.BoolProperty(
-        name="Compress CFP file",
+        name="Compress CFP file (Lossy)",
         description="Compress the values in the CFP file",
         default=True,
     )

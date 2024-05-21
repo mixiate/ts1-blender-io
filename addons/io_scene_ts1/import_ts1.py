@@ -5,10 +5,11 @@ import mathutils
 import os
 
 from . import bcf
+from . import bmf
 from . import cfp
 from . import utils
 
-def import_files(context, file_paths):
+def import_files(context, file_paths, cleanup_meshes):
     bcf_files = []
     for file_path in file_paths:
         file = open(file_path, mode='rb')
@@ -71,7 +72,110 @@ def import_files(context, file_paths):
 
             bpy.ops.object.mode_set(mode='OBJECT')
 
+            bpy.ops.object.select_all(action='DESELECT')
+            armature_obj.select_set(True)
+
     for bcf_file in bcf_files:
+        for suit in bcf_file.suits:
+            for skin in suit.skins:
+                if context.active_object.name not in bpy.data.armatures:
+                    raise Exception("please select the armature you want to add the meshes to")
+                armature = bpy.data.armatures[context.active_object.name]
+
+                bmf_file_path = os.path.join(os.path.dirname(file_path), skin.skin_name + ".bmf")
+                bmf_file = bmf.read_file(bmf_file_path)
+
+                for bone in bmf_file.bones:
+                    if bone not in armature.bones:
+                        raise Exception("could not apply mesh to this armature, bones do not match")
+
+                mesh = bpy.data.meshes.new(bmf_file.skin_name)
+                obj = bpy.data.objects.new(bmf_file.skin_name, mesh)
+                context.collection.objects.link(obj)
+
+                import bmesh
+                b_mesh = bmesh.new()
+
+                normals = list()
+                deform_layer = b_mesh.verts.layers.deform.verify()
+
+                for bone_binding in bmf_file.bone_bindings:
+                    bone_name = bmf_file.bones[bone_binding.bone_index]
+
+                    armature_bone = armature.bones[bone_name]
+                    bone_matrix = armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET.inverted()
+
+                    vertex_group = obj.vertex_groups.new(name=bone_name)
+
+                    vertex_index_start = bone_binding.vertex_index
+                    vertex_index_end = vertex_index_start + bone_binding.vertex_count
+                    for vertex in bmf_file.vertices[vertex_index_start:vertex_index_end]:
+                        position = mathutils.Vector(vertex.position).xzy / utils.BONE_SCALE
+                        b_mesh_vertex = b_mesh.verts.new(bone_matrix @ position)
+
+                        normal = bone_matrix.to_quaternion().to_matrix().to_4x4() @ mathutils.Vector(vertex.normal).xzy
+                        normals.append(normal)
+
+                        b_mesh_vertex[deform_layer][vertex_group.index] = 1.0
+
+                b_mesh.verts.ensure_lookup_table()
+                b_mesh.verts.index_update()
+
+                for bone_binding in bmf_file.bone_bindings:
+                    bone_name = bmf_file.bones[bone_binding.bone_index]
+                    vertex_group = obj.vertex_groups[bone_name]
+
+                    blend_index_start = bone_binding.blended_vertex_index
+                    blend_index_end = blend_index_start + bone_binding.blended_vertex_count
+                    for blend in bmf_file.blends[blend_index_start:blend_index_end]:
+                        for bone_binding in bmf_file.bone_bindings:
+                            vertex_index_start = bone_binding.vertex_index
+                            vertex_index_end = vertex_index_start + bone_binding.vertex_count
+                            if blend.vertex_index >= vertex_index_start and blend.vertex_index < vertex_index_end:
+                                original_bone_name = bmf_file.bones[bone_binding.bone_index]
+
+                        original_vertex_group = obj.vertex_groups[original_bone_name]
+                        weight = float(blend.weight) * math.pow(2, -15)
+                        b_mesh.verts[blend.vertex_index][deform_layer][original_vertex_group.index] = 1 - weight
+                        b_mesh.verts[blend.vertex_index][deform_layer][vertex_group.index] = weight
+
+                for face in bmf_file.faces:
+                    try:
+                        b_mesh.faces.new((b_mesh.verts[face[2]], b_mesh.verts[face[1]], b_mesh.verts[face[0]]))
+                    except:
+                        continue
+
+                uv_layer = b_mesh.loops.layers.uv.verify()
+                for face in b_mesh.faces:
+                    for loop in face.loops:
+                        uv = bmf_file.uvs[loop.vert.index]
+                        loop[uv_layer].uv = (uv[0], -uv[1])
+
+                b_mesh.to_mesh(mesh)
+                b_mesh.free()
+
+                mesh.normals_split_custom_set_from_vertices(normals)
+
+                if cleanup_meshes:
+                    original_active_object = context.view_layer.objects.active
+
+                    context.view_layer.objects.active = obj
+                    bpy.ops.object.mode_set(mode = 'EDIT')
+
+                    bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
+                    bpy.ops.mesh.select_all(action='SELECT')
+
+                    bpy.ops.mesh.merge_normals()
+                    bpy.ops.mesh.remove_doubles(threshold=0.0001, use_unselected=False, use_sharp_edge_from_normals=True)
+                    bpy.ops.mesh.customdata_custom_splitnormals_clear()
+                    bpy.ops.mesh.faces_shade_smooth()
+
+                    bpy.ops.mesh.select_all(action='DESELECT')
+
+                    bpy.ops.object.mode_set(mode = 'OBJECT')
+
+                    context.view_layer.objects.active = original_active_object
+
         for skill in bcf_file.skills:
             cfp_file_path = os.path.join(os.path.dirname(file_path), skill.animation_name + ".cfp")
             cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
