@@ -176,6 +176,26 @@ def import_files(context, file_paths, cleanup_meshes):
 
                     context.view_layer.objects.active = original_active_object
 
+                texture_file_path = os.path.join(os.path.dirname(file_path), bmf_file.default_texture_name + ".bmp")
+
+                if os.path.exists(texture_file_path):
+                    material = bpy.data.materials.get(bmf_file.default_texture_name)
+                    if material is None:
+                        material = bpy.data.materials.new(name=bmf_file.default_texture_name)
+
+                    image = bpy.data.images.load(texture_file_path)
+                    material.use_nodes = True
+
+                    image_node = material.node_tree.nodes.new('ShaderNodeTexImage')
+                    image_node.image = image
+
+                    principled_BSDF = material.node_tree.nodes.get('Principled BSDF')
+                    material.node_tree.links.new(image_node.outputs[0], principled_BSDF.inputs[0])
+                    principled_BSDF.inputs[2].default_value = 1.0
+                    principled_BSDF.inputs[12].default_value = 0.0
+
+                    obj.data.materials.append(material)
+
         for skill in bcf_file.skills:
             cfp_file_path = os.path.join(os.path.dirname(file_path), skill.animation_name + ".cfp")
             cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
