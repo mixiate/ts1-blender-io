@@ -298,7 +298,7 @@ def import_files(context, logger, file_paths, import_skeletons, import_meshes, i
 
                     context.view_layer.objects.active = original_active_object
 
-                texture_file_names = create_texture_file_name_variants(bmf_file.skin_name, skin_color)
+                texture_file_names = create_texture_file_name_variants(skin.skin_name, skin_color)
                 if bmf_file.default_texture_name != "x" and bmf_file.default_texture_name.lower() not in texture_file_names:
                     for file_path in texture_file_list:
                         if os.path.splitext(os.path.basename(file_path).lower())[0] == bmf_file.default_texture_name.lower():
