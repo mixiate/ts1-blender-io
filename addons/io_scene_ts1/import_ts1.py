@@ -73,7 +73,7 @@ def create_material(obj, texture_name, texture_file_path):
         obj.data.materials.append(material)
 
 
-def import_files(context, logger, file_paths, cleanup_meshes):
+def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
     bcf_files = []
     for file_path in file_paths:
         file = open(file_path, mode='rb')
@@ -257,7 +257,7 @@ def import_files(context, logger, file_paths, cleanup_meshes):
 
                     context.view_layer.objects.active = original_active_object
 
-                texture_file_names = create_texture_file_name_variants(bmf_file.skin_name, "lgt")
+                texture_file_names = create_texture_file_name_variants(bmf_file.skin_name, skin_color)
                 if bmf_file.default_texture_name != "x":
                     texture_file_names.append(bmf_file.default_texture_name)
 

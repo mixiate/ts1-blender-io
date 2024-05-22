@@ -73,7 +73,7 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         if bpy.ops.object.select_all.poll():
             bpy.ops.object.select_all(action='DESELECT')
 
-        import_ts1.import_files(context, logger, paths, self.cleanup_meshes)
+        import_ts1.import_files(context, logger, paths, self.cleanup_meshes, context.scene.ts1_import_skin_color)
 
         log_output = log_stream.getvalue()
         if log_output != "":
@@ -84,6 +84,8 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     def draw(self, context):
         col = self.layout.column()
         col.prop(self, "cleanup_meshes")
+        col.label(text="Skin Color:")
+        col.prop(context.scene, "ts1_import_skin_color", text="")
 
 
 class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
@@ -140,6 +142,17 @@ def register():
     bpy.types.TOPBAR_MT_file_import.append(menu_import)
     bpy.types.TOPBAR_MT_file_export.append(menu_export)
 
+    bpy.types.Scene.ts1_import_skin_color = bpy.props.EnumProperty(
+        name="Skin Color",
+        description="Which skin color texture will be set to the active material",
+        items=[
+            ('drk', "Dark", ""),
+            ('med', "Medium", ""),
+            ('lgt', "Light", ""),
+        ],
+        default='med',
+    )
+
 
 def unregister():
     for cls in classes:
@@ -147,6 +160,8 @@ def unregister():
 
     bpy.types.TOPBAR_MT_file_import.remove(menu_import)
     bpy.types.TOPBAR_MT_file_export.remove(menu_export)
+
+    del bpy.types.Scene.ts1_import_skin_color
 
 
 if __name__ == "__main__":
