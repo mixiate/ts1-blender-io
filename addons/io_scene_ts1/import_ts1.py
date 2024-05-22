@@ -18,10 +18,10 @@ def create_texture_file_name_variants(skin_name, preferred_skin_color):
     skin_colors = [preferred_skin_color] + [x for x in skin_colors if x != preferred_skin_color]
 
     split = skin_name.removeprefix("xskin-").split("-")
-    type_identifier_split = split[0].split("_")
+    type_identifier_split = split[0].split("_", 1)
     model_type = type_identifier_split[0]
     identifier = None
-    if len(type_identifier_split) > 1 and type_identifier_split[1] != "01":
+    if len(type_identifier_split) > 1:
         identifier = type_identifier_split[1]
 
     if model_type in ["hflc", "hfrc", "hflo", "hfro", "hflp", "hfrp", "hmlc", "hmrc", "hmlo", "hmro", "hmlp", "hmrp"]:
@@ -36,16 +36,46 @@ def create_texture_file_name_variants(skin_name, preferred_skin_color):
                     texture_names.append(("h" + sex + side + position + skin_color).lower())
     else:
         for skin_color in skin_colors:
+            # TYPE_IDENTIFER<skin_color>
+            texture_name = model_type
+            if identifier is not None:
+                texture_name += "_" + identifier
+            texture_name += skin_color
+            texture_names.append(texture_name.lower())
+
+            # TYPE_IDENTIFER<skin_color> no 01 identifier
+            texture_name = model_type
+            if identifier is not None and identifier != "01":
+                texture_name += "_" + identifier
+            texture_name += skin_color
+            texture_names.append(texture_name.lower())
+
             for weight in ["", "skn", "fit", "fat"]:
+                # TYPE<weight><skin_color>_IDENTIFIER
                 new_model_type = model_type + weight + skin_color
                 texture_name = new_model_type
                 if identifier is not None:
                     texture_name += "_" + identifier
                 texture_names.append(texture_name.lower())
 
+                # TYPE<weight><skin_color>_IDENTIFIER no 01
+                new_model_type = model_type + weight + skin_color
+                texture_name = new_model_type
+                if identifier is not None and identifier != "01":
+                    texture_name += "_" + identifier
+                texture_names.append(texture_name.lower())
+
+                # TYPE<-weight><skin_color>_IDENTIFIER
                 new_model_type = model_type.removesuffix(weight) + skin_color
                 texture_name = new_model_type
                 if identifier is not None:
+                    texture_name += "_" + identifier
+                texture_names.append(texture_name.lower())
+
+                # TYPE<-weight><skin_color>_IDENTIFIER no 01
+                new_model_type = model_type.removesuffix(weight) + skin_color
+                texture_name = new_model_type
+                if identifier is not None and identifier != "01":
                     texture_name += "_" + identifier
                 texture_names.append(texture_name.lower())
 
@@ -275,13 +305,14 @@ def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
 
                 texture_file_names = create_texture_file_name_variants(bmf_file.skin_name, skin_color)
                 if bmf_file.default_texture_name != "x" and bmf_file.default_texture_name.lower() not in texture_file_names:
-                    texture_file_names = [bmf_file.default_texture_name]
+                    for file_path in texture_file_list:
+                        if os.path.splitext(os.path.basename(file_path).lower())[0] == bmf_file.default_texture_name.lower():
+                            texture_file_names = [bmf_file.default_texture_name]
 
                 for texture_name in texture_file_names:
                     for file_path in texture_file_list:
                         if os.path.basename(file_path).lower().startswith(texture_name.lower()):
-                            texture_file_path = os.path.join(os.path.dirname(file_path), file_path)
-                            create_material(obj, os.path.basename(file_path), texture_file_path)
+                            create_material(obj, os.path.splitext(os.path.basename(file_path))[0], file_path)
 
                 if not obj.data.materials:
                     logger.info("Could not find a texture for mesh {}".format(bmf_file.skin_name))
