@@ -129,9 +129,25 @@ def menu_export(self, context):
     self.layout.operator(ExportTS1.bl_idname, text="The Sims 1 (.cmx.bcf)")
 
 
+class TS1_IO_AddonPreferences(bpy.types.AddonPreferences):
+    bl_idname = __name__
+
+    file_search_directory: bpy.props.StringProperty(
+        name="File Search Directory",
+        description="Directory that will be recursively searched to find referenced files",
+        subtype='FILE_PATH',
+        default="",
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "file_search_directory")
+
+
 classes = (
     ImportTS1,
     ExportTS1,
+    TS1_IO_AddonPreferences,
 )
 
 

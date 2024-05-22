@@ -3,6 +3,7 @@ import copy
 import math
 import mathutils
 import os
+import pathlib
 
 from . import bcf
 from . import bmf
@@ -78,6 +79,11 @@ def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
     for file_path in file_paths:
         file = open(file_path, mode='rb')
         bcf_files.append(bcf.bcf_struct().parse(file.read()))
+
+    file_search_directory = context.preferences.addons["io_scene_ts1"].preferences.file_search_directory
+    file_list = list(map(lambda x: str(x), pathlib.Path(file_search_directory).rglob("*")))
+
+    texture_file_list = [file_name for file_name in file_list if os.path.splitext(file_name)[1].lower() == ".bmp"]
 
     for bcf_file in bcf_files:
         for skeleton in bcf_file.skeletons:
@@ -261,14 +267,8 @@ def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
                 if bmf_file.default_texture_name != "x" and bmf_file.default_texture_name.lower() not in texture_file_names:
                     texture_file_names = [bmf_file.default_texture_name]
 
-                file_list = [
-                    file_name for file_name in os.listdir(os.path.dirname(file_path))
-                    if os.path.isfile(os.path.join(os.path.dirname(file_path), file_name))
-                    and os.path.splitext(file_name)[1] == ".bmp"
-                ]
-
                 for texture_name in texture_file_names:
-                    for file_name in file_list:
+                    for file_name in texture_file_list:
                         if os.path.basename(file_name).lower().startswith(texture_name.lower()):
                             texture_file_path = os.path.join(os.path.dirname(file_path), file_name)
                             create_material(obj, os.path.splitext(file_name)[0], texture_file_path)
