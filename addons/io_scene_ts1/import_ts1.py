@@ -28,11 +28,11 @@ def create_texture_file_name_variants(skin_name, preferred_skin_color):
         hand = model_type[2]
         position = model_type[3]
 
-        for sex in ["U", "F", "M"]:
-            for side in ["A", "L", "R"]:
-                texture_names.append("G" + sex + side + position.upper())
+        for sex in ["u", "f", "m"]:
+            for side in ["a", "l", "r"]:
+                texture_names.append("g" + sex + side + position)
                 for skin_color in skin_colors:
-                    texture_names.append("H" + sex + side + position.upper() + skin_color)
+                    texture_names.append(("h" + sex + side + position + skin_color).lower())
     else:
         for skin_color in skin_colors:
             for weight in ["", "skn", "fit", "fat"]:
@@ -40,13 +40,13 @@ def create_texture_file_name_variants(skin_name, preferred_skin_color):
                 texture_name = new_model_type
                 if identifier is not None:
                     texture_name += "_" + identifier
-                texture_names.append(texture_name)
+                texture_names.append(texture_name.lower())
 
                 new_model_type = model_type.removesuffix(weight) + skin_color
                 texture_name = new_model_type
                 if identifier is not None:
                     texture_name += "_" + identifier
-                texture_names.append(texture_name)
+                texture_names.append(texture_name.lower())
 
     return texture_names
 
@@ -258,8 +258,8 @@ def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
                     context.view_layer.objects.active = original_active_object
 
                 texture_file_names = create_texture_file_name_variants(bmf_file.skin_name, skin_color)
-                if bmf_file.default_texture_name != "x":
-                    texture_file_names.append(bmf_file.default_texture_name)
+                if bmf_file.default_texture_name != "x" and bmf_file.default_texture_name.lower() not in texture_file_names:
+                    texture_file_names = [bmf_file.default_texture_name]
 
                 file_list = [
                     file_name for file_name in os.listdir(os.path.dirname(file_path))
