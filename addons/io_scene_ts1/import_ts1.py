@@ -48,40 +48,19 @@ def create_texture_file_name_variants(skin_name, preferred_skin_color):
             texture_name += skin_color
             texture_names.append(texture_name.lower())
 
-            # TYPE_IDENTIFER<skin_color> no 01 identifier
-            texture_name = model_type
-            if identifier is not None and identifier != "01":
-                texture_name += "_" + identifier
-            texture_name += skin_color
-            texture_names.append(texture_name.lower())
-
             for weight in ["", "skn", "fit", "fat"]:
                 # TYPE<weight><skin_color>_IDENTIFIER
                 new_model_type = model_type + weight + skin_color
                 texture_name = new_model_type
                 if identifier is not None:
-                    texture_name += "_" + identifier
-                texture_names.append(texture_name.lower())
-
-                # TYPE<weight><skin_color>_IDENTIFIER no 01
-                new_model_type = model_type + weight + skin_color
-                texture_name = new_model_type
-                if identifier is not None and identifier != "01":
-                    texture_name += "_" + identifier
+                    texture_name += "_"
                 texture_names.append(texture_name.lower())
 
                 # TYPE<-weight><skin_color>_IDENTIFIER
                 new_model_type = model_type.removesuffix(weight) + skin_color
                 texture_name = new_model_type
                 if identifier is not None:
-                    texture_name += "_" + identifier
-                texture_names.append(texture_name.lower())
-
-                # TYPE<-weight><skin_color>_IDENTIFIER no 01
-                new_model_type = model_type.removesuffix(weight) + skin_color
-                texture_name = new_model_type
-                if identifier is not None and identifier != "01":
-                    texture_name += "_" + identifier
+                    texture_name += "_"
                 texture_names.append(texture_name.lower())
 
     # TYPE_IDENTIFER
