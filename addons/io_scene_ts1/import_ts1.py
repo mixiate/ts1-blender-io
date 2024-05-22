@@ -24,17 +24,20 @@ def create_texture_file_name_variants(skin_name, preferred_skin_color):
     if len(type_identifier_split) > 1:
         identifier = type_identifier_split[1]
 
-    if model_type in ["hflc", "hfrc", "hflo", "hfro", "hflp", "hfrp", "hmlc", "hmrc", "hmlo", "hmro", "hmlp", "hmrp"]:
+    if model_type in [
+        "hulc", "hurc", "hulo", "huro", "hulp", "hurp",
+        "hflc", "hfrc", "hflo", "hfro", "hflp", "hfrp",
+        "hmlc", "hmrc", "hmlo", "hmro", "hmlp", "hmrp",
+    ]:
         sex = model_type[1]
         hand = model_type[2]
         position = model_type[3]
 
-        for sex in ["u", sex.lower()]:
-            for side in ["a", "l", "r"]:
-                for skin_color in skin_colors:
-                    texture_names.append(("h" + sex + side + position + skin_color).lower())
-                texture_names.append(("h" + sex + side + position).lower())
-                texture_names.append(("g" + sex + side + position).lower())
+        for side in ["a", "l", "r"]:
+            for skin_color in skin_colors:
+                texture_names.append(("h" + sex + side + position + skin_color).lower())
+            texture_names.append(("h" + sex + side + position).lower())
+            texture_names.append(("g" + sex + side + position).lower())
     else:
         for skin_color in skin_colors:
             # TYPE_IDENTIFER<skin_color>
