@@ -78,14 +78,15 @@ def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
     bcf_files = []
     for file_path in file_paths:
         file = open(file_path, mode='rb')
-        bcf_files.append(bcf.bcf_struct().parse(file.read()))
+        bcf_file = bcf.bcf_struct().parse(file.read())
+        bcf_files.append((file_path, bcf_file))
 
     file_search_directory = context.preferences.addons["io_scene_ts1"].preferences.file_search_directory
     file_list = list(map(lambda x: str(x), pathlib.Path(file_search_directory).rglob("*")))
 
     texture_file_list = [file_name for file_name in file_list if os.path.splitext(file_name)[1].lower() == ".bmp"]
 
-    for bcf_file in bcf_files:
+    for bcf_file_path, bcf_file in bcf_files:
         for skeleton in bcf_file.skeletons:
             if skeleton.name in bpy.data.armatures:
                 continue
@@ -145,7 +146,7 @@ def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
             bpy.ops.object.select_all(action='DESELECT')
             armature_obj.select_set(True)
 
-    for bcf_file in bcf_files:
+    for bcf_file_path, bcf_file in bcf_files:
         if context.active_object.name not in bpy.data.armatures:
             logger.info("Please select an armature to apply the mesh to.")
             break
@@ -154,8 +155,17 @@ def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
             for skin in suit.skins:
                 armature = bpy.data.armatures[context.active_object.name]
 
-                bmf_file_path = os.path.join(os.path.dirname(file_path), skin.skin_name + ".bmf")
-                bmf_file = bmf.read_file(bmf_file_path)
+                bmf_file_path = os.path.join(os.path.dirname(bcf_file_path), skin.skin_name + ".bmf")
+                try:
+                    bmf_file = bmf.read_file(bmf_file_path)
+                except:
+                    logger.info(
+                        "Could not load mesh {} used by {}.".format(
+                            bmf_file_path,
+                            suit.name,
+                        )
+                    )
+                    continue
 
                 if not all(bone in armature.bones for bone in bmf_file.bones):
                     logger.info(
@@ -268,10 +278,10 @@ def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
                     texture_file_names = [bmf_file.default_texture_name]
 
                 for texture_name in texture_file_names:
-                    for file_name in texture_file_list:
-                        if os.path.basename(file_name).lower().startswith(texture_name.lower()):
-                            texture_file_path = os.path.join(os.path.dirname(file_path), file_name)
-                            create_material(obj, os.path.splitext(file_name)[0], texture_file_path)
+                    for file_path in texture_file_list:
+                        if os.path.basename(file_path).lower().startswith(texture_name.lower()):
+                            texture_file_path = os.path.join(os.path.dirname(file_path), file_path)
+                            create_material(obj, os.path.basename(file_path), texture_file_path)
 
                 if not obj.data.materials:
                     logger.info("Could not find a texture for mesh {}".format(bmf_file.skin_name))
@@ -284,9 +294,9 @@ def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
                 bpy.ops.object.parent_set(type='ARMATURE')
                 obj.select_set(False)
 
-    for bcf_file in bcf_files:
+    for bcf_file_path, bcf_file in bcf_files:
         for skill in bcf_file.skills:
-            cfp_file_path = os.path.join(os.path.dirname(file_path), skill.animation_name + ".cfp")
+            cfp_file_path = os.path.join(os.path.dirname(bcf_file_path), skill.animation_name + ".cfp")
             cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
 
             armature = None
