@@ -94,7 +94,7 @@ def create_material(obj, texture_name, texture_file_path):
         obj.data.materials.append(material)
 
 
-def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
+def import_files(context, logger, file_paths, import_skeletons, import_meshes, import_animations, cleanup_meshes, skin_color):
     bcf_files = []
     for file_path in file_paths:
         file = open(file_path, mode='rb')
@@ -107,6 +107,8 @@ def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
     texture_file_list = [file_name for file_name in file_list if os.path.splitext(file_name)[1].lower() == ".bmp"]
 
     for bcf_file_path, bcf_file in bcf_files:
+        if not import_skeletons:
+            break
         for skeleton in bcf_file.skeletons:
             if skeleton.name in bpy.data.armatures:
                 continue
@@ -167,6 +169,9 @@ def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
             armature_obj.select_set(True)
 
     for bcf_file_path, bcf_file in bcf_files:
+        if not import_meshes:
+            break
+
         if context.active_object.name not in bpy.data.armatures:
             logger.info("Please select an armature to apply the mesh to.")
             break
@@ -316,6 +321,9 @@ def import_files(context, logger, file_paths, cleanup_meshes, skin_color):
                 obj.select_set(False)
 
     for bcf_file_path, bcf_file in bcf_files:
+        if not import_animations:
+            break
+
         for skill in bcf_file.skills:
             cfp_file_path = os.path.join(os.path.dirname(bcf_file_path), skill.animation_name + ".cfp")
             cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)

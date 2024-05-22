@@ -45,6 +45,21 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         subtype='DIR_PATH',
     )
 
+    import_skeletons: bpy.props.BoolProperty(
+        name="Import Skeletons",
+        default=True,
+    )
+
+    import_meshes: bpy.props.BoolProperty(
+        name="Import Meshes",
+        default=True,
+    )
+
+    import_animations: bpy.props.BoolProperty(
+        name="Import Animations",
+        default=True,
+    )
+
     cleanup_meshes: bpy.props.BoolProperty(
         name="Cleanup Meshes (Lossy)",
         description="Merge the vertices of the mesh, add sharp edges, remove original normals and shade smooth",
@@ -73,7 +88,16 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         if bpy.ops.object.select_all.poll():
             bpy.ops.object.select_all(action='DESELECT')
 
-        import_ts1.import_files(context, logger, paths, self.cleanup_meshes, context.scene.ts1_import_skin_color)
+        import_ts1.import_files(
+            context,
+            logger,
+            paths,
+            self.import_skeletons,
+            self.import_meshes,
+            self.import_animations,
+            self.cleanup_meshes,
+            context.scene.ts1_import_skin_color
+        )
 
         log_output = log_stream.getvalue()
         if log_output != "":
@@ -83,6 +107,9 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
     def draw(self, context):
         col = self.layout.column()
+        col.prop(self, "import_skeletons")
+        col.prop(self, "import_meshes")
+        col.prop(self, "import_animations")
         col.prop(self, "cleanup_meshes")
         col.label(text="Skin Color:")
         col.prop(context.scene, "ts1_import_skin_color", text="")
