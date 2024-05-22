@@ -29,11 +29,12 @@ def create_texture_file_name_variants(skin_name, preferred_skin_color):
         hand = model_type[2]
         position = model_type[3]
 
-        for sex in ["u", "f", "m"]:
+        for sex in ["u", sex.lower()]:
             for side in ["a", "l", "r"]:
-                texture_names.append("g" + sex + side + position)
                 for skin_color in skin_colors:
                     texture_names.append(("h" + sex + side + position + skin_color).lower())
+                texture_names.append(("h" + sex + side + position).lower())
+                texture_names.append(("g" + sex + side + position).lower())
     else:
         for skin_color in skin_colors:
             # TYPE_IDENTIFER<skin_color>
