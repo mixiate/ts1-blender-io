@@ -73,22 +73,45 @@ def create_texture_file_name_variants(skin_name, preferred_skin_color):
 
 
 def create_material(obj, texture_name, texture_file_path):
+    if texture_name.lower() in ["white", "grey"]:
+        texture_name = texture_name.lower()
+
     material = bpy.data.materials.get(texture_name)
     if material is None:
-        material = bpy.data.materials.new(name=texture_name)
+        if texture_name == "grey":
+            material = bpy.data.materials.new(name=texture_name)
+            material.use_nodes = True
 
-        image = bpy.data.images.get(texture_file_path)
-        if image is None:
-            image = bpy.data.images.load(texture_file_path)
-        material.use_nodes = True
+            principled_BSDF = material.node_tree.nodes.get('Principled BSDF')
+            principled_BSDF.inputs[0].default_value = (0.2, 0.2, 0.2, 1.0)
+            principled_BSDF.inputs[2].default_value = 1.0
+            principled_BSDF.inputs[12].default_value = 0.0
 
-        image_node = material.node_tree.nodes.new('ShaderNodeTexImage')
-        image_node.image = image
+        elif texture_name == "white":
+            material = bpy.data.materials.new(name=texture_name)
+            material.use_nodes = True
 
-        principled_BSDF = material.node_tree.nodes.get('Principled BSDF')
-        material.node_tree.links.new(image_node.outputs[0], principled_BSDF.inputs[0])
-        principled_BSDF.inputs[2].default_value = 1.0
-        principled_BSDF.inputs[12].default_value = 0.0
+            principled_BSDF = material.node_tree.nodes.get('Principled BSDF')
+            material.node_tree.links.new(image_node.outputs[0], principled_BSDF.inputs[0])
+            principled_BSDF.inputs[0].default_value = (1.0, 1.0, 1.0, 1.0)
+            principled_BSDF.inputs[2].default_value = 1.0
+            principled_BSDF.inputs[12].default_value = 0.0
+
+        else:
+            material = bpy.data.materials.new(name=texture_name)
+
+            image = bpy.data.images.get(texture_file_path)
+            if image is None:
+                image = bpy.data.images.load(texture_file_path)
+            material.use_nodes = True
+
+            image_node = material.node_tree.nodes.new('ShaderNodeTexImage')
+            image_node.image = image
+
+            principled_BSDF = material.node_tree.nodes.get('Principled BSDF')
+            material.node_tree.links.new(image_node.outputs[0], principled_BSDF.inputs[0])
+            principled_BSDF.inputs[2].default_value = 1.0
+            principled_BSDF.inputs[12].default_value = 0.0
 
     if material.name not in obj.data.materials:
         obj.data.materials.append(material)
@@ -299,18 +322,22 @@ def import_files(context, logger, file_paths, import_skeletons, import_meshes, i
                     context.view_layer.objects.active = original_active_object
 
                 texture_file_names = create_texture_file_name_variants(skin.skin_name, skin_color)
-                if bmf_file.default_texture_name != "x" and bmf_file.default_texture_name.lower() not in texture_file_names:
-                    for file_path in texture_file_list:
-                        if os.path.splitext(os.path.basename(file_path).lower())[0] == bmf_file.default_texture_name.lower():
-                            texture_file_names = [bmf_file.default_texture_name]
 
-                for texture_name in texture_file_names:
-                    for file_path in texture_file_list:
-                        if os.path.basename(file_path).lower().startswith(texture_name.lower()):
-                            create_material(obj, os.path.splitext(os.path.basename(file_path))[0], file_path)
+                if bmf_file.default_texture_name.lower() in ["white", "grey"]:
+                    create_material(obj, bmf_file.default_texture_name, "")
+                else:
+                    if bmf_file.default_texture_name != "x" and bmf_file.default_texture_name.lower() not in texture_file_names:
+                        for file_path in texture_file_list:
+                            if os.path.splitext(os.path.basename(file_path).lower())[0] == bmf_file.default_texture_name.lower():
+                                texture_file_names = [bmf_file.default_texture_name]
 
-                if not obj.data.materials:
-                    logger.info("Could not find a texture for mesh {}".format(bmf_file.skin_name))
+                    for texture_name in texture_file_names:
+                        for file_path in texture_file_list:
+                            if os.path.basename(file_path).lower().startswith(texture_name.lower()):
+                                create_material(obj, os.path.splitext(os.path.basename(file_path))[0], file_path)
+
+                    if not obj.data.materials:
+                        logger.info("Could not find a texture for mesh {}".format(bmf_file.skin_name))
 
                 armature_object = bpy.data.objects[armature.name]
                 bpy.ops.object.select_all(action='DESELECT')
