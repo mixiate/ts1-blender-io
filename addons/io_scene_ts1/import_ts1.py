@@ -84,6 +84,12 @@ def create_texture_file_name_variants(skin_name, preferred_skin_color):
                     texture_name += "_" + identifier
                 texture_names.append(texture_name.lower())
 
+    # TYPE_IDENTIFER
+    texture_name = model_type
+    if identifier is not None:
+        texture_name += "_" + identifier
+    texture_names.append(texture_name.lower())
+
     return texture_names
 
 
