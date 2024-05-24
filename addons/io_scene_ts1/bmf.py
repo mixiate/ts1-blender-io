@@ -108,4 +108,6 @@ def read_file(file_path):
     except:
         pass
 
+    file.close()
+
     return bmf

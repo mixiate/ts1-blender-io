@@ -97,6 +97,8 @@ def read_file(file_path, position_count, rotation_count):
 
     decoded_values = decode_values(file, (position_count * 3) + (rotation_count * 4))
 
+    file.close()
+
     try:
         file.read(1)
         raise Exception("data left unread at end of cfp file")
@@ -139,3 +141,4 @@ def write_file(
 
     file = open(file_path, "wb")
     file.write(encode_values(values, compress))
+    file.close()
