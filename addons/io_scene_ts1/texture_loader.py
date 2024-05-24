@@ -61,8 +61,6 @@ def create_head_texture_file_name_variants(skin_name, preferred_skin_color):
     sex = skin_type[4]
     age = skin_type[5]
 
-    texture_names.append(("c" + body_id + sex + age + "_" + name).lower())
-
     for skin_color in skin_colors:
         texture_names.append(("c" + body_id + sex + age + skin_color + "_" + name).lower())
         texture_names.append(("c" + body_id + sex + age + skin_color + "_").lower())
@@ -360,6 +358,9 @@ def fixup_skin_name_and_default_texture(texture_file_names, skin_name, default_t
 
     if skin_name == "xskin-pcrasherma_01-PELVIS-BODY":
         texture_file_names.append("PCrasher-MA-01".lower())
+
+    if skin_name == "xskin-c030fa_eurotrsh-HEAD-HEAD":
+        texture_file_names.append(default_texture.lower())
 
     if skin_name == "xskin-B721MC_ct-PELVIS-BODY":
         skin_name = "xskin-B721MCChd_ct-PELVIS-BODY"
