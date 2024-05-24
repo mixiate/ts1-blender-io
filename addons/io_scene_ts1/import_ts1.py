@@ -4,6 +4,7 @@ import math
 import mathutils
 import os
 import pathlib
+import re
 
 from . import bcf
 from . import bmf
@@ -12,9 +13,155 @@ from . import texture_loader
 from . import utils
 
 
-def import_suit(context, logger, bcf_directory, texture_file_list, suit, cleanup_meshes, preferred_skin_color):
+def import_skeleton(context, skeleton):
+    armature = bpy.data.armatures.new(name=skeleton.name)
+    armature_obj = bpy.data.objects.new(name=skeleton.name, object_data=armature)
+    context.collection.objects.link(armature_obj)
+
+    context.view_layer.objects.active = armature_obj
+    bpy.ops.object.mode_set(mode='EDIT')
+
+    for bone in skeleton.bones:
+        armature_bone = armature.edit_bones.new(name=bone.name)
+
+        parent_matrix = mathutils.Matrix()
+        if bone.parent != "NULL":
+            armature_bone.parent = armature.edit_bones[bone.parent]
+            parent_matrix = armature.edit_bones[bone.parent].matrix @ utils.BONE_ROTATION_OFFSET.inverted()
+
+        armature_bone.head = mathutils.Vector((0.0, 0.0, 0.0))
+        armature_bone.tail = mathutils.Vector((0.1, 0.0, 0.0))
+
+        rotation = mathutils.Quaternion(
+            (bone.rotation_w, bone.rotation_x, bone.rotation_z, bone.rotation_y)
+        ).to_matrix().to_4x4()
+
+        translation = mathutils.Matrix.Translation(mathutils.Vector(
+            (bone.position_x, bone.position_z, bone.position_y)
+        ) / utils.BONE_SCALE)
+
+        armature_bone.matrix = (parent_matrix @ (translation @ rotation)) @ utils.BONE_ROTATION_OFFSET
+
+        armature_bone["ts1_translate"] = bone.translate
+        armature_bone["ts1_rotate"] = bone.rotate
+        armature_bone["ts1_blend"] = bone.blend_suits
+        armature_bone["ts1_wiggle_value"] = bone.wiggle_value
+        armature_bone["ts1_wiggle_power"] = bone.wiggle_power
+
+        for property_list in bone.properties:
+            for prop in property_list.properties:
+                armature_bone["ts1_" + prop.name] = prop.value
+
+    for bone in armature.edit_bones:
+        if bone.parent != None:
+            previous_parent_tail = copy.copy(bone.parent.tail)
+            previous_parent_quat = bone.parent.matrix.to_4x4().to_quaternion()
+            bone.parent.tail = bone.head
+            if bone.parent.matrix.to_4x4().to_quaternion().dot(previous_parent_quat) < 0.9999999:
+                bone.parent.tail = previous_parent_tail
+            else:
+                bone.use_connect = True
+
+        if len(bone.children) == 0:
+            bone.length = bone.parent.length
+
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    bpy.ops.object.select_all(action='DESELECT')
+    armature_obj.select_set(True)
+    return armature
+
+
+def get_skin_type_skeleton_name(skin_name):
+    # adult head
+    if re.match("^xskin-c\\d{3}(f|m|u)a.*-head", skin_name.lower()):
+        return "adult"
+
+    # adult body
+    if re.match("^xskin-b\\d{3}(f|m|u)a(skn|fit|fat|chd).*-body.*", skin_name.lower()):
+        return "adult"
+
+    # child head
+    if re.match("^xskin-c\\d{3}(f|m|u)c.*-head", skin_name.lower()):
+        return "child"
+
+    # child body
+    if re.match("^xskin-b\\d{3}(f|m|u)c(skn|fit|fat|chd|).*-body.*", skin_name.lower()):
+        return "child"
+
+    # child npc head
+    if re.match("^xskin-.*chd_.*-head-.*", skin_name.lower()):
+        return "child"
+
+    # child npc body
+    if re.match("^xskin-.*chd_.*-pelvis-.*", skin_name.lower()):
+        return "child"
+
+    # child costume
+    if re.match("^xskin-ct-.*(f|m)c-.*", skin_name.lower()):
+        return "child"
+
+    # cat
+    if re.match("^xskin-b\\d{3}(c|k)at.*", skin_name.lower()):
+        return "kat"
+
+    # dog
+    if re.match("^xskin-b\\d{3}dog_.*", skin_name.lower()):
+        return "dog"
+
+    # skunk and raccoon
+    if re.match("^xskin-.*-dogbody", skin_name.lower()):
+        return "dog"
+
+    # dragon
+    if re.match("^xskin-b\\d{3}dragon_.*", skin_name.lower()):
+        return "kat"
+
+    # effects
+    if re.match("^xskin-effects1-.*", skin_name.lower()):
+        return "effects1"
+
+    # gnome
+    if re.match("^xskin-.*-gnomebody", skin_name.lower()):
+        return "kat"
+
+    return "adult"
+
+
+def find_or_import_skeleton(context, file_list, skeleton_name):
+    if context.active_object is not None and context.active_object.name.startswith(skeleton_name):
+        return bpy.data.armatures[context.active_object.name]
+
+    if skeleton_name == "adult":
+        skeleton_file_name = "adult-skeleton.cmx.bcf"
+    elif skeleton_name == "child":
+        skeleton_file_name = "child-skeleton.cmx.bcf"
+    elif skeleton_name == "kat":
+        skeleton_file_name = "kat_skeleton.cmx.bcf"
+    elif skeleton_name == "dog":
+        skeleton_file_name = "dog_skeleton.cmx.bcf"
+    elif skeleton_name == "effects1":
+        skeleton_file_name = "effects1-skeleton.cmx.bcf"
+
+    armature = bpy.data.armatures.get(skeleton_name)
+    if armature is None:
+        for file_path in file_list:
+            if os.path.basename(file_path) == skeleton_file_name:
+                file = open(file_path, mode='rb')
+                bcf_file = bcf.bcf_struct().parse(file.read())
+                file.close()
+
+                armature = import_skeleton(context, bcf_file.skeletons[0])
+
+    return armature
+
+
+def import_suit(context, logger, bcf_directory, file_list, texture_file_list, suit, cleanup_meshes, preferred_skin_color):
     for skin in suit.skins:
-        armature = bpy.data.armatures[context.active_object.name]
+        armature = find_or_import_skeleton(context, file_list, get_skin_type_skeleton_name(skin.skin_name))
+        if armature is None:
+            logger.info("Could not load skeleton used by {} .".format(suit.name))
+            continue
 
         bmf_file_path = os.path.join(bcf_directory, skin.skin_name + ".bmf")
         try:
@@ -171,83 +318,24 @@ def import_files(context, logger, file_paths, import_skeletons, import_meshes, i
         or os.path.splitext(file_name)[1].lower() == ".tga"
     ]
 
-    for bcf_file_path, bcf_file in bcf_files:
-        if not import_skeletons:
-            break
-        for skeleton in bcf_file.skeletons:
-            if skeleton.name in bpy.data.armatures:
-                continue
-            armature = bpy.data.armatures.new(name=skeleton.name)
-            armature_obj = bpy.data.objects.new(name=skeleton.name, object_data=armature)
-            context.collection.objects.link(armature_obj)
-
-            context.view_layer.objects.active = armature_obj
-            bpy.ops.object.mode_set(mode='EDIT')
-
-            for bone in skeleton.bones:
-                armature_bone = armature.edit_bones.new(name=bone.name)
-
-                parent_matrix = mathutils.Matrix()
-                if bone.parent != "NULL":
-                    armature_bone.parent = armature.edit_bones[bone.parent]
-                    parent_matrix = armature.edit_bones[bone.parent].matrix @ utils.BONE_ROTATION_OFFSET.inverted()
-
-                armature_bone.head = mathutils.Vector((0.0, 0.0, 0.0))
-                armature_bone.tail = mathutils.Vector((0.1, 0.0, 0.0))
-
-                rotation = mathutils.Quaternion(
-                    (bone.rotation_w, bone.rotation_x, bone.rotation_z, bone.rotation_y)
-                ).to_matrix().to_4x4()
-
-                translation = mathutils.Matrix.Translation(mathutils.Vector(
-                    (bone.position_x, bone.position_z, bone.position_y)
-                ) / utils.BONE_SCALE)
-
-                armature_bone.matrix = (parent_matrix @ (translation @ rotation)) @ utils.BONE_ROTATION_OFFSET
-
-                armature_bone["ts1_translate"] = bone.translate
-                armature_bone["ts1_rotate"] = bone.rotate
-                armature_bone["ts1_blend"] = bone.blend_suits
-                armature_bone["ts1_wiggle_value"] = bone.wiggle_value
-                armature_bone["ts1_wiggle_power"] = bone.wiggle_power
-
-                for property_list in bone.properties:
-                    for prop in property_list.properties:
-                        armature_bone["ts1_" + prop.name] = prop.value
-
-            for bone in armature.edit_bones:
-                if bone.parent != None:
-                    previous_parent_tail = copy.copy(bone.parent.tail)
-                    previous_parent_quat = bone.parent.matrix.to_4x4().to_quaternion()
-                    bone.parent.tail = bone.head
-                    if bone.parent.matrix.to_4x4().to_quaternion().dot(previous_parent_quat) < 0.9999999:
-                        bone.parent.tail = previous_parent_tail
-                    else:
-                        bone.use_connect = True
-
-                if len(bone.children) == 0:
-                    bone.length = bone.parent.length
-
-            bpy.ops.object.mode_set(mode='OBJECT')
-
-            bpy.ops.object.select_all(action='DESELECT')
-            armature_obj.select_set(True)
+    if import_skeletons:
+        for bcf_file_path, bcf_file in bcf_files:
+            for skeleton in bcf_file.skeletons:
+                import_skeleton(context, skeleton)
 
     if import_meshes:
-        if context.active_object is None or context.active_object.name not in bpy.data.armatures:
-            logger.info("Please select an armature to apply the mesh to.")
-        else:
-            for bcf_file_path, bcf_file in bcf_files:
-                for suit in bcf_file.suits:
-                    import_suit(
-                        context,
-                        logger,
-                        os.path.dirname(bcf_file_path),
-                        texture_file_list,
-                        suit,
-                        cleanup_meshes,
-                        preferred_skin_color
-                    )
+        for bcf_file_path, bcf_file in bcf_files:
+            for suit in bcf_file.suits:
+                import_suit(
+                    context,
+                    logger,
+                    os.path.dirname(bcf_file_path),
+                    file_list,
+                    texture_file_list,
+                    suit,
+                    cleanup_meshes,
+                    preferred_skin_color
+                )
 
     for bcf_file_path, bcf_file in bcf_files:
         if not import_animations:

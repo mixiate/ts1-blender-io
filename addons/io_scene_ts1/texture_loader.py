@@ -419,6 +419,12 @@ def fixup_skin_name_and_default_texture(texture_file_names, skin_name, default_t
     if skin_name == "xskin-B008dog_greyhound-PELVIS-DOGBODY" or skin_name == "xskin-B008dog_greyhound-HEAD-DOGBODY-HEAD":
         default_texture = "b008dog_greyhound"
 
+    if skin_name == "xskin-b000kat_orangetabby-HEAD-CATJAW":
+        default_texture = "cathead"
+
+    if skin_name == "xskin-b000kat_orangetabby-PELVIS-BODY":
+        default_texture = "catbody"
+
     if skin_name == "xskin-CGardener_MaFat_Unleashed-HEAD-HEAD":
         default_texture = "cgardener_ma_unleashed"
 
