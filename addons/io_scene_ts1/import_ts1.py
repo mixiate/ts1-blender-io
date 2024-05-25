@@ -156,7 +156,17 @@ def find_or_import_skeleton(context, file_list, skeleton_name):
     return armature
 
 
-def import_suit(context, logger, bcf_directory, file_list, texture_file_list, suit, cleanup_meshes, preferred_skin_color):
+def import_suit(
+    context,
+    logger,
+    bcf_directory,
+    file_list,
+    texture_file_list,
+    suit,
+    cleanup_meshes,
+    preferred_skin_color,
+    armature_object_map,
+):
     for skin in suit.skins:
         armature = find_or_import_skeleton(context, file_list, get_skin_type_skeleton_name(skin.skin_name))
         if armature is None:
@@ -292,16 +302,22 @@ def import_suit(context, logger, bcf_directory, file_list, texture_file_list, su
         if not obj.data.materials:
             logger.info("Could not find a texture for mesh {}".format(bmf_file.skin_name))
 
-        armature_object = bpy.data.objects[armature.name]
-        bpy.ops.object.select_all(action='DESELECT')
-        obj.select_set(True)
-        armature_object.select_set(True)
-        context.view_layer.objects.active = armature_object
-        bpy.ops.object.parent_set(type='ARMATURE')
-        obj.select_set(False)
+        if armature_object_map.get(armature.name) is None:
+            armature_object_map[armature.name] = list()
+
+        armature_object_map[armature.name] += [obj.name]
 
 
-def import_files(context, logger, file_paths, import_skeletons, import_meshes, import_animations, cleanup_meshes, preferred_skin_color):
+def import_files(
+    context,
+    logger,
+    file_paths,
+    import_skeletons,
+    import_meshes,
+    import_animations,
+    cleanup_meshes,
+    preferred_skin_color
+):
     bcf_files = []
     for file_path in file_paths:
         file = open(file_path, mode='rb')
@@ -324,6 +340,7 @@ def import_files(context, logger, file_paths, import_skeletons, import_meshes, i
                 import_skeleton(context, skeleton)
 
     if import_meshes:
+        armature_object_map = {}
         for bcf_file_path, bcf_file in bcf_files:
             for suit in bcf_file.suits:
                 import_suit(
@@ -334,8 +351,27 @@ def import_files(context, logger, file_paths, import_skeletons, import_meshes, i
                     texture_file_list,
                     suit,
                     cleanup_meshes,
-                    preferred_skin_color
+                    preferred_skin_color,
+                    armature_object_map,
                 )
+
+        previous_active_object = context.view_layer.objects.active
+
+        for armature_name in armature_object_map:
+            bpy.ops.object.select_all(action='DESELECT')
+
+            for object_name in armature_object_map[armature_name]:
+                obj = bpy.data.objects[object_name]
+                obj.select_set(True)
+
+            armature_object = bpy.data.objects[armature_name]
+            armature_object.select_set(True)
+            context.view_layer.objects.active = armature_object
+            bpy.ops.object.parent_set(type='ARMATURE')
+
+        bpy.ops.object.select_all(action='DESELECT')
+
+        context.view_layer.objects.active = previous_active_object
 
     for bcf_file_path, bcf_file in bcf_files:
         if not import_animations:
