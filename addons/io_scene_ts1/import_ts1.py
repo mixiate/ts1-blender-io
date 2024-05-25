@@ -57,7 +57,7 @@ def import_skeleton(context, skeleton):
             previous_parent_tail = copy.copy(bone.parent.tail)
             previous_parent_quat = bone.parent.matrix.to_4x4().to_quaternion()
             bone.parent.tail = bone.head
-            if bone.parent.matrix.to_4x4().to_quaternion().dot(previous_parent_quat) < 0.9999999:
+            if bone.parent.matrix.to_4x4().to_quaternion().dot(previous_parent_quat) < 0.999999:
                 bone.parent.tail = previous_parent_tail
             else:
                 bone.use_connect = True
