@@ -153,12 +153,16 @@ def create_npc_head_texture_file_name_variants(skin_name, preferred_skin_color):
 
     texture_names = list()
 
-    split_skin_name = skin_name.split("-")[1].split("_", 1)
+    xskin_split = skin_name.split("-")
+    split_skin_name = xskin_split[1].split("_", 1)
     skin_type = split_skin_name[0]
     name = split_skin_name[1]
 
     for skin_color in skin_colors:
         texture_names.append((skin_type + skin_color + "_" + name).lower())
+
+        if len(xskin_split) >= 3:
+            texture_names.append((skin_type + skin_color + "_" + name + "-" + xskin_split[2]).lower()) # pa-onset
 
     return texture_names
 
@@ -169,7 +173,8 @@ def create_npc_body_texture_file_name_variants(skin_name, preferred_skin_color):
 
     texture_names = list()
 
-    split_skin_name = skin_name.split("-")[1]
+    xskin_split = skin_name.split("-")
+    split_skin_name = xskin_split[1]
     sex_age_weight_span = re.search("(f|m|u)(a|c|)(skn|fit|fat|chd)_", split_skin_name.lower()).span()
     skin_type = split_skin_name[:sex_age_weight_span[1] - 1]
     name = split_skin_name[sex_age_weight_span[1]:]
@@ -183,6 +188,9 @@ def create_npc_body_texture_file_name_variants(skin_name, preferred_skin_color):
 
         if name == "01":
             texture_names.append((skin_type + skin_color + "_").lower())
+
+        if len(xskin_split) >= 3:
+            texture_names.append((skin_type + skin_color + "_" + name + "-" + xskin_split[2]).lower()) # pa-onset
 
     return texture_names
 
@@ -439,15 +447,13 @@ def fixup_skin_name_and_default_texture(texture_file_names, skin_name, default_t
     if skin_name == "xskin-CSuperstarMA_Photographer-HEAD-HEAD":
         skin_name = "xskin-CSuperstarMASkn_Photographer-HEAD-HEAD"
 
-    if skin_name == "xskin-csuperstarfa_pa-onset-HEAD-HEAD":
-        skin_name = "xskin-csuperstarfa_pa-HEAD-HEAD"
-        default_texture = "superstarfafitmed_pa"
-
-    if skin_name == "xskin-superstarfafit_pa-onset-PELVIS-BODY":
-        skin_name = "xskin-superstarfafit_pa-PELVIS-BODY"
-        default_texture = "CSuperstarFAMed_PA"
-
     # makin magic
+    if skin_name == "xskin-b823faskn_01-PELVIS-BODY":
+        default_texture = "b823fasknmed"
+
+    if skin_name == "xskin-B825MaFit_gs1sar-PELVIS-BODY":
+        default_texture = "b825mafitmed_gs1sar"
+
     if skin_name == "xskin-C203FC_CreepyBen-HEAD-HEAD":
         skin_name = "xskin-C203MC_CreepyBen-HEAD-HEAD"
 
@@ -508,6 +514,13 @@ def add_job_and_npc_textures(texture_file_names, skin_name, preferred_skin_color
     if skin_name == "xskin-nffit_01-PELVIS-MBODY":
         texture_file_names += ["b_fa_eurotrash_swim", "b_fa_eurotrash_nekkid"]
 
+    # unleashed
+    if skin_name == "xskin-Petjudge_Mafit_01-PELVIS-BODY":
+        texture_file_names += create_npc_body_texture_file_name_variants(
+            "xskin-Petjudge_Mafit_02-PELVIS-BODY",
+            preferred_skin_color
+        )
+
 
 def load_textures_internal(obj, texture_file_list, skin_name, default_texture, preferred_skin_color):
     texture_file_names = list()
@@ -538,10 +551,8 @@ def load_textures_internal(obj, texture_file_list, skin_name, default_texture, p
 
     elif is_npc_head_skin_type(skin_name):
         texture_file_names += create_npc_head_texture_file_name_variants(skin_name, preferred_skin_color)
-        find_secondary_textures = True
     elif is_npc_body_skin_type(skin_name):
         texture_file_names += create_npc_body_texture_file_name_variants(skin_name, preferred_skin_color)
-        find_secondary_textures = True
     elif is_hot_date_npc_head_skin_type(skin_name):
         texture_file_names += create_hot_date_npc_head_texture_file_name_variants(skin_name, preferred_skin_color)
     elif is_unleashed_npc_body_skin_type(skin_name):
@@ -563,6 +574,8 @@ def load_textures_internal(obj, texture_file_list, skin_name, default_texture, p
         npc_body_skin_name = "xskin-" + skin_type + "fit" + bone_model
         texture_file_names += create_npc_body_texture_file_name_variants(npc_body_skin_name, preferred_skin_color)
 
+    print(texture_file_names)
+
     if default_texture != "x" and default_texture.lower() not in texture_file_names:
         if not is_head_skin_type(skin_name) and not is_body_skin_type(skin_name):
             for file_path in texture_file_list:
@@ -574,6 +587,8 @@ def load_textures_internal(obj, texture_file_list, skin_name, default_texture, p
             texture_file_names.append(default_texture)
 
     add_job_and_npc_textures(texture_file_names, skin_name, preferred_skin_color)
+
+    print(texture_file_names)
 
     texture_file_list = reduce_texture_file_list(texture_file_list, texture_file_names)
 
