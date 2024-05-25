@@ -9,6 +9,7 @@ import re
 from . import bcf
 from . import bmf
 from . import cfp
+from . import cmx
 from . import texture_loader
 from . import utils
 
@@ -316,7 +317,11 @@ def import_files(
 ):
     bcf_files = []
     for file_path in file_paths:
-        bcf_files.append((file_path, bcf.read_file(file_path)))
+        match os.path.splitext(file_path)[1]:
+            case ".cmx":
+                bcf_files.append((file_path, cmx.read_file(file_path)))
+            case ".bcf":
+                bcf_files.append((file_path, bcf.read_file(file_path)))
 
     file_search_directory = context.preferences.addons["io_scene_ts1"].preferences.file_search_directory
     if file_search_directory == "":

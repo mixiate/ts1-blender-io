@@ -586,6 +586,9 @@ def load_textures_internal(obj, texture_file_list, skin_name, default_texture, p
 
     add_job_and_npc_textures(texture_file_names, skin_name, preferred_skin_color)
 
+    if skin_name.startswith("xskin-B601MAFit_"):
+        find_secondary_textures = False
+
     texture_file_list = reduce_texture_file_list(texture_file_list, texture_file_names)
 
     for file_path in texture_file_list:

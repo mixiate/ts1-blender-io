@@ -6,6 +6,7 @@ import os
 
 from . import bcf
 from . import cfp
+from . import cmx
 from . import utils
 
 def export_files(context, file_path, compress_cfp):
@@ -32,7 +33,7 @@ def export_files(context, file_path, compress_cfp):
                 skill = bcf.Skill(
                     strip.action.name,
                     track.name,
-                    math.floor((strip.action.frame_end - 1) * 33.3333333),
+                    math.floor((strip.action.frame_end) * 33.3333333),
                     strip.action["distance"],
                     1 if strip.action["distance"] != 0.0 else 0,
                     0,
@@ -91,6 +92,8 @@ def export_files(context, file_path, compress_cfp):
 
                     bpy.context.scene.frame_set(original_current_frame)
 
+                    time_property_list = bcf.TimePropertyList(list())
+
                     for marker in strip.action.pose_markers:
                         marker_components = marker.name.split()
                         if marker_components[0] == bone.name:
@@ -104,10 +107,12 @@ def export_files(context, file_path, compress_cfp):
                                 [event],
                             )
 
-                            motion.time_property_lists.append(bcf.TimePropertyList([time_property]))
+                            time_property_list.time_properties.append(time_property)
 
-                    motion.position_offset = 4294967295
-                    motion.rotation_offset = 4294967295
+                    motion.time_property_lists.append(time_property_list)
+
+                    motion.position_offset = -1
+                    motion.rotation_offset = -1
 
                     skill.motions.append(motion)
 
@@ -139,12 +144,14 @@ def export_files(context, file_path, compress_cfp):
                     rotations_w
                 )
 
-    print(skills)
-
     bcf_desc = bcf.Bcf(
         skeletons,
         suits,
         skills
     )
 
-    bcf.write_file(file_path + ".bcf", bcf_desc)
+    match os.path.splitext(file_path)[1]:
+        case ".cmx":
+            cmx.write_file(file_path, bcf_desc)
+        case ".bcf":
+            bcf.write_file(file_path, bcf_desc)

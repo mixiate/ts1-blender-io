@@ -371,24 +371,18 @@ def write_bcf(file, bcf):
 
 
 def read_file(file_path):
-    file = open(file_path, mode='rb')
+    with open(file_path, mode='rb') as file:
+        bcf = read_bcf(file)
 
-    bcf = read_bcf(file)
+        try:
+            file.read(1)
+            raise Exception("data left unread at end of " + file_path)
+        except:
+            pass
 
-    try:
-        file.read(1)
-        raise Exception("data left unread at end of " + file_path)
-    except:
-        pass
-
-    file.close()
-
-    import pprint
-    pprint.pprint(bcf)
-
-    return bcf
+        return bcf
 
 
 def write_file(file_path, bcf):
-    with open(file_path, "wb") as file:
+    with open(file_path, 'wb') as file:
         write_bcf(file, bcf)

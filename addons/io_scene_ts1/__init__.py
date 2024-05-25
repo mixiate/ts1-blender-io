@@ -28,13 +28,13 @@ import bpy_extras
 class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     bl_idname = "import.bcf"
     bl_label = "Import The Sims 1 meshes and animations"
-    bl_description = ""
+    bl_description = "Import a cmx or bcf file from The Sims 1"
     bl_options = {'UNDO'}
 
     filename_ext = ".cmx.bcf"
 
     filter_glob: bpy.props.StringProperty(
-        default="*.cmx.bcf",
+        default="*.cmx;*.cmx.bcf",
         options={'HIDDEN'},
     )
     files: bpy.props.CollectionProperty(
@@ -116,14 +116,15 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
 
 class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
-    bl_idname = "export.cmx"
+    bl_idname = "export.bcf"
     bl_label = "Export The Sims 1 meshes and animations"
-    bl_description = ""
+    bl_description = "Export a cmx or bcf file for The Sims 1"
 
-    filename_ext = ".cmx"
+    check_extension = None
+    filename_ext = ".cmx.bcf"
 
     filter_glob: bpy.props.StringProperty(
-        default="*.cmx.bcf",
+        default="*.cmx;*.cmx.bcf",
         options={'HIDDEN'},
     )
 
@@ -136,10 +137,7 @@ class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
     def execute(self, context):
         from . import export_ts1
 
-        try:
-            export_ts1.export_files(context, self.properties.filepath, self.compress_cfp)
-        except Exception as exception:
-             self.report({"ERROR"}, exception.args[0])
+        export_ts1.export_files(context, self.properties.filepath, self.compress_cfp)
 
         return {'FINISHED'}
 
@@ -149,11 +147,11 @@ class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
 
 
 def menu_import(self, context):
-    self.layout.operator(ImportTS1.bl_idname, text="The Sims 1 (.cmx.bcf)")
+    self.layout.operator(ImportTS1.bl_idname, text="The Sims 1 (.cmx/.bcf)")
 
 
 def menu_export(self, context):
-    self.layout.operator(ExportTS1.bl_idname, text="The Sims 1 (.cmx.bcf)")
+    self.layout.operator(ExportTS1.bl_idname, text="The Sims 1 (.cmx/.bcf)")
 
 
 class TS1_IO_AddonPreferences(bpy.types.AddonPreferences):
