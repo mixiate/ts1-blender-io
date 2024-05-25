@@ -314,10 +314,7 @@ def import_files(
 ):
     bcf_files = []
     for file_path in file_paths:
-        file = open(file_path, mode='rb')
-        bcf_file = bcf.bcf_struct().parse(file.read())
-        file.close()
-        bcf_files.append((file_path, bcf_file))
+        bcf_files.append((file_path, bcf.read_file(file_path)))
 
     file_search_directory = context.preferences.addons["io_scene_ts1"].preferences.file_search_directory
     file_list = list(map(lambda x: str(x), pathlib.Path(file_search_directory).rglob("*")))
@@ -447,11 +444,11 @@ def import_files(
                     if motion.rotations_used_flag:
                         bone.keyframe_insert("rotation_quaternion", frame=frame + 1)
 
-                for time_props in motion.time_properties:
-                    for time_prop in time_props.properties:
-                        for event in time_prop.events:
+                for time_property_list in motion.time_property_lists:
+                    for time_property in time_property_list.time_properties:
+                        for event in time_property.events:
                             marker = action.pose_markers.new(name=motion.bone_name + " " + event.name + " " + event.value)
-                            marker.frame = int(round(time_prop.time / 33.3333333)) + 1
+                            marker.frame = int(round(time_property.time / 33.3333333)) + 1
 
             track = armature_object.animation_data.nla_tracks.new(prev=None)
             track.name = skill.animation_name

@@ -1,17 +1,14 @@
 import dataclasses
 import struct
 
-
-def read_string(file):
-    length = struct.unpack('<B', file.read(1))[0]
-    return struct.unpack("%ds" % length, file.read(length))[0].decode("windows-1252")
+from . import utils
 
 
 def read_bones(file):
     count = struct.unpack('<I', file.read(4))[0]
     bones = list()
     for i in range(count):
-        bones.append(read_string(file))
+        bones.append(utils.read_string(file))
     return bones
 
 
@@ -107,8 +104,8 @@ class Bmf:
 
 
 def read_bmf(file):
-    skin_name = read_string(file)
-    default_texture_name = read_string(file)
+    skin_name = utils.read_string(file)
+    default_texture_name = utils.read_string(file)
     bones = read_bones(file)
     faces = read_faces(file)
     bone_bindings = read_bone_bindings(file)

@@ -574,8 +574,6 @@ def load_textures_internal(obj, texture_file_list, skin_name, default_texture, p
         npc_body_skin_name = "xskin-" + skin_type + "fit" + bone_model
         texture_file_names += create_npc_body_texture_file_name_variants(npc_body_skin_name, preferred_skin_color)
 
-    print(texture_file_names)
-
     if default_texture != "x" and default_texture.lower() not in texture_file_names:
         if not is_head_skin_type(skin_name) and not is_body_skin_type(skin_name):
             for file_path in texture_file_list:
@@ -587,8 +585,6 @@ def load_textures_internal(obj, texture_file_list, skin_name, default_texture, p
             texture_file_names.append(default_texture)
 
     add_job_and_npc_textures(texture_file_names, skin_name, preferred_skin_color)
-
-    print(texture_file_names)
 
     texture_file_list = reduce_texture_file_list(texture_file_list, texture_file_names)
 
