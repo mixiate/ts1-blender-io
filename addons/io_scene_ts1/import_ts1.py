@@ -160,10 +160,7 @@ def find_or_import_skeleton(context, file_list, skeleton_name):
     if armature is None:
         for file_path in file_list:
             if os.path.basename(file_path) == skeleton_file_name:
-                file = open(file_path, mode='rb')
-                bcf_file = bcf.bcf_struct().parse(file.read())
-                file.close()
-
+                bcf_file = bcf.read_file(file_path)
                 armature = import_skeleton(context, bcf_file.skeletons[0])
 
     return armature
@@ -317,6 +314,8 @@ def import_files(
         bcf_files.append((file_path, bcf.read_file(file_path)))
 
     file_search_directory = context.preferences.addons["io_scene_ts1"].preferences.file_search_directory
+    if file_search_directory == "":
+        file_search_directory = os.path.dirname(file_paths[0])
     file_list = list(map(lambda x: str(x), pathlib.Path(file_search_directory).rglob("*")))
 
     texture_file_list = [
