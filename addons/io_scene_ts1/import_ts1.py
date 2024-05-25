@@ -271,26 +271,6 @@ def import_suit(
 
         mesh.normals_split_custom_set_from_vertices(normals)
 
-        if cleanup_meshes:
-            original_active_object = context.view_layer.objects.active
-
-            context.view_layer.objects.active = obj
-            bpy.ops.object.mode_set(mode = 'EDIT')
-
-            bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
-            bpy.ops.mesh.select_all(action='SELECT')
-
-            bpy.ops.mesh.merge_normals()
-            bpy.ops.mesh.remove_doubles(use_sharp_edge_from_normals=True)
-            bpy.ops.mesh.customdata_custom_splitnormals_clear()
-            bpy.ops.mesh.faces_shade_smooth()
-
-            bpy.ops.mesh.select_all(action='DESELECT')
-
-            bpy.ops.object.mode_set(mode = 'OBJECT')
-
-            context.view_layer.objects.active = original_active_object
-
         texture_loader.load_textures(
             obj,
             texture_file_list,
@@ -363,6 +343,22 @@ def import_files(
             for object_name in armature_object_map[armature_name]:
                 obj = bpy.data.objects[object_name]
                 obj.select_set(True)
+
+            if cleanup_meshes:
+                context.view_layer.objects.active = bpy.data.objects[armature_object_map[armature_name][0]]
+                bpy.ops.object.mode_set(mode='EDIT')
+
+                bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
+                bpy.ops.mesh.select_all(action='SELECT')
+
+                bpy.ops.mesh.merge_normals()
+                bpy.ops.mesh.remove_doubles(use_sharp_edge_from_normals=True)
+                bpy.ops.mesh.customdata_custom_splitnormals_clear()
+                bpy.ops.mesh.faces_shade_smooth()
+
+                bpy.ops.mesh.select_all(action='DESELECT')
+
+                bpy.ops.object.mode_set(mode='OBJECT')
 
             armature_object = bpy.data.objects[armature_name]
             armature_object.select_set(True)
