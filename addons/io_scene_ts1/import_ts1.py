@@ -298,6 +298,11 @@ def import_suit(
 
         armature_object_map[armature.name] += [obj.name]
 
+        armature_obj = bpy.data.objects[armature.name]
+        obj.location = armature_obj.location
+        obj.rotation_euler = armature_obj.rotation_euler
+        obj.scale = armature_obj.scale
+
 
 def import_files(
     context,
