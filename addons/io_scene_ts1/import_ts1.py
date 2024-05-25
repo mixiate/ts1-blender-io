@@ -128,6 +128,19 @@ def get_skin_type_skeleton_name(skin_name):
     return "adult"
 
 
+def get_skill_type_skeleton_name(skill_name):
+    if skill_name.startswith("a2"):
+        return "adult"
+    elif skill_name.startswith("c2"):
+        return "child"
+    elif skill_name.startswith("k2"):
+        return "kat"
+    elif skill_name.startswith("d2"):
+        return "dog"
+
+    raise Exception("Invalid skill name")
+
+
 def find_or_import_skeleton(context, file_list, skeleton_name):
     if context.active_object is not None and context.active_object.name.startswith(skeleton_name):
         return bpy.data.armatures[context.active_object.name]
@@ -168,9 +181,10 @@ def import_suit(
     armature_object_map,
 ):
     for skin in suit.skins:
-        armature = find_or_import_skeleton(context, file_list, get_skin_type_skeleton_name(skin.skin_name))
+        skeleton_name = get_skin_type_skeleton_name(skin.skin_name)
+        armature = find_or_import_skeleton(context, file_list, skeleton_name)
         if armature is None:
-            logger.info("Could not load skeleton used by {} .".format(suit.name))
+            logger.info("Could not find or import {} skeleton used by {} .".format(skeleton_name, suit.name))
             continue
 
         bmf_file_path = os.path.join(bcf_directory, skin.skin_name + ".bmf")
@@ -374,20 +388,12 @@ def import_files(
             break
 
         for skill in bcf_file.skills:
-            cfp_file_path = os.path.join(os.path.dirname(bcf_file_path), skill.animation_name + ".cfp")
-            cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
+            skeleton_name = get_skill_type_skeleton_name(skill.skill_name)
+            armature = find_or_import_skeleton(context, file_list, skeleton_name)
+            if armature is None:
+                logger.info("Could not find or import {} skeleton used by {} .".format(skeleton_name, bcf_file_path))
+                continue
 
-            armature = None
-            try:
-                armature = next(x for x in bpy.data.armatures if x.name[0] == skill.skill_name[0])
-            except:
-                logger.info(
-                    "Could not find {} armature used by animation {}".format(
-                        skill.skill_name[0],
-                        skill.skill_name,
-                    )
-                )
-                break
             armature_object = bpy.data.objects[armature.name]
 
             if skill.skill_name in bpy.data.actions:
@@ -403,6 +409,9 @@ def import_files(
             action.frame_range = (1.0, skill.motions[0].frame_count)
 
             action["distance"] = skill.distance
+
+            cfp_file_path = os.path.join(os.path.dirname(bcf_file_path), skill.animation_name + ".cfp")
+            cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
 
             for motion in skill.motions:
                 for frame in range(motion.frame_count):
