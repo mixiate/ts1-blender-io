@@ -1,3 +1,4 @@
+import dataclasses
 import struct
 
 
@@ -6,95 +7,125 @@ def read_string(file):
     return struct.unpack("%ds" % length, file.read(length))[0].decode("windows-1252")
 
 
-def read_bones(file, count):
+def read_bones(file):
+    count = struct.unpack('<I', file.read(4))[0]
     bones = list()
     for i in range(count):
         bones.append(read_string(file))
     return bones
 
 
-def read_faces(file, count):
+def read_faces(file):
+    count = struct.unpack('<I', file.read(4))[0]
     faces = list()
     for i in range(count):
         faces.append(struct.unpack('<3I', file.read(4 * 3)))
     return faces
 
 
-class BoneBinding(object):
-    pass
+@dataclasses.dataclass
+class BoneBinding:
+    bone_index: int
+    vertex_index: int
+    vertex_count: int
+    blended_vertex_index: int
+    blended_vertex_count: int
 
 
-def read_bone_bindings(file, count):
+def read_bone_bindings(file):
+    count = struct.unpack('<I', file.read(4))[0]
     bone_bindings = list()
     for i in range(count):
-        bone_binding = BoneBinding()
-        bone_binding.bone_index = struct.unpack('<I', file.read(4))[0]
-        bone_binding.vertex_index = struct.unpack('<I', file.read(4))[0]
-        bone_binding.vertex_count = struct.unpack('<I', file.read(4))[0]
-        bone_binding.blended_vertex_index = struct.unpack('<I', file.read(4))[0]
-        bone_binding.blended_vertex_count = struct.unpack('<I', file.read(4))[0]
-        bone_bindings.append(bone_binding)
+        bone_bindings.append(
+            BoneBinding(
+                struct.unpack('<I', file.read(4))[0],
+                struct.unpack('<I', file.read(4))[0],
+                struct.unpack('<I', file.read(4))[0],
+                struct.unpack('<I', file.read(4))[0],
+                struct.unpack('<I', file.read(4))[0],
+            )
+        )
     return bone_bindings
 
 
-def read_uvs(file, count):
+def read_uvs(file):
+    count = struct.unpack('<I', file.read(4))[0]
     uvs = list()
     for i in range(count):
         uvs.append(struct.unpack('<2f', file.read(4 * 2)))
     return uvs
 
 
-class Blend(object):
-    pass
+@dataclasses.dataclass
+class Blend:
+    weight: int
+    vertex_index: int
 
 
-def read_blends(file, count):
+def read_blends(file):
+    count = struct.unpack('<I', file.read(4))[0]
     blends = list()
     for i in range(count):
-        blend = Blend()
-        blend.weight = struct.unpack('<I', file.read(4))[0]
-        blend.vertex_index = struct.unpack('<I', file.read(4))[0]
-        blends.append(blend)
+        blends.append(
+            Blend(
+                struct.unpack('<I', file.read(4))[0],
+                struct.unpack('<I', file.read(4))[0],
+            )
+        )
     return blends
 
 
-class Vertex(object):
-    pass
+@dataclasses.dataclass
+class Vertex:
+    position: (float, float, float)
+    normal: (float, float, float)
 
 
-def read_vertices(file, count):
+def read_vertices(file):
+    count = struct.unpack('<I', file.read(4))[0]
     vertices = list()
     for i in range(count):
-        vertex = Vertex()
-        vertex.position = struct.unpack('<3f', file.read(4 * 3))
-        vertex.normal = struct.unpack('<3f', file.read(4 * 3))
-        vertices.append(vertex)
+        vertices.append(
+            Vertex(
+                struct.unpack('<3f', file.read(4 * 3)),
+                struct.unpack('<3f', file.read(4 * 3)),
+            )
+        )
     return vertices
 
 
-class Bmf(object):
-    pass
+@dataclasses.dataclass
+class Bmf:
+    skin_name: str
+    default_texture_name: str
+    bones: list[str]
+    faces: list[(int, int, int)]
+    bone_bindings: list[BoneBinding]
+    uvs: list[(float, float)]
+    blends: list[Blend]
+    vertices: list[Vertex]
 
 
 def read_bmf(file):
-    bmf = Bmf()
+    skin_name = read_string(file)
+    default_texture_name = read_string(file)
+    bones = read_bones(file)
+    faces = read_faces(file)
+    bone_bindings = read_bone_bindings(file)
+    uvs = read_uvs(file)
+    blends = read_blends(file)
+    vertices = read_vertices(file)
 
-    bmf.skin_name = read_string(file)
-    bmf.default_texture_name = read_string(file)
-    bmf.bone_count = struct.unpack('<I', file.read(4))[0]
-    bmf.bones = read_bones(file, bmf.bone_count)
-    bmf.face_count = struct.unpack('<I', file.read(4))[0]
-    bmf.faces = read_faces(file, bmf.face_count)
-    bmf.bone_binding_count = struct.unpack('<I', file.read(4))[0]
-    bmf.bone_bindings = read_bone_bindings(file, bmf.bone_binding_count)
-    bmf.uv_count = struct.unpack('<I', file.read(4))[0]
-    bmf.uvs = read_uvs(file, bmf.uv_count)
-    bmf.blend_count = struct.unpack('<I', file.read(4))[0]
-    bmf.blends = read_blends(file, bmf.blend_count)
-    bmf.vertex_count = struct.unpack('<I', file.read(4))[0]
-    bmf.vertices = read_vertices(file, bmf.vertex_count)
-
-    return bmf
+    return Bmf(
+        skin_name,
+        default_texture_name,
+        bones,
+        faces,
+        bone_bindings,
+        uvs,
+        blends,
+        vertices,
+    )
 
 
 def read_file(file_path):
