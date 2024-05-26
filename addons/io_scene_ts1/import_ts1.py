@@ -10,6 +10,7 @@ from . import bcf
 from . import bmf
 from . import cfp
 from . import cmx
+from . import skn
 from . import texture_loader
 from . import utils
 
@@ -126,6 +127,14 @@ def get_skin_type_skeleton_name(skin_name):
     if re.match("^xskin-.*-gnomebody", skin_name.lower()):
         return "kat"
 
+    # cat accessories
+    if re.match("^xskin-cat.*-cat-", skin_name.lower()):
+        return "kat"
+
+    # dog accessories
+    if re.match("^xskin-dog.*-dog-", skin_name.lower()):
+        return "dog"
+
     return "adult"
 
 
@@ -189,13 +198,17 @@ def import_suit(
         try:
             bmf_file = bmf.read_file(bmf_file_path)
         except:
-            logger.info(
-                "Could not load mesh {} used by {}.".format(
-                    bmf_file_path,
-                    suit.name,
+            skn_file_path = os.path.join(bcf_directory, skin.skin_name + ".skn")
+            try:
+                bmf_file = skn.read_file(skn_file_path)
+            except:
+                logger.info(
+                    "Could not load mesh {} used by {}.".format(
+                        bmf_file_path,
+                        suit.name,
+                    )
                 )
-            )
-            continue
+                continue
 
         if not all(bone in armature.bones for bone in bmf_file.bones):
             logger.info(

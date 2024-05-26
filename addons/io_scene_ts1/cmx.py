@@ -1,7 +1,3 @@
-import dataclasses
-import struct
-
-
 from . import bcf
 from . import utils
 
@@ -292,11 +288,8 @@ def read_file(file_path):
 
         cmx = read_cmx(file)
 
-        try:
-            file.readline()
+        if file.readline() != "":
             raise Exception("data left unread at end of " + file_path)
-        except:
-            pass
 
         return cmx
 

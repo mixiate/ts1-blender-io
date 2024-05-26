@@ -8,7 +8,7 @@ def is_head_skin_type(skin_name):
 
 
 def is_body_skin_type(skin_name):
-    return re.match("^xskin-b\\d{3}(f|m|u)(a|c)(skn|fit|fat|chd).*-body.*", skin_name.lower())
+    return re.match("^xskin-(b|f|h|l|s|w)\\d{3}(f|m|u)(a|c)(skn|fit|fat|chd).*-body.*", skin_name.lower())
 
 
 def is_hand_skin_type(skin_name):
@@ -79,6 +79,7 @@ def create_body_texture_file_name_variants(skin_name, preferred_skin_color):
     skin_type = split_skin_name[0]
     name = None if len(split_skin_name) == 1 else split_skin_name[1]
 
+    clothes = skin_type[0]
     body_id = skin_type[1:4]
     sex = skin_type[4]
     age = skin_type[5]
@@ -86,10 +87,10 @@ def create_body_texture_file_name_variants(skin_name, preferred_skin_color):
 
     for skin_color in skin_colors:
         if name is not None:
-            texture_names.append(("b" + body_id + sex + age + weight + skin_color + "_" + name ).lower())
+            texture_names.append((clothes + body_id + sex + age + weight + skin_color + "_" + name ).lower())
 
-        texture_names.append(("b" + body_id + sex + age + weight + skin_color + "_").lower())
-        texture_names.append(("b" + body_id + sex + age + weight + "t" + skin_color + "_").lower()) # b823faskn
+        texture_names.append((clothes + body_id + sex + age + weight + skin_color + "_").lower())
+        texture_names.append((clothes + body_id + sex + age + weight + "t" + skin_color + "_").lower()) # b823faskn
 
     return texture_names
 
@@ -460,6 +461,24 @@ def fixup_skin_name_and_default_texture(texture_file_names, skin_name, default_t
     if skin_name == "xskin-CMagicFAFit_BlueGenie-HEAD-HEAD":
         default_texture = "CMagicFA_BlueGenie"
 
+    if skin_name == "xskin-magic-wizeyelashes-R_HAND-WAX_JAR01":
+        default_texture = "wizeyelash"
+
+    if skin_name == "xskin-magic-wizeyelashes-R_HAND-WAX_JAR08":
+        default_texture = "wizeyelash"
+
+    # expansion shared
+    if re.match("^xskin-(f|h|l|s|w)\\d{3}(f|m|u)(a|c)(skn|fit|fat|chd).*-body.*", skin_name.lower()):
+        default_texture = "x"
+
+    # official downloads
+    if skin_name == "xskin-B015dog_pug-HEAD-DOGBODY-HEAD":
+        default_texture = "B015dog_pug"
+    if skin_name == "xskin-B015dog_pug-PELVIS-DOGBODY":
+        default_texture = "B015dog_pug"
+    if skin_name == "xskin-B619MA_FlameTroop-PELVIS-BODY":
+        default_texture = "B619MAFATlgt_FlameTroop"
+
     return skin_name, default_texture
 
 
@@ -587,6 +606,8 @@ def load_textures_internal(obj, texture_file_list, skin_name, default_texture, p
     add_job_and_npc_textures(texture_file_names, skin_name, preferred_skin_color)
 
     if skin_name.startswith("xskin-B601MAFit_"):
+        find_secondary_textures = False
+    if skin_name.startswith("xskin-B620MAFit_"):
         find_secondary_textures = False
 
     texture_file_list = reduce_texture_file_list(texture_file_list, texture_file_names)
