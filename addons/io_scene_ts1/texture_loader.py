@@ -108,7 +108,7 @@ def create_hand_texture_file_name_variants(skin_name, preferred_skin_color):
     texture_names = list()
 
     for sex in ["u", sex.lower()]:
-        for side in ["a", "l", "r"]:
+        for side in ["a", "l", "r", "c"]:
             for skin_color in skin_colors:
                 texture_names.append(("h" + sex + side + position + skin_color).lower())
 
