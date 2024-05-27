@@ -92,24 +92,39 @@ def export_files(context, file_path, compress_cfp):
 
                     bpy.context.scene.frame_set(original_current_frame)
 
+                    # there's never more than one time property list in official animations
                     time_property_list = bcf.TimePropertyList(list())
 
-                    for marker in strip.action.pose_markers:
-                        marker_components = marker.name.split()
-                        if marker_components[0] == bone.name:
-                            event = bcf.Property(
-                                marker_components[1],
-                                marker_components[2],
-                            )
+                    for frame in range(int(strip.action.frame_start), int(strip.action.frame_end) + 1):
+                        markers = [x for x in strip.action.pose_markers if x.frame == frame]
+                        if len(markers) == 0:
+                            continue
 
-                            time_property = bcf.TimeProperty(
-                                int(round((marker.frame - int(strip.action.frame_start)) * 33.33333)),
-                                [event],
-                            )
+                        time = int(round((frame - int(strip.action.frame_start)) * 33.33333))
+                        events = list()
 
-                            time_property_list.time_properties.append(time_property)
+                        for marker in markers:
+                            event_strings = marker.name.split(";")
+                            for event_string in event_strings:
+                                event_components = event_string.split()
+                                if not event_components[0] == bone.name:
+                                    continue
+                                events.append(bcf.Property(
+                                    event_components[1],
+                                    event_components[2],
+                                ))
 
-                    motion.time_property_lists.append(time_property_list)
+                        if len(events) == 0:
+                            continue
+
+                        time_property = bcf.TimeProperty(
+                            time,
+                            events,
+                        )
+                        time_property_list.time_properties.append(time_property)
+
+                    if len(time_property_list.time_properties) > 0:
+                        motion.time_property_lists.append(time_property_list)
 
                     motion.position_offset = -1
                     motion.rotation_offset = -1

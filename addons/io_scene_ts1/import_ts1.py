@@ -480,8 +480,21 @@ def import_files(
                 for time_property_list in motion.time_property_lists:
                     for time_property in time_property_list.time_properties:
                         for event in time_property.events:
-                            marker = action.pose_markers.new(name=motion.bone_name + " " + event.name + " " + event.value)
-                            marker.frame = int(round(time_property.time / 33.3333333)) + 1
+                            event_string = "{} {} {}".format(motion.bone_name, event.name, event.value)
+                            frame = int(round(time_property.time / 33.3333333)) + 1
+
+                            markers = [x for x in action.pose_markers if x.frame == frame]
+
+                            if len(markers) == 0:
+                                marker = action.pose_markers.new(name=event_string)
+                                marker.frame = frame
+                            else:
+                                last_marker = action.pose_markers[-1]
+                                if len(last_marker.name) + 1 + len(event_string) <= 63: # room for null
+                                    last_marker.name = "{};{}".format(last_marker.name, event_string)
+                                else:
+                                    marker = action.pose_markers.new(name=event_string)
+                                    marker.frame = frame
 
             track = armature_object.animation_data.nla_tracks.new(prev=None)
             track.name = skill.animation_name
