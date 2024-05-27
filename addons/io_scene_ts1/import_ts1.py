@@ -148,6 +148,10 @@ def get_skill_type_skeleton_name(skill_name):
         return ["kat"]
     elif skill_name.startswith("d2"):
         return ["dog"]
+    elif skill_name.startswith("f2"):
+        return ["kat"]
+    elif skill_name.startswith("effects-"):
+        return ["effects1"]
 
     raise Exception("Invalid skill name")
 
