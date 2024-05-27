@@ -12,12 +12,24 @@ def read_bones(file):
     return bones
 
 
+def write_bones(file, bones):
+    file.write(struct.pack('<I', len(bones)))
+    for bone in bones:
+        utils.write_string(file, bone)
+
+
 def read_faces(file):
     count = struct.unpack('<I', file.read(4))[0]
     faces = list()
     for i in range(count):
         faces.append(struct.unpack('<3I', file.read(4 * 3)))
     return faces
+
+
+def write_faces(file, faces):
+    file.write(struct.pack('<I', len(faces)))
+    for face in faces:
+        file.write(struct.pack('<3I', *face))
 
 
 @dataclasses.dataclass
@@ -45,12 +57,28 @@ def read_bone_bindings(file):
     return bone_bindings
 
 
+def write_bone_bindings(file, bone_bindings):
+    file.write(struct.pack('<I', len(bone_bindings)))
+    for bone_binding in bone_bindings:
+        file.write(struct.pack('<I', bone_binding.bone_index))
+        file.write(struct.pack('<I', bone_binding.vertex_index))
+        file.write(struct.pack('<I', bone_binding.vertex_count))
+        file.write(struct.pack('<I', bone_binding.blended_vertex_index))
+        file.write(struct.pack('<I', bone_binding.blended_vertex_count))
+
+
 def read_uvs(file):
     count = struct.unpack('<I', file.read(4))[0]
     uvs = list()
     for i in range(count):
         uvs.append(struct.unpack('<2f', file.read(4 * 2)))
     return uvs
+
+
+def write_uvs(file, uvs):
+    file.write(struct.pack('<I', len(uvs)))
+    for uv in uvs:
+        file.write(struct.pack('<2f', *uv))
 
 
 @dataclasses.dataclass
@@ -72,6 +100,13 @@ def read_blends(file):
     return blends
 
 
+def write_blends(file, blends):
+    file.write(struct.pack('<I', len(blends)))
+    for blend in blends:
+        file.write(struct.pack('<I', blend.weight))
+        file.write(struct.pack('<I', blend.vertex_index))
+
+
 @dataclasses.dataclass
 class Vertex:
     position: (float, float, float)
@@ -91,6 +126,13 @@ def read_vertices(file):
     return vertices
 
 
+def write_vertices(file, vertices):
+    file.write(struct.pack('<I', len(vertices)))
+    for vertex in vertices:
+        file.write(struct.pack('<3f', *vertex.position))
+        file.write(struct.pack('<3f', *vertex.normal))
+
+
 @dataclasses.dataclass
 class Bmf:
     skin_name: str
@@ -104,25 +146,27 @@ class Bmf:
 
 
 def read_bmf(file):
-    skin_name = utils.read_string(file)
-    default_texture_name = utils.read_string(file)
-    bones = read_bones(file)
-    faces = read_faces(file)
-    bone_bindings = read_bone_bindings(file)
-    uvs = read_uvs(file)
-    blends = read_blends(file)
-    vertices = read_vertices(file)
-
     return Bmf(
-        skin_name,
-        default_texture_name,
-        bones,
-        faces,
-        bone_bindings,
-        uvs,
-        blends,
-        vertices,
+        utils.read_string(file),
+        utils.read_string(file),
+        read_bones(file),
+        read_faces(file),
+        read_bone_bindings(file),
+        read_uvs(file),
+        read_blends(file),
+        read_vertices(file),
     )
+
+
+def write_bmf(file, bmf):
+    utils.write_string(file, bmf.skin_name),
+    utils.write_string(file, bmf.default_texture_name),
+    write_bones(file, bmf.bones),
+    write_faces(file, bmf.faces),
+    write_bone_bindings(file, bmf.bone_bindings),
+    write_uvs(file, bmf.uvs),
+    write_blends(file, bmf.blends),
+    write_vertices(file, bmf.vertices),
 
 
 def read_file(file_path):
@@ -139,3 +183,8 @@ def read_file(file_path):
     file.close()
 
     return bmf
+
+
+def write_file(file_path, bmf):
+    with open(file_path, 'wb') as file:
+        write_bmf(file, bmf)
