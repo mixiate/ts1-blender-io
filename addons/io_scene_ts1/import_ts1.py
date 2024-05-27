@@ -75,99 +75,101 @@ def import_skeleton(context, skeleton):
     return armature
 
 
-def get_skin_type_skeleton_name(skin_name):
+def get_skin_type_skeleton_names(skin_name):
     # adult head
     if re.match("^xskin-c\\d{3}(f|m|u)a.*-head", skin_name.lower()):
-        return "adult"
+        return ["adult"]
 
     # adult body
     if re.match("^xskin-b\\d{3}(f|m|u)a(skn|fit|fat|chd).*-body.*", skin_name.lower()):
-        return "adult"
+        return ["adult"]
 
     # child head
     if re.match("^xskin-c\\d{3}(f|m|u)c.*-head", skin_name.lower()):
-        return "child"
+        return ["child"]
 
     # child body
     if re.match("^xskin-b\\d{3}(f|m|u)c(skn|fit|fat|chd|).*-body.*", skin_name.lower()):
-        return "child"
+        return ["child"]
 
     # child npc head
     if re.match("^xskin-.*chd_.*-head-.*", skin_name.lower()):
-        return "child"
+        return ["child"]
 
     # child npc body
     if re.match("^xskin-.*chd_.*-pelvis-.*", skin_name.lower()):
-        return "child"
+        return ["child"]
 
     # child costume
     if re.match("^xskin-ct-.*(f|m)c-.*", skin_name.lower()):
-        return "child"
+        return ["child"]
 
     # cat
     if re.match("^xskin-b\\d{3}(c|k)at.*", skin_name.lower()):
-        return "kat"
+        return ["kat"]
 
     # dog
     if re.match("^xskin-b\\d{3}dog_.*", skin_name.lower()):
-        return "dog"
+        return ["dog"]
 
     # skunk and raccoon
     if re.match("^xskin-.*-dogbody", skin_name.lower()):
-        return "dog"
+        return ["dog"]
 
     # dragon
     if re.match("^xskin-b\\d{3}dragon_.*", skin_name.lower()):
-        return "kat"
+        return ["kat"]
 
     # effects
     if re.match("^xskin-effects1-.*", skin_name.lower()):
-        return "effects1"
+        return ["effects1"]
 
     # gnome
     if re.match("^xskin-.*-gnomebody", skin_name.lower()):
-        return "kat"
+        return ["kat"]
 
     # cat accessories
     if re.match("^xskin-cat.*-cat-", skin_name.lower()):
-        return "kat"
+        return ["kat"]
 
     # dog accessories
     if re.match("^xskin-dog.*-dog-", skin_name.lower()):
-        return "dog"
+        return ["dog"]
 
-    return "adult"
+    return ["adult", "child"]
 
 
 def get_skill_type_skeleton_name(skill_name):
     if skill_name.startswith("a2"):
-        return "adult"
+        return ["adult"]
     elif skill_name.startswith("c2"):
-        return "child"
+        return ["child"]
     elif skill_name.startswith("k2"):
-        return "kat"
+        return ["kat"]
     elif skill_name.startswith("d2"):
-        return "dog"
+        return ["dog"]
 
     raise Exception("Invalid skill name")
 
 
-def find_or_import_skeleton(context, file_list, skeleton_name):
-    if context.active_object is not None and context.active_object.name.startswith(skeleton_name):
-        return bpy.data.armatures[context.active_object.name]
+def find_or_import_skeleton(context, file_list, skeleton_names):
+    if context.active_object is not None:
+        for skeleton_name in skeleton_names:
+            if context.active_object.name.startswith(skeleton_name):
+                return bpy.data.armatures[context.active_object.name]
 
-    if skeleton_name == "adult":
+    if skeleton_names[0] == "adult":
         skeleton_file_name = "adult-skeleton.cmx.bcf"
-    elif skeleton_name == "child":
+    elif skeleton_names[0] == "child":
         skeleton_file_name = "child-skeleton.cmx.bcf"
-    elif skeleton_name == "kat":
+    elif skeleton_names[0] == "kat":
         skeleton_file_name = "kat_skeleton.cmx.bcf"
-    elif skeleton_name == "dog":
+    elif skeleton_names[0] == "dog":
         skeleton_file_name = "dog_skeleton.cmx.bcf"
-    elif skeleton_name == "effects1":
+    elif skeleton_names[0] == "effects1":
         skeleton_file_name = "effects1-skeleton.cmx.bcf"
 
-    armature = bpy.data.armatures.get(skeleton_name)
+    armature = bpy.data.armatures.get(skeleton_names[0])
     if armature is None:
         for file_path in file_list:
             if os.path.basename(file_path) == skeleton_file_name:
@@ -190,10 +192,10 @@ def import_suit(
     armature_object_map,
 ):
     for skin in suit.skins:
-        skeleton_name = get_skin_type_skeleton_name(skin.skin_name)
-        armature = find_or_import_skeleton(context, file_list, skeleton_name)
+        skeleton_names = get_skin_type_skeleton_names(skin.skin_name)
+        armature = find_or_import_skeleton(context, file_list, skeleton_names)
         if armature is None:
-            logger.info("Could not find or import {} skeleton used by {} .".format(skeleton_name, suit.name))
+            logger.info("Could not find or import {} skeleton used by {} .".format(skeleton_names[0], suit.name))
             continue
 
         bmf_file_path = os.path.join(bcf_directory, skin.skin_name + ".bmf")
