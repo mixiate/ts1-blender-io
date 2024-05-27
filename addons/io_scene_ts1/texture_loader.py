@@ -4,50 +4,50 @@ import re
 
 
 def is_head_skin_type(skin_name):
-    return re.match("^xskin-c\\d{3}(f|m|u)(a|c).*-head-head(|01)$", skin_name.lower())
+    return re.match("^xskin-c\\d{3}(f|m|u)(a|c)_.*-head-head$", skin_name.lower())
 
 
 def is_body_skin_type(skin_name):
-    return re.match("^xskin-(b|f|h|l|s|w)\\d{3}(f|m|u)(a|c)(skn|fit|fat|chd).*-body.*", skin_name.lower())
+    return re.match("^xskin-(b|f|h|l|s|w)\\d{3}(f|m|u)(a|c)(skn|fit|fat|chd).*-pelvis-body$", skin_name.lower())
 
 
 def is_hand_skin_type(skin_name):
-    return re.match("^xskin-(h)(u|f|m)(l|r)(c|o|p).*hand-.*", skin_name.lower())
+    return re.match("^xskin-h(u|f|m)(l|r)(c|o|p)-(l|r)_hand-(fist|hand|point)(f|m|c)(l|r)$", skin_name.lower())
 
 
 def is_nude_skin_type(skin_name):
-    return re.match("^xskin-n(f|m|u)(skn|fit|fat|chd)_01.*-pelvis-.*", skin_name.lower())
+    return re.match("^xskin-n(f|m|u)(skn|fit|fat|chd)_01-pelvis-.*body.*", skin_name.lower())
 
 
 def is_npc_head_skin_type(skin_name):
-    return re.search("(f|m|u)(a|c)_.*-head-.*", skin_name.lower())
+    return re.match("^xskin-c((?!\\d{3}).).*(f|m|u)(a|c)_.*-head-head$", skin_name.lower())
+
+
+def is_sex_npc_head_skin_type(skin_name):
+    return re.match("^xskin-c((?!\\d{3}).).*(f|m|u)_.*-head-head$", skin_name.lower())
+
+
+def is_weight_npc_head_skin_type(skin_name):
+    return re.match("^xskin-c((?!\\d{3}).).*(f|m|u)(skn|fit|fat)_.*-head-head$", skin_name.lower())
+
+
+def is_age_weight_npc_head_skin_type(skin_name):
+    return re.match("^xskin-c((?!\\d{3}).).*(f|m|u)(a|c)(skn|fit|fat)_.*-head-head$", skin_name.lower())
 
 
 def is_npc_body_skin_type(skin_name):
-    return re.search("(f|m|u)(a|c|)(skn|fit|fat|chd)_.*-pelvis-body.*", skin_name.lower())
-
-
-def is_hot_date_npc_head_skin_type(skin_name):
-    return re.match("xskin-c.*(f|m|u)(a|)(skn|fit|fat|)(drk|med|lgt|)_.*-head-.*", skin_name.lower())
+    return re.match("^xskin-((?!\\d{3}).).*(f|m|u)(a|c|)(skn|fit|fat|chd)_.*-pelvis-body$", skin_name.lower())
 
 
 def is_unleashed_npc_body_skin_type(skin_name):
-    return re.match("xskin-b.*_01-pelvis-body$", skin_name.lower())
+    return re.match("xskin-b((?!\\d{3}).).*_01-pelvis-body$", skin_name.lower())
 
 
 def is_costume_skin_type(skin_name):
     return skin_name.lower().startswith("xskin-ct-")
 
 
-def is_body_texture_type(texture_name):
-    return re.match("^b\\d{3}(f|m|u)(a|c)(skn|fit|fat|chd)", texture_name.lower())
-
-
-def is_npc_body_texture_type(texture_name):
-    return re.search("(f|m|u)(a|c|)(drk|med|lgt)_", texture_name.lower())
-
-
-def create_head_texture_file_name_variants(skin_name, preferred_skin_color):
+def list_head_texture_variants(skin_name, preferred_skin_color):
     skin_colors = ["drk", "med", "lgt"]
     skin_colors = [preferred_skin_color] + [x for x in skin_colors if x != preferred_skin_color]
 
@@ -55,21 +55,22 @@ def create_head_texture_file_name_variants(skin_name, preferred_skin_color):
 
     split_skin_name = skin_name.split("-")[1].split("_", 1)
     skin_type = split_skin_name[0]
-    name = split_skin_name[1]
+    name = None if len(split_skin_name) == 1 else split_skin_name[1]
 
     body_id = skin_type[1:4]
     sex = skin_type[4]
     age = skin_type[5]
 
     for skin_color in skin_colors:
-        texture_names.append(("c" + body_id + sex + age + skin_color + "_" + name).lower())
+        if name is not None:
+            texture_names.append(("c" + body_id + sex + age + skin_color + "_" + name).lower())
+
         texture_names.append(("c" + body_id + sex + age + skin_color + "_").lower())
-        texture_names.append(("c" + body_id + sex + age + "_" + name + skin_color).lower())
 
     return texture_names
 
 
-def create_body_texture_file_name_variants(skin_name, preferred_skin_color):
+def list_body_texture_variants(skin_name, preferred_skin_color):
     skin_colors = ["drk", "med", "lgt"]
     skin_colors = [preferred_skin_color] + [x for x in skin_colors if x != preferred_skin_color]
 
@@ -87,15 +88,14 @@ def create_body_texture_file_name_variants(skin_name, preferred_skin_color):
 
     for skin_color in skin_colors:
         if name is not None:
-            texture_names.append((clothes + body_id + sex + age + weight + skin_color + "_" + name ).lower())
+            texture_names.append((clothes + body_id + sex + age + weight + skin_color + "_" + name).lower())
 
         texture_names.append((clothes + body_id + sex + age + weight + skin_color + "_").lower())
-        texture_names.append((clothes + body_id + sex + age + weight + "t" + skin_color + "_").lower()) # b823faskn
 
     return texture_names
 
 
-def create_hand_texture_file_name_variants(skin_name, preferred_skin_color):
+def list_hand_texture_variants(skin_name, preferred_skin_color):
     skin_colors = ["drk", "med", "lgt"]
     skin_colors = [preferred_skin_color] + [x for x in skin_colors if x != preferred_skin_color]
 
@@ -119,7 +119,7 @@ def create_hand_texture_file_name_variants(skin_name, preferred_skin_color):
     return texture_names
 
 
-def create_nude_texture_file_name_variants(skin_name, preferred_skin_color):
+def list_nude_texture_variants(skin_name, preferred_skin_color):
     skin_colors = ["drk", "med", "lgt"]
     skin_colors = [preferred_skin_color] + [x for x in skin_colors if x != preferred_skin_color]
 
@@ -148,34 +148,46 @@ def create_nude_texture_file_name_variants(skin_name, preferred_skin_color):
     return texture_names
 
 
-def create_npc_head_texture_file_name_variants(skin_name, preferred_skin_color):
+def list_npc_head_texture_variants(skin_name, preferred_skin_color):
     skin_colors = ["drk", "med", "lgt"]
     skin_colors = [preferred_skin_color] + [x for x in skin_colors if x != preferred_skin_color]
 
     texture_names = list()
 
-    xskin_split = skin_name.split("-")
-    split_skin_name = xskin_split[1].split("_", 1)
+    split_skin_name = re.search("(?<=xskin-).*(?=-head-head)", skin_name.lower()).group(0).split("_", 1)
     skin_type = split_skin_name[0]
     name = split_skin_name[1]
 
     for skin_color in skin_colors:
         texture_names.append((skin_type + skin_color + "_" + name).lower())
 
-        if len(xskin_split) >= 3:
-            texture_names.append((skin_type + skin_color + "_" + name + "-" + xskin_split[2]).lower()) # pa-onset
-
     return texture_names
 
 
-def create_npc_body_texture_file_name_variants(skin_name, preferred_skin_color):
+def list_age_weight_npc_head_texture_variants(skin_name, preferred_skin_color):
     skin_colors = ["drk", "med", "lgt"]
     skin_colors = [preferred_skin_color] + [x for x in skin_colors if x != preferred_skin_color]
 
     texture_names = list()
 
-    xskin_split = skin_name.split("-")
-    split_skin_name = xskin_split[1]
+    split_skin_name = re.search("(?<=xskin-).*(?=-head-head)", skin_name.lower()).group(0).split("_", 1)
+    skin_type = split_skin_name[0]
+    name = split_skin_name[1]
+
+    for skin_color in skin_colors:
+        texture_names.append((skin_type + skin_color + "_" + name).lower())
+        texture_names.append((skin_type[:-3] + skin_color + "_" + name).lower())
+
+    return texture_names
+
+
+def list_npc_body_texture_variants(skin_name, preferred_skin_color):
+    skin_colors = ["drk", "med", "lgt"]
+    skin_colors = [preferred_skin_color] + [x for x in skin_colors if x != preferred_skin_color]
+
+    texture_names = list()
+
+    split_skin_name = skin_name.lower().removeprefix("xskin-").removesuffix("-pelvis-body")
     sex_age_weight_span = re.search("(f|m|u)(a|c|)(skn|fit|fat|chd)_", split_skin_name.lower()).span()
     skin_type = split_skin_name[:sex_age_weight_span[1] - 1]
     name = split_skin_name[sex_age_weight_span[1]:]
@@ -190,32 +202,10 @@ def create_npc_body_texture_file_name_variants(skin_name, preferred_skin_color):
         if name == "01":
             texture_names.append((skin_type + skin_color + "_").lower())
 
-        if len(xskin_split) >= 3:
-            texture_names.append((skin_type + skin_color + "_" + name + "-" + xskin_split[2]).lower()) # pa-onset
-
     return texture_names
 
 
-def create_hot_date_npc_head_texture_file_name_variants(skin_name, preferred_skin_color):
-    skin_colors = ["drk", "med", "lgt", "gt"] # gt for CCook
-    skin_colors = [preferred_skin_color] + [x for x in skin_colors if x != preferred_skin_color]
-
-    texture_names = list()
-
-    split_skin_name = skin_name.split("-")[1]
-    sex_age_weight_span = re.search("(f|m|u)(a|)(skn|fit|fat|)(drk|med|lgt|)_", split_skin_name.lower()).span()
-    skin_type = split_skin_name[:sex_age_weight_span[1] - 1]
-    name = split_skin_name[sex_age_weight_span[1]:]
-
-    for skin_color in skin_colors:
-        texture_names.append((skin_type + skin_color + "_" + name).lower())
-        for weight in ["skn", "fit", "fat"]:
-            texture_names.append((skin_type + weight + skin_color + "_" + name).lower())
-
-    return texture_names
-
-
-def create_unleashed_npc_body_texture_file_name_variants(skin_name, preferred_skin_color):
+def list_unleashed_npc_body_texture_variants(skin_name, preferred_skin_color):
     skin_colors = ["drk", "med", "lgt"]
     skin_colors = [preferred_skin_color] + [x for x in skin_colors if x != preferred_skin_color]
 
@@ -231,7 +221,7 @@ def create_unleashed_npc_body_texture_file_name_variants(skin_name, preferred_sk
     return texture_names
 
 
-def create_costume_texture_file_name_variants(skin_name, preferred_skin_color):
+def list_costume_texture_variants(skin_name, preferred_skin_color):
     skin_colors = ["drk", "med", "lgt"]
     skin_colors = [preferred_skin_color] + [x for x in skin_colors if x != preferred_skin_color]
 
@@ -305,12 +295,48 @@ def create_material(obj, texture_name, texture_file_path):
         obj.data.materials.append(material)
 
 
-def reduce_texture_file_list(texture_file_list, texture_file_names):
+def fix_texture_file_name(texture_file_name):
+    if texture_file_name == "B204MAFaMedFat_PeasantMan":
+        return "B204MAFatMed_FatPeasantMan"
+
+    if texture_file_name == "CCookMfatgt_Chef":
+        return "CCookMfatlgt_Chef"
+
+    if texture_file_name == "C209MA_TattooMandrk":
+        return "C209MAdrk_TattooMan"
+
+    if texture_file_name == "C209MA_TattooManmed":
+        return "C209MAmed_TattooMan"
+
+    if texture_file_name == "C209MA_TattooManlgt":
+        return "C209MAlgt_TattooMan"
+
+    if texture_file_name == "CWAITMfitdrk_Xfancy":
+        return "CWAITMdrk_Xfancy"
+
+    if texture_file_name == "CWAITMfitmed_Xfancy":
+        return "CWAITMmed_Xfancy"
+
+    if texture_file_name == "CWAITMfitlgt_Xfancy":
+        return "CWAITMlgt_Xfancy"
+
+    if texture_file_name == "b823faskntlgt_blacklayertee":
+        return "b823fasknlgt_blacklayertee"
+
+    if texture_file_name == "b823faskntmed_blacklayertee":
+        return "b823fasknmed_blacklayertee"
+
+    return texture_file_name
+
+
+def reduce_texture_file_list(texture_file_list, texture_file_names, fix_textures):
     zipped_texture_file_names = list(zip(texture_file_names, range(len(texture_file_names))))
     reduced_texture_file_list = list()
 
     for file_path in texture_file_list:
         file_texture_name = os.path.splitext(os.path.basename(file_path))[0]
+        if fix_textures:
+            file_texture_name = fix_texture_file_name(file_texture_name)
         for texture_name in zipped_texture_file_names:
             if file_texture_name.lower().startswith(texture_name[0].lower()):
                 reduced_texture_file_list.append(tuple((file_path, texture_name[1])))
@@ -324,6 +350,21 @@ def reduce_texture_file_list(texture_file_list, texture_file_names):
 
 def fixup_skin_name_and_default_texture(texture_file_names, skin_name, default_texture):
     # base game
+    if skin_name == "xskin-b001fcchd_01-PELVIS-BODYCHD":
+        skin_name = "xskin-b001fcchd_01-PELVIS-BODY"
+
+    if skin_name == "xskin-b001mcchd_01-PELVIS-BODYCHD":
+        skin_name = "xskin-b001mcchd_01-PELVIS-BODY"
+
+    if skin_name == "xskin-b011fcchd_01-PELVIS-BODYCHD":
+        skin_name = "xskin-b011fcchd_01-PELVIS-BODY"
+
+    if skin_name == "xskin-b011ucchd_01-PELVIS-BODYCHD":
+        skin_name = "xskin-b011ucchd_01-PELVIS-BODY"
+
+    if skin_name == "xskin-c001ma_ross-HEAD-HEADB":
+        skin_name = "xskin-c001ma_ross-HEAD-HEAD"
+
     if skin_name == "xskin-c_firefighter-HEAD-HEAD":
         default_texture = "C_Firefighter"
 
@@ -333,43 +374,12 @@ def fixup_skin_name_and_default_texture(texture_file_names, skin_name, default_t
     if skin_name == "xskin-c_postal-HEAD-HEAD":
         default_texture = "Postalface"
 
-    if skin_name == "xskin-ffskn_01-PELVIS-BODY":
-        default_texture = "ffsknmed_01"
-
-    if skin_name == "xskin-c_skeleton-HEAD-HEAD":
-        texture_file_names += ["C_skeleton".lower(), "C_skeleneg".lower()]
-
-    if skin_name == "xskin-skeleton_01-PELVIS-BODY" or skin_name == "xskin-skeletonchd_01-PELVIS-BODY":
-        texture_file_names += ["Skeleton_01".lower(), "Skeleneg_01".lower()]
-
-    if default_texture.lower() == "repoizerringb3drt":
-        texture_file_names += ["repoizerringA3DRT".lower(), "repoizerringB3DRT".lower(), "repoizerringC3DRT".lower()]
-
-    # deluxe
-    if skin_name == "xskin-b011fafit_01-PELVIS-BODY":
-        default_texture = "b011fafitmed_redshirtshortsta"
-
-    if skin_name == "xskin-B103Maskn_longarms-PELVIS-BODY":
-        default_texture = "b103masknmed_dkbluejacket"
-
-    if skin_name == "xskin-b325fafit_01-PELVIS-BODY":
-        default_texture = "B325FaFitmed_bluefractals"
-
-    if skin_name == "xskin-B335Mafit_WDSCoat-01-PELVIS-BODY":
-        default_texture = "b335mafitmed_manblsar"
-
-    if skin_name == "xskin-B345MAFit_WDSRetro-PELVIS-BODY":
-        default_texture = "b345mafitmed_flowersar"
+    if skin_name == "xskin-militaryffit_01-PELVIS-MBODY":
+        skin_name = "xskin-militaryffit_01-PELVIS-BODY"
 
     # house party
-    if skin_name == "xskin-cpcrasherma_01-HEAD-HEAD":
-        texture_file_names.append("cPCrasherMA-01".lower())
-
-    if skin_name == "xskin-pcrasherma_01-PELVIS-BODY":
-        texture_file_names.append("PCrasher-MA-01".lower())
-
-    if skin_name == "xskin-c030fa_eurotrsh-HEAD-HEAD":
-        texture_file_names.append(default_texture.lower())
+    if skin_name == "xskin-b046fafit_cowg-PELVIS-MBODY5":
+        skin_name = "xskin-b046fafit_cowg-PELVIS-BODY"
 
     if skin_name == "xskin-B721MC_ct-PELVIS-BODY":
         skin_name = "xskin-B721MCChd_ct-PELVIS-BODY"
@@ -386,44 +396,18 @@ def fixup_skin_name_and_default_texture(texture_file_names, skin_name, default_t
     if skin_name == "xskin-B724FC_ct-PELVIS-BODY":
         skin_name = "xskin-B724FCChd_ct-PELVIS-BODY"
 
-    if skin_name == "xskin-B700MAFit_ct-PELVIS-BODY":
-        default_texture = "B700MAFit_ct"
-    if skin_name == "xskin-B701MAFit_ct-PELVIS-BODY":
-        default_texture = "B701MAFit_ct"
-    if skin_name == "xskin-B702MAFit_ct-PELVIS-BODY":
-        default_texture = "B702MAFit_ct"
-    if skin_name == "xskin-B703MAFit_ct-PELVIS-BODY":
-        default_texture = "B703MAFit_ct"
-    if skin_name == "xskin-B709MAFit_ct-PELVIS-BODY":
-        default_texture = "B709MAFit_ct"
-    if skin_name == "xskin-B710MAFit_ct-PELVIS-BODY":
-        default_texture = "B710MAFit_ct"
-    if skin_name == "xskin-B712MAFit_ct-PELVIS-BODY":
-        default_texture = "B712MAFit_ct"
-    if skin_name == "xskin-B716MAFit_ct-PELVIS-BODY":
-        default_texture = "B716MAFit_ct"
-    if skin_name == "xskin-B719MAFit_ct-PELVIS-BODY":
-        default_texture = "B719MAFit_ct"
-    if skin_name == "xskin-B710FAFit_ct-PELVIS-BODY":
-        default_texture = "B710FAFit_ct"
-    if skin_name == "xskin-B712FAFit_ct-PELVIS-BODY":
-        default_texture = "B712FAFit_ct"
-    if skin_name == "xskin-B716FAFit_ct-PELVIS-BODY":
-        default_texture = "B716FAFit_ct"
-    if skin_name == "xskin-B717FAFit_ct-PELVIS-BODY":
-        default_texture = "B717FAFit_ct"
-    if skin_name == "xskin-B719FAFit_ct-PELVIS-BODY":
-        default_texture = "B719FAFit_ct"
+    if skin_name == "xskin-cpcrasherma_01-HEAD-HEAD":
+        default_texture = "cPCrasherMA-01"
 
-    # hot date
-    if skin_name == "xskin-B415MAfit_rockabilly-PELVIS-BODY":
-        texture_file_names.append("B415MAfit_rockabilly".lower())
+    if skin_name == "xskin-pcrasherma_01-PELVIS-BODY":
+        default_texture = "PCrasher-MA-01"
 
-    if skin_name == "xskin-C405FAlgt_janitor-HEAD-HEAD":
-        texture_file_names.append("C_lgt_janitor".lower())
+    # vacation
+    if skin_name == "xskin-C506MC_Swim1-HEAD-HEAD01":
+        skin_name = "xskin-C506MC_Swim1-HEAD-HEAD"
 
-    if skin_name == "xskin-b046fafit_cowg-PELVIS-MBODY5":
-        skin_name = "xskin-b046fafit_cowg-PELVIS-BODY"
+    if skin_name == "xskin-C507FC_Swim2-HEAD-HEAD01":
+        skin_name = "xskin-C507FC_Swim2-HEAD-HEAD"
 
     # unleashed:
     if skin_name == "xskin-B008dog_greyhound-PELVIS-DOGBODY" or skin_name == "xskin-B008dog_greyhound-HEAD-DOGBODY-HEAD":
@@ -448,12 +432,18 @@ def fixup_skin_name_and_default_texture(texture_file_names, skin_name, default_t
     if skin_name == "xskin-CSuperstarMA_Photographer-HEAD-HEAD":
         skin_name = "xskin-CSuperstarMASkn_Photographer-HEAD-HEAD"
 
-    # makin magic
-    if skin_name == "xskin-b823faskn_01-PELVIS-BODY":
-        default_texture = "b823fasknmed"
+    if skin_name == "xskin-CSuperstarFA_SushiChef-HEAD-HEADF01":
+        skin_name = "xskin-CSuperstarFA_SushiChef-HEAD-HEAD"
 
-    if skin_name == "xskin-B825MaFit_gs1sar-PELVIS-BODY":
-        default_texture = "b825mafitmed_gs1sar"
+    # makin magic
+    if skin_name == "xskin-B203FAFit_Suffragette-PELVIS-BODY01":
+        skin_name = "xskin-B203FAFit_Suffragette-PELVIS-BODY"
+
+    if skin_name == "xskin-B205FAFat_Madame-PELVIS-BODY01":
+        skin_name = "xskin-B205FAFat_Madame-PELVIS-BODY"
+
+    if skin_name == "xskin-B208FAFit_Jenna-PELVIS-BODY01":
+        skin_name = "xskin-B208FAFit_Jenna-PELVIS-BODY"
 
     if skin_name == "xskin-C203FC_CreepyBen-HEAD-HEAD":
         skin_name = "xskin-C203MC_CreepyBen-HEAD-HEAD"
@@ -468,51 +458,106 @@ def fixup_skin_name_and_default_texture(texture_file_names, skin_name, default_t
         default_texture = "wizeyelash"
 
     # expansion shared
-    if re.match("^xskin-(f|h|l|s|w)\\d{3}(f|m|u)(a|c)(skn|fit|fat|chd).*-body.*", skin_name.lower()):
-        default_texture = "x"
+    if skin_name == "xskin-S100FCChd_original-PELVIS-BODYU":
+        skin_name = "xskin-S100FCChd_original-PELVIS-BODY"
+
+    if skin_name == "xskin-S100MCChd_original-PELVIS-BODYU":
+        skin_name = "xskin-S100MCChd_original-PELVIS-BODY"
+
+    if skin_name == "xskin-W504FAfat_Winter4-PELVIS-BODY_FAT_WINTER4":
+        skin_name = "xskin-W504FAfat_Winter4-PELVIS-BODY"
+
+    if skin_name == "xskin-W504FAfit_Winter4-PELVIS-BODY_FIT_WINTER4":
+        skin_name = "xskin-W504FAfit_Winter4-PELVIS-BODY"
+
+    if skin_name == "xskin-W504FAskn_Winter4-PELVIS-BODY_SKN_WINTER4":
+        skin_name = "xskin-W504FAskn_Winter4-PELVIS-BODY"
 
     # official downloads
-    if skin_name == "xskin-B015dog_pug-HEAD-DOGBODY-HEAD":
+    if skin_name == "xskin-B015dog_pug-HEAD-DOGBODY-HEAD" or skin_name == "xskin-B015dog_pug-PELVIS-DOGBODY":
         default_texture = "B015dog_pug"
-    if skin_name == "xskin-B015dog_pug-PELVIS-DOGBODY":
-        default_texture = "B015dog_pug"
+
+    if skin_name == "xskin-b200mafit_ctb-PELVIS-BODYB":
+        skin_name = "xskin-b200mafit_ctb-PELVIS-BODY"
+
     if skin_name == "xskin-B619MA_FlameTroop-PELVIS-BODY":
         default_texture = "B619MAFATlgt_FlameTroop"
+
+    if skin_name == "xskin-B621MAFIT_NOD_RTRPR-PELVIS-BODY_FIT":
+        default_texture = "B621MAFITlgt_RTRPR"
+
+    if skin_name == "xskin-C609MA_rocketofficer-HEAD-HEADSET":
+        default_texture = "B609_rocketofficerheadset"
+
+    if skin_name == "xskin-C630MA_Locke-HEAD-HEAD01":
+        skin_name = "xskin-C630MA_Locke-HEAD-HEAD"
+
+    if skin_name == "xskin-C634FA_Petrova-HEAD-HEAD.03":
+        skin_name = "xskin-C634FA_Petrova-HEAD-HEAD"
 
     return skin_name, default_texture
 
 
 def add_job_and_npc_textures(texture_file_names, skin_name, preferred_skin_color):
     # base game
-    if skin_name.startswith("xskin-b003fa"):
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-CatsuitFfit_", preferred_skin_color)
+    if skin_name.startswith("xskin-b001ma"):
+        texture_file_names += list_npc_body_texture_variants("xskin-ExtremeMfit_01-pelvis-body", preferred_skin_color)
 
-    if skin_name.startswith("xskin-b008fa"):
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-MayorFfit_", preferred_skin_color)
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-PoliticsFfit_", preferred_skin_color)
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-TopCopFfit_", preferred_skin_color)
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-TopDocFfit_", preferred_skin_color)
+    if skin_name == "xskin-b002fafat_01-PELVIS-BODY":
+        texture_file_names.append("GardenerFFat_01".lower())
 
-    if skin_name.startswith("xskin-b012fa"):
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-ScrubsFfit_", preferred_skin_color)
+    if skin_name.startswith("xskin-b002ma"):
+        texture_file_names += list_npc_body_texture_variants("xskin-PoliceMfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-ScrubsMfit_01-pelvis-body", preferred_skin_color)
 
     if skin_name == "xskin-b002mafit_01-PELVIS-BODY":
         texture_file_names.append("pizzaguysuit".lower())
 
+    if skin_name.startswith("xskin-b003fa"):
+        texture_file_names += list_npc_body_texture_variants("xskin-BurglarFfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-CatsuitFfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-EMTFfit_01-pelvis-body", preferred_skin_color)
+
+    if skin_name.startswith("xskin-b003ma"):
+        texture_file_names += list_npc_body_texture_variants("xskin-BurglarMfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-EMTMfit_01-pelvis-body", preferred_skin_color)
+
+    if skin_name == "xskin-b003mafat_01-PELVIS-BODY":
+        texture_file_names.append("HandyMFat_01".lower())
+
     if skin_name == "xskin-b003mafit_01-PELVIS-BODY":
         texture_file_names.append("Postalsuit".lower())
 
-    if skin_name.startswith("xskin-b002ma"):
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-ScrubsMfit_", preferred_skin_color)
-
-    if skin_name.startswith("xskin-b003ma"):
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-EMTMfit_", preferred_skin_color)
-
     if skin_name.startswith("xskin-b004ma"):
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-MayorMfit_", preferred_skin_color)
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-PoliticsMfit_", preferred_skin_color)
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-TopCopMfit_", preferred_skin_color)
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-TopDocMfit_", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-BusinessMfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-MayorMfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-PoliticsMfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-SciMidMfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-TopCopMfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-TopDocMfit_01-pelvis-body", preferred_skin_color)
+
+    if skin_name == "xskin-b005mafit_01-PELVIS-BODY":
+        texture_file_names.append("RepoMFit_01".lower())
+
+    if skin_name.startswith("xskin-b008fa"):
+        texture_file_names += list_npc_body_texture_variants("xskin-BusinessFfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-MayorFfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-PoliticsFfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-TopCopFfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-TopDocFfit_01-pelvis-body", preferred_skin_color)
+
+    if skin_name.startswith("xskin-b009fa"):
+        texture_file_names += list_npc_body_texture_variants("xskin-SciMidFfit_01-pelvis-body", preferred_skin_color)
+
+    if skin_name == "xskin-b004ucchd_01-PELVIS-BODY":
+        texture_file_names += list_npc_body_texture_variants("xskin-MilCadetUfit_01-pelvis-body", preferred_skin_color)
+
+    if skin_name.startswith("xskin-b011fa"):
+        texture_file_names += list_npc_body_texture_variants("xskin-ExtremeFfit_01-pelvis-body", preferred_skin_color)
+
+    if skin_name.startswith("xskin-b012fa"):
+        texture_file_names += list_npc_body_texture_variants("xskin-PoliceFfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-ScrubsFfit_01-pelvis-body", preferred_skin_color)
 
     if skin_name == "xskin-c004fa_gma1-HEAD-HEAD":
         texture_file_names.append("C_socwkr".lower())
@@ -521,13 +566,20 @@ def add_job_and_npc_textures(texture_file_names, skin_name, preferred_skin_color
         texture_file_names.append("C_Handy".lower())
         texture_file_names.append("C_Repo".lower())
 
+    if skin_name == "xskin-c_skeleton-HEAD-HEAD":
+        texture_file_names += ["C_skeleton".lower(), "C_skeleneg".lower()]
+
+    if skin_name == "xskin-skeleton_01-PELVIS-BODY" or skin_name == "xskin-skeletonchd_01-PELVIS-BODY":
+        texture_file_names += ["Skeleton_01".lower(), "Skeleneg_01".lower()]
+
     # livin large
-    if skin_name.startswith("xskin-b008fa"):
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-infoverlordFfit_", preferred_skin_color)
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-UFOinvestFfit_", preferred_skin_color)
     if skin_name.startswith("xskin-b004ma"):
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-HypnotistMfit_", preferred_skin_color)
-        texture_file_names += create_npc_body_texture_file_name_variants("xskin-UFOinvestMfit_", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-HypnotistMfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-UFOinvestMfit_01-pelvis-body", preferred_skin_color)
+
+    if skin_name.startswith("xskin-b008fa"):
+        texture_file_names += list_npc_body_texture_variants("xskin-infoverlordFfit_01-pelvis-body", preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants("xskin-UFOinvestFfit_01-pelvis-body", preferred_skin_color)
 
     # house party
     if skin_name == "xskin-nffit_01-PELVIS-MBODY":
@@ -535,115 +587,95 @@ def add_job_and_npc_textures(texture_file_names, skin_name, preferred_skin_color
 
     # unleashed
     if skin_name == "xskin-Petjudge_Mafit_01-PELVIS-BODY":
-        texture_file_names += create_npc_body_texture_file_name_variants(
-            "xskin-Petjudge_Mafit_02-PELVIS-BODY",
-            preferred_skin_color
-        )
+        texture_file_names += list_npc_body_texture_variants("xskin-Petjudge_Mafit_02-pelvis-body", preferred_skin_color)
 
 
-def load_textures_internal(obj, texture_file_list, skin_name, default_texture, preferred_skin_color):
+def load_textures(obj, texture_file_list, skin_name, default_texture, fix_textures, preferred_skin_color):
     texture_file_names = list()
     find_secondary_textures = False
 
-    skin_name, default_texture = fixup_skin_name_and_default_texture(
-        texture_file_names,
-        skin_name,
-        default_texture
-    )
-
-    if default_texture.lower() in ["white", "grey"]:
-        create_material(obj, default_texture, "")
-        return
+    if fix_textures:
+        skin_name, default_texture = fixup_skin_name_and_default_texture(
+            texture_file_names,
+            skin_name,
+            default_texture
+        )
 
     if is_head_skin_type(skin_name):
-        texture_file_names += create_head_texture_file_name_variants(skin_name, preferred_skin_color)
+        texture_file_names += list_head_texture_variants(skin_name, preferred_skin_color)
         find_secondary_textures = True
     elif is_body_skin_type(skin_name):
-        texture_file_names += create_body_texture_file_name_variants(skin_name, preferred_skin_color)
+        texture_file_names += list_body_texture_variants(skin_name, preferred_skin_color)
         find_secondary_textures = True
     elif is_hand_skin_type(skin_name):
-        texture_file_names += create_hand_texture_file_name_variants(skin_name, preferred_skin_color)
+        texture_file_names += list_hand_texture_variants(skin_name, preferred_skin_color)
         find_secondary_textures = True
     elif is_nude_skin_type(skin_name):
-        texture_file_names += create_nude_texture_file_name_variants(skin_name, preferred_skin_color)
+        texture_file_names += list_nude_texture_variants(skin_name, preferred_skin_color)
         find_secondary_textures = True
-
     elif is_npc_head_skin_type(skin_name):
-        texture_file_names += create_npc_head_texture_file_name_variants(skin_name, preferred_skin_color)
+        texture_file_names += list_npc_head_texture_variants(skin_name, preferred_skin_color)
+    elif is_sex_npc_head_skin_type(skin_name):
+        texture_file_names += list_npc_head_texture_variants(skin_name, preferred_skin_color)
+    elif is_weight_npc_head_skin_type(skin_name):
+        texture_file_names += list_npc_head_texture_variants(skin_name, preferred_skin_color)
+    elif is_age_weight_npc_head_skin_type(skin_name):
+        texture_file_names += list_age_weight_npc_head_texture_variants(skin_name, preferred_skin_color)
     elif is_npc_body_skin_type(skin_name):
-        texture_file_names += create_npc_body_texture_file_name_variants(skin_name, preferred_skin_color)
-    elif is_hot_date_npc_head_skin_type(skin_name):
-        texture_file_names += create_hot_date_npc_head_texture_file_name_variants(skin_name, preferred_skin_color)
+        texture_file_names += list_npc_body_texture_variants(skin_name, preferred_skin_color)
     elif is_unleashed_npc_body_skin_type(skin_name):
-        texture_file_names += create_unleashed_npc_body_texture_file_name_variants(skin_name, preferred_skin_color)
-
+        texture_file_names += list_unleashed_npc_body_texture_variants(skin_name, preferred_skin_color)
     elif is_costume_skin_type(skin_name):
-        texture_file_names += create_costume_texture_file_name_variants(skin_name, preferred_skin_color)
-        for texture_name in texture_file_names:
-            for file_path in texture_file_list:
-                file_texture_name = os.path.splitext(os.path.basename(file_path))[0]
-                if file_texture_name.lower() == texture_name.lower():
-                    create_material(obj, file_texture_name, file_path)
-        return
-
-    if is_body_skin_type(skin_name) and is_npc_body_texture_type(default_texture):
-        skin_color_span = is_npc_body_texture_type(default_texture).span()
-        skin_type = default_texture[:skin_color_span[0] + 1]
-        bone_model = default_texture[skin_color_span[1] - 1:]
-        npc_body_skin_name = "xskin-" + skin_type + "fit" + bone_model
-        texture_file_names += create_npc_body_texture_file_name_variants(npc_body_skin_name, preferred_skin_color)
-
-    if default_texture != "x" and default_texture.lower() not in texture_file_names:
-        if not is_head_skin_type(skin_name) and not is_body_skin_type(skin_name):
-            for file_path in texture_file_list:
-                file_texture_name = os.path.splitext(os.path.basename(file_path))[0]
-                if file_texture_name.lower() == default_texture.lower():
-                    create_material(obj, file_texture_name, file_path)
-                    return
-        elif is_body_skin_type(skin_name) and not is_body_texture_type(default_texture):
-            texture_file_names.append(default_texture)
+        texture_file_names += list_costume_texture_variants(skin_name, preferred_skin_color)
 
     add_job_and_npc_textures(texture_file_names, skin_name, preferred_skin_color)
 
-    if skin_name.startswith("xskin-B601MAFit_"):
-        find_secondary_textures = False
-    if skin_name.startswith("xskin-B620MAFit_"):
-        find_secondary_textures = False
+    if fix_textures:
+        if skin_name.lower().startswith("xskin-B601MAFit_".lower()):
+            find_secondary_textures = False
+        if skin_name.lower().startswith("xskin-B620MAFit_".lower()):
+            find_secondary_textures = False
+        if skin_name.lower().startswith("xskin-B632MAFit_".lower()):
+            find_secondary_textures = False
+        if skin_name.lower().startswith("xskin-B634FAFit_".lower()):
+            find_secondary_textures = False
+        if skin_name.lower().startswith("xskin-C620MA_".lower()):
+            find_secondary_textures = False
 
-    texture_file_list = reduce_texture_file_list(texture_file_list, texture_file_names)
+    reduced_texture_file_list = reduce_texture_file_list(texture_file_list, texture_file_names, fix_textures)
 
-    for file_path in texture_file_list:
-        file_texture_name = os.path.splitext(os.path.basename(file_path))[0]
+    for file_path in reduced_texture_file_list:
+        original_file_texture_name = os.path.splitext(os.path.basename(file_path))[0]
+        file_texture_name = original_file_texture_name
+        if fix_textures:
+            file_texture_name = fix_texture_file_name(file_texture_name)
+
         for texture_name in texture_file_names:
             if file_texture_name.lower() == texture_name.lower():
-                create_material(obj, file_texture_name, file_path)
+                create_material(obj, original_file_texture_name, file_path)
 
     if find_secondary_textures:
-        for file_path in texture_file_list:
-            file_texture_name = os.path.splitext(os.path.basename(file_path))[0]
+        for file_path in reduced_texture_file_list:
+            original_file_texture_name = os.path.splitext(os.path.basename(file_path))[0]
+            file_texture_name = original_file_texture_name
+            if fix_textures:
+                file_texture_name = fix_texture_file_name(file_texture_name)
+
             for texture_name in texture_file_names:
                 if file_texture_name.lower().startswith(texture_name.lower()):
-                    create_material(obj, file_texture_name, file_path)
+                    create_material(obj, original_file_texture_name, file_path)
 
+    if not obj.data.materials and default_texture != "x":
+        if default_texture.lower() in ["white", "grey"]:
+            create_material(obj, default_texture, "")
+            return
 
-def load_textures(obj, texture_file_list, skin_name, default_texture, preferred_skin_color):
-    load_textures_internal(
-        obj,
-        texture_file_list,
-        skin_name,
-        default_texture,
-        preferred_skin_color,
-    )
+        for file_path in texture_file_list:
+            original_file_texture_name = os.path.splitext(os.path.basename(file_path))[0]
+            file_texture_name = original_file_texture_name
+            if fix_textures:
+                file_texture_name = fix_texture_file_name(file_texture_name)
 
-    if not obj.data.materials and is_body_skin_type(skin_name):
-        weights = ["skn", "fit", "fat"]
-        current_weight = skin_name[12:15]
-        for weight in filter(lambda x: x != current_weight, weights):
-            skin_name = skin_name[:12] + weight + skin_name[15:]
-            load_textures_internal(
-                obj,
-                texture_file_list,
-                skin_name,
-                default_texture,
-                preferred_skin_color,
-            )
+            if file_texture_name.lower() == default_texture.lower():
+                create_material(obj, original_file_texture_name, file_path)
+                return

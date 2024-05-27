@@ -6,6 +6,7 @@ import os
 import pathlib
 import re
 
+
 from . import bcf
 from . import bmf
 from . import cfp
@@ -171,7 +172,7 @@ def find_or_import_skeleton(context, file_list, skeleton_name):
         for file_path in file_list:
             if os.path.basename(file_path) == skeleton_file_name:
                 bcf_file = bcf.read_file(file_path)
-                armature = import_skeleton(context, bcf_file.skeletons[0])
+                return import_skeleton(context, bcf_file.skeletons[0])
 
     return armature
 
@@ -184,6 +185,7 @@ def import_suit(
     texture_file_list,
     suit,
     cleanup_meshes,
+    fix_textures,
     preferred_skin_color,
     armature_object_map,
 ):
@@ -213,14 +215,14 @@ def import_suit(
         if not all(bone in armature.bones for bone in bmf_file.bones):
             logger.info(
                 "Could not apply mesh {} to armature {}. The bones do not match.".format(
-                    bmf_file.skin_name,
+                    skin.skin_name,
                     armature.name
                 )
             )
             continue
 
-        mesh = bpy.data.meshes.new(bmf_file.skin_name)
-        obj = bpy.data.objects.new(bmf_file.skin_name, mesh)
+        mesh = bpy.data.meshes.new(skin.skin_name)
+        obj = bpy.data.objects.new(skin.skin_name, mesh)
 
         mesh_collection = bpy.data.collections.get(suit.name)
         if mesh_collection is None:
@@ -283,7 +285,7 @@ def import_suit(
             except:
                 invalid_face_count += 1
         if invalid_face_count > 0:
-            logger.info("Skipped {} invalid faces in mesh {}".format(invalid_face_count, bmf_file.skin_name))
+            logger.info("Skipped {} invalid faces in mesh {}".format(invalid_face_count, skin.skin_name))
 
         uv_layer = b_mesh.loops.layers.uv.verify()
         for face in b_mesh.faces:
@@ -301,11 +303,12 @@ def import_suit(
             texture_file_list,
             skin.skin_name,
             bmf_file.default_texture_name,
-            preferred_skin_color
+            fix_textures,
+            preferred_skin_color,
         )
 
         if not obj.data.materials:
-            logger.info("Could not find a texture for mesh {}".format(bmf_file.skin_name))
+            logger.info("Could not find a texture for mesh {}".format(skin.skin_name))
 
         if armature_object_map.get(armature.name) is None:
             armature_object_map[armature.name] = list()
@@ -326,7 +329,8 @@ def import_files(
     import_meshes,
     import_animations,
     cleanup_meshes,
-    preferred_skin_color
+    fix_textures,
+    preferred_skin_color,
 ):
     bcf_files = []
     for file_path in file_paths:
@@ -364,6 +368,7 @@ def import_files(
                     texture_file_list,
                     suit,
                     cleanup_meshes,
+                    fix_textures,
                     preferred_skin_color,
                     armature_object_map,
                 )

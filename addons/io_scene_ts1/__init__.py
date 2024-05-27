@@ -66,6 +66,12 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         default=True,
     )
 
+    fix_textures: bpy.props.BoolProperty(
+        name="Fix Official Texture Mistakes",
+        description="Fix texture file mistakes made in the game, expansions and official downloads",
+        default=True,
+    )
+
     def execute(self, context):
         import io
         import logging
@@ -96,6 +102,7 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             self.import_meshes,
             self.import_animations,
             self.cleanup_meshes,
+            self.fix_textures,
             context.scene.ts1_import_skin_color
         )
 
@@ -111,6 +118,7 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         col.prop(self, "import_meshes")
         col.prop(self, "import_animations")
         col.prop(self, "cleanup_meshes")
+        col.prop(self, "fix_textures")
         col.label(text="Skin Color:")
         col.prop(context.scene, "ts1_import_skin_color", text="")
 
