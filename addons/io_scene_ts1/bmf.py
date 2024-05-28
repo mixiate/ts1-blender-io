@@ -50,7 +50,7 @@ def read_bone_bindings(file):
                 struct.unpack('<I', file.read(4))[0],
                 struct.unpack('<I', file.read(4))[0],
                 struct.unpack('<I', file.read(4))[0],
-                struct.unpack('<I', file.read(4))[0],
+                struct.unpack('<i', file.read(4))[0],
                 struct.unpack('<I', file.read(4))[0],
             )
         )
@@ -63,7 +63,7 @@ def write_bone_bindings(file, bone_bindings):
         file.write(struct.pack('<I', bone_binding.bone_index))
         file.write(struct.pack('<I', bone_binding.vertex_index))
         file.write(struct.pack('<I', bone_binding.vertex_count))
-        file.write(struct.pack('<I', bone_binding.blended_vertex_index))
+        file.write(struct.pack('<i', bone_binding.blended_vertex_index))
         file.write(struct.pack('<I', bone_binding.blended_vertex_count))
 
 

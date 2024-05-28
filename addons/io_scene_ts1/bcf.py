@@ -255,7 +255,7 @@ def write_suits(file, suits):
         utils.write_string(file, suit.name)
         file.write(struct.pack('<I', suit.suit_type))
         file.write(struct.pack('<I', suit.unknown))
-        write_skins(suit.skins)
+        write_skins(file, suit.skins)
 
 
 @dataclasses.dataclass

@@ -1,3 +1,4 @@
+import bmesh
 import bpy
 import copy
 import math
@@ -233,11 +234,14 @@ def import_suit(
         mesh_collection = bpy.data.collections.get(suit.name)
         if mesh_collection is None:
             mesh_collection = bpy.data.collections.new(suit.name)
+            mesh_collection["Suit Type"] = suit.suit_type
         mesh_collection.objects.link(obj)
         if mesh_collection.name not in context.collection.children:
             context.collection.children.link(mesh_collection)
 
-        import bmesh
+        obj["Bone Name"] = skin.bone_name
+        obj["Censor Flags"] = skin.censor_flags
+
         b_mesh = bmesh.new()
 
         normals = list()
@@ -297,7 +301,7 @@ def import_suit(
         for face in b_mesh.faces:
             for loop in face.loops:
                 uv = bmf_file.uvs[loop.vert.index]
-                loop[uv_layer].uv = (uv[0], -uv[1])
+                loop[uv_layer].uv = (uv[0], 1 - uv[1])
 
         b_mesh.to_mesh(mesh)
         b_mesh.free()

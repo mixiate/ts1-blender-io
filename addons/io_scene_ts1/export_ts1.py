@@ -1,21 +1,225 @@
+import bmesh
 import bpy
 import copy
 import math
 import mathutils
 import os
 
+
 from . import bcf
+from . import bmf
 from . import cfp
 from . import cmx
 from . import utils
+
+
+class ExportException(Exception):
+    pass
+
+
+def export_skin(context, directory, obj):
+    mesh = obj.data
+    uv_layer = mesh.uv_layers[0]
+
+    new_vertices = list()
+    new_faces = list()
+
+    # create unique vertices and faces
+    for triangle in mesh.loop_triangles:
+        face = list()
+        for loop_index in triangle.loops:
+            vertex_index = mesh.loops[loop_index].vertex_index
+
+            if len(mesh.vertices[vertex_index].groups) == 0:
+                raise ExportException("{} mesh has vertices that are not in a vertex group".format(obj.name))
+
+            if len(mesh.vertices[vertex_index].groups) > 2:
+                raise ExportException("{} mesh has vertices in more than 2 vertex groups".format(obj.name))
+
+            vertex = (
+                mesh.vertices[vertex_index].co,
+                mesh.loops[loop_index].normal,
+                uv_layer.data[loop_index].uv,
+                mesh.vertices[vertex_index].groups[0].group,
+                mesh.vertices[vertex_index].groups[1] if len(mesh.vertices[vertex_index].groups) > 1 else None,
+            )
+
+            if vertex not in new_vertices:
+                new_vertices.append(vertex)
+
+            vertex_index = new_vertices.index(vertex)
+            face.append(vertex_index)
+
+        new_faces.append(face)
+
+    bones = list()
+    bone_bindings = list()
+    blends = list()
+    vertices = list()
+    uvs = list()
+    faces = list()
+
+    armature = obj.parent.data
+
+    vertex_index_map = list()
+
+    # create main vertices
+    for vertex_group in obj.vertex_groups:
+        vertex_group_vertices = list()
+        vertex_group_uvs = list()
+
+        armature_bone = armature.bones.get(vertex_group.name)
+        if armature_bone is None:
+            raise ExportException(
+                "Vertex group {} in {} is not a bone in armature {}".format(
+                    vertex_group.name,
+                    obj.name,
+                    obj.parent.name
+                )
+            )
+
+        bone_matrix = (armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET.inverted()).inverted()
+        normal_bone_matrix = bone_matrix.to_quaternion().to_matrix().to_4x4()
+
+        for vertex_index, vertex in enumerate(new_vertices):
+            if vertex_group.index == vertex[3]:
+                vertex_position = (bone_matrix @ vertex[0]) * utils.BONE_SCALE
+                vertex_normal = normal_bone_matrix @ vertex[1]
+                vertex_group_vertices.append(bmf.Vertex(vertex_position.xzy, vertex_normal.xzy))
+
+                vertex_uvs = (vertex[2][0], -vertex[2][1])
+                vertex_group_uvs.append(vertex_uvs)
+
+                vertex_index_map.append(vertex_index)
+
+        bone_bindings.append(
+            bmf.BoneBinding(
+                len(bones),
+                len(vertices),
+                len(vertex_group_vertices),
+                -1,
+                0,
+            )
+        )
+        bones.append(vertex_group.name)
+
+        vertices += vertex_group_vertices
+        uvs += vertex_group_uvs
+
+    # create blended vertices
+    blended_vertices = list()
+    for vertex_group_index, vertex_group in enumerate(obj.vertex_groups):
+        vertex_group_vertices = list()
+
+        armature_bone = armature.bones[vertex_group.name]
+        bone_matrix = (armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET.inverted()).inverted()
+        normal_bone_matrix = bone_matrix.to_quaternion().to_matrix().to_4x4()
+
+        for vertex_index, vertex in enumerate(new_vertices):
+            if not vertex[4] is None and vertex[4].group == vertex_group_index:
+                vertex_position = (bone_matrix @ vertex[0]) * utils.BONE_SCALE
+                vertex_normal = normal_bone_matrix @ vertex[1]
+                vertex_group_vertices.append(bmf.Vertex(vertex_position.xzy, vertex_normal.xzy))
+
+                weight = int(vertex[4].weight * math.pow(2, 15))
+                blends.append(bmf.Blend(weight, vertex_index_map.index(vertex_index)))
+
+        if len(vertex_group_vertices) > 0:
+            bone_bindings[vertex_group_index].blended_vertex_index = len(blended_vertices)
+            bone_bindings[vertex_group_index].blended_vertex_count = len(vertex_group_vertices)
+
+            blended_vertices += vertex_group_vertices
+
+    vertices += blended_vertices
+
+    for face in new_faces:
+        faces.append(
+            (
+                vertex_index_map.index(face[2]),
+                vertex_index_map.index(face[1]),
+                vertex_index_map.index(face[0]),
+            )
+        )
+
+    default_texture = "x"
+    if len(obj.data.materials) > 0:
+        default_texture = obj.data.materials[0].name
+
+    bmf_file = bmf.Bmf(
+        obj.name,
+        default_texture,
+        bones,
+        faces,
+        bone_bindings,
+        uvs,
+        blends,
+        vertices,
+    )
+
+    bmf.write_file(os.path.join(directory, obj.name) + ".bmf", bmf_file)
+
+
+def export_suit(context, directory, suit_name, suit_type, objects):
+    skins = list()
+    for obj in objects:
+        bone_name = obj.get("Bone Name")
+        if bone_name is None:
+            raise ExportException("{} object does not have a Bone Name custom property".format(obj.name))
+
+        expected_object_name_prefix = "xskin-{}-{}-".format(suit_name, bone_name)
+        if not obj.name.startswith(expected_object_name_prefix):
+            raise ExportException(
+                "{} object name is invalid. It's name should start with {}".format(
+                    obj.name,
+                    expected_object_name_prefix,
+                )
+            )
+
+        if not obj.parent or obj.parent.type != 'ARMATURE':
+            raise ExportException("{} object is not parented to an armature".format(obj.name))
+
+        skins.append(bcf.Skin(
+            bone_name,
+            obj.name,
+            obj.get("Censor Flags", 0),
+            0,
+        ))
+
+        export_skin(context, directory, obj)
+
+    return bcf.Suit(
+        suit_name,
+        suit_type,
+        0,
+        skins,
+    )
+
 
 def export_files(context, file_path, compress_cfp):
     skeletons = list()
     suits = list()
     skills = list()
 
+    for collection in context.scene.collection.children:
+        objects = [obj for obj in collection.objects if obj.type == 'MESH']
+        if len(objects) == 0:
+            continue
+
+        suits.append(
+            export_suit(
+                context,
+                os.path.dirname(file_path),
+                collection.name,
+                collection.get("Suit Type", 0),
+                objects
+            )
+        )
+
     for armature in bpy.data.armatures:
         armature_object = bpy.data.objects[armature.name]
+
+        if armature_object.get("animation_data") is None:
+            continue
 
         for track in armature_object.animation_data.nla_tracks:
             for strip in track.strips:

@@ -72,6 +72,17 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         default=True,
     )
 
+    skin_color: bpy.props.EnumProperty(
+        name="Skin Color",
+        description="Which skin color texture will be set to the active material",
+        items=[
+            ('drk', "Dark", ""),
+            ('med', "Medium", ""),
+            ('lgt', "Light", ""),
+        ],
+        default='med',
+    )
+
     def execute(self, context):
         import io
         import logging
@@ -103,7 +114,7 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             self.import_animations,
             self.cleanup_meshes,
             self.fix_textures,
-            context.scene.ts1_import_skin_color
+            self.skin_color
         )
 
         log_output = log_stream.getvalue()
@@ -120,7 +131,7 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         col.prop(self, "cleanup_meshes")
         col.prop(self, "fix_textures")
         col.label(text="Skin Color:")
-        col.prop(context.scene, "ts1_import_skin_color", text="")
+        col.prop(self, "skin_color", text="")
 
 
 class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
@@ -145,7 +156,10 @@ class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
     def execute(self, context):
         from . import export_ts1
 
-        export_ts1.export_files(context, self.properties.filepath, self.compress_cfp)
+        try:
+            export_ts1.export_files(context, self.properties.filepath, self.compress_cfp)
+        except export_ts1.ExportException as e:
+            self.report({"ERROR"}, e.args[0])
 
         return {'FINISHED'}
 
@@ -190,17 +204,6 @@ def register():
 
     bpy.types.TOPBAR_MT_file_import.append(menu_import)
     bpy.types.TOPBAR_MT_file_export.append(menu_export)
-
-    bpy.types.Scene.ts1_import_skin_color = bpy.props.EnumProperty(
-        name="Skin Color",
-        description="Which skin color texture will be set to the active material",
-        items=[
-            ('drk', "Dark", ""),
-            ('med', "Medium", ""),
-            ('lgt', "Light", ""),
-        ],
-        default='med',
-    )
 
 
 def unregister():
