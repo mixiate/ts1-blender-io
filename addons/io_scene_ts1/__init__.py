@@ -147,6 +147,16 @@ class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
         options={'HIDDEN'},
     )
 
+    mesh_format: bpy.props.EnumProperty(
+        name="Mesh Format",
+        description="Which format to use when exporting meshes",
+        items=[
+            ('bmf', "BMF", ""),
+            ('skn', "SKN", ""),
+        ],
+        default='bmf',
+    )
+
     compress_cfp: bpy.props.BoolProperty(
         name="Compress CFP file (Lossy)",
         description="Compress the values in the CFP file",
@@ -157,7 +167,7 @@ class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
         from . import export_ts1
 
         try:
-            export_ts1.export_files(context, self.properties.filepath, self.compress_cfp)
+            export_ts1.export_files(context, self.properties.filepath, self.mesh_format, self.compress_cfp)
         except export_ts1.ExportException as e:
             self.report({"ERROR"}, e.args[0])
 
@@ -165,6 +175,8 @@ class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
 
     def draw(self, context):
         col = self.layout.column()
+        col.label(text="Mesh Format:")
+        col.prop(self, "mesh_format", text="")
         col.prop(self, "compress_cfp")
 
 

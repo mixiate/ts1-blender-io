@@ -10,6 +10,7 @@ from . import bcf
 from . import bmf
 from . import cfp
 from . import cmx
+from . import skn
 from . import utils
 
 
@@ -17,7 +18,7 @@ class ExportException(Exception):
     pass
 
 
-def export_skin(context, directory, obj):
+def export_skin(context, directory, mesh_format, obj):
     mesh = obj.data
     uv_layer = mesh.uv_layers[0]
 
@@ -156,10 +157,16 @@ def export_skin(context, directory, obj):
         vertices,
     )
 
-    bmf.write_file(os.path.join(directory, obj.name) + ".bmf", bmf_file)
+    match mesh_format:
+        case 'bmf':
+            bmf.write_file(os.path.join(directory, obj.name) + ".bmf", bmf_file)
+        case 'skn':
+            skn.write_file(os.path.join(directory, obj.name) + ".skn", bmf_file)
+        case _:
+            raise ExportException("Unkown mesh format {}".format(mesh_format))
 
 
-def export_suit(context, directory, suit_name, suit_type, objects):
+def export_suit(context, directory, mesh_format, suit_name, suit_type, objects):
     skins = list()
     for obj in objects:
         bone_name = obj.get("Bone Name")
@@ -185,7 +192,7 @@ def export_suit(context, directory, suit_name, suit_type, objects):
             0,
         ))
 
-        export_skin(context, directory, obj)
+        export_skin(context, directory, mesh_format, obj)
 
     return bcf.Suit(
         suit_name,
@@ -195,7 +202,7 @@ def export_suit(context, directory, suit_name, suit_type, objects):
     )
 
 
-def export_files(context, file_path, compress_cfp):
+def export_files(context, file_path, mesh_format, compress_cfp):
     skeletons = list()
     suits = list()
     skills = list()
@@ -209,9 +216,10 @@ def export_files(context, file_path, compress_cfp):
             export_suit(
                 context,
                 os.path.dirname(file_path),
+                mesh_format,
                 collection.name,
                 collection.get("Suit Type", 0),
-                objects
+                objects,
             )
         )
 

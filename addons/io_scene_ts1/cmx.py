@@ -189,7 +189,7 @@ def write_suits(file, suits):
         file.write(suit.name + "\n")
         file.write(str(suit.suit_type) + "\n")
         file.write(str(suit.unknown) + "\n")
-        write_skins(suit.skins)
+        write_skins(file, suit.skins)
 
 
 def read_bones(file):
