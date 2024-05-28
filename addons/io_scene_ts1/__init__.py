@@ -194,7 +194,7 @@ class TS1_IO_AddonPreferences(bpy.types.AddonPreferences):
     file_search_directory: bpy.props.StringProperty(
         name="File Search Directory",
         description="Directory that will be recursively searched to find referenced files",
-        subtype='FILE_PATH',
+        subtype='DIR_PATH',
         default="",
     )
 
