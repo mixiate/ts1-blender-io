@@ -273,9 +273,9 @@ def create_material(obj, texture_name, texture_file_path):
         else:
             material = bpy.data.materials.new(name=texture_name)
 
-            image = bpy.data.images.get(texture_file_path)
+            image = bpy.data.images.get(texture_file_path.as_posix())
             if image is None:
-                image = bpy.data.images.load(texture_file_path)
+                image = bpy.data.images.load(texture_file_path.as_posix())
             material.use_nodes = True
 
             image_node = material.node_tree.nodes.new('ShaderNodeTexImage')
@@ -286,7 +286,7 @@ def create_material(obj, texture_name, texture_file_path):
             principled_BSDF.inputs[2].default_value = 1.0
             principled_BSDF.inputs[12].default_value = 0.0
 
-            if os.path.splitext(texture_file_path)[1] == ".tga":
+            if texture_file_path.suffix.lower() == ".tga":
                 material.node_tree.links.new(image_node.outputs[1], principled_BSDF.inputs[4])
                 material.blend_method = 'BLEND'
 
@@ -333,7 +333,7 @@ def reduce_texture_file_list(texture_file_list, texture_file_names, fix_textures
     reduced_texture_file_list = []
 
     for file_path in texture_file_list:
-        file_texture_name = os.path.splitext(os.path.basename(file_path))[0]
+        file_texture_name = file_path.stem
         if fix_textures:
             file_texture_name = fix_texture_file_name(file_texture_name)
         for texture_name in zipped_texture_file_names:
@@ -643,7 +643,7 @@ def load_textures(obj, texture_file_list, skin_name, default_texture, fix_textur
     reduced_texture_file_list = reduce_texture_file_list(texture_file_list, texture_file_names, fix_textures)
 
     for file_path in reduced_texture_file_list:
-        original_file_texture_name = os.path.splitext(os.path.basename(file_path))[0]
+        original_file_texture_name = file_path.stem
         file_texture_name = original_file_texture_name
         if fix_textures:
             file_texture_name = fix_texture_file_name(file_texture_name)
@@ -654,7 +654,7 @@ def load_textures(obj, texture_file_list, skin_name, default_texture, fix_textur
 
     if find_secondary_textures:
         for file_path in reduced_texture_file_list:
-            original_file_texture_name = os.path.splitext(os.path.basename(file_path))[0]
+            original_file_texture_name = file_path.stem
             file_texture_name = original_file_texture_name
             if fix_textures:
                 file_texture_name = fix_texture_file_name(file_texture_name)
@@ -669,7 +669,7 @@ def load_textures(obj, texture_file_list, skin_name, default_texture, fix_textur
             return
 
         for file_path in texture_file_list:
-            original_file_texture_name = os.path.splitext(os.path.basename(file_path))[0]
+            original_file_texture_name = file_path.stem
             file_texture_name = original_file_texture_name
             if fix_textures:
                 file_texture_name = fix_texture_file_name(file_texture_name)

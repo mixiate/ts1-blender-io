@@ -137,7 +137,7 @@ def write_skn(file, bmf):
 
 
 def read_file(file_path):
-    with open(file_path) as file:
+    with file_path.open() as file:
         skn = read_skn(file)
 
         if file.readline() != "":
@@ -147,5 +147,5 @@ def read_file(file_path):
 
 
 def write_file(file_path, bmf):
-    with open(file_path, 'w') as file:
+    with file_path.open('w') as file:
         write_skn(file, bmf)

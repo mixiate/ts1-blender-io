@@ -153,9 +153,9 @@ def export_skin(context, directory, mesh_format, obj):
 
     match mesh_format:
         case 'bmf':
-            bmf.write_file(os.path.join(directory, obj.name) + ".bmf", bmf_file)
+            bmf.write_file(directory / (obj.name + ".bmf"), bmf_file)
         case 'skn':
-            skn.write_file(os.path.join(directory, obj.name) + ".skn", bmf_file)
+            skn.write_file(directory / (obj.name + ".skn"), bmf_file)
         case _:
             raise ExportException(f"Unkown mesh format {mesh_format}")
 
@@ -208,7 +208,7 @@ def export_files(context, file_path, mesh_format, compress_cfp):
         suits.append(
             export_suit(
                 context,
-                os.path.dirname(file_path),
+                file_path.parent,
                 mesh_format,
                 collection.name,
                 collection.get("Suit Type", 0),
@@ -357,7 +357,7 @@ def export_files(context, file_path, mesh_format, compress_cfp):
 
                 skills.append(skill)
 
-                cfp_file_path = os.path.join(os.path.dirname(file_path), track.name + ".cfp")
+                cfp_file_path = file_path.parent / (track.name + ".cfp")
                 cfp.write_file(
                     cfp_file_path,
                     compress_cfp,
@@ -372,7 +372,7 @@ def export_files(context, file_path, mesh_format, compress_cfp):
 
     bcf_desc = bcf.Bcf(skeletons, suits, skills)
 
-    match os.path.splitext(file_path)[1]:
+    match file_path.suffix:
         case ".cmx":
             cmx.write_file(file_path, bcf_desc)
         case ".bcf":

@@ -88,6 +88,7 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         import io
         import logging
         import os
+        import pathlib
         from . import import_ts1
 
         logger = logging.getLogger(__name__)
@@ -95,16 +96,8 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         log_stream = io.StringIO()
         logger.addHandler(logging.StreamHandler(stream=log_stream))
 
-        paths = [os.path.join(self.directory, name.name) for name in self.files]
-
-        if not paths:
-            paths.append(self.filepath)
-
-        if bpy.ops.object.mode_set.poll():
-            bpy.ops.object.mode_set(mode='OBJECT')
-
-        if bpy.ops.object.select_all.poll():
-            bpy.ops.object.select_all(action='DESELECT')
+        directory = pathlib.Path(self.directory)
+        paths = [directory / file.name for file in self.files]
 
         import_ts1.import_files(
             context,
@@ -165,10 +158,13 @@ class ExportTS1(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
     )
 
     def execute(self, context):
+        import pathlib
         from . import export_ts1
 
         try:
-            export_ts1.export_files(context, self.properties.filepath, self.mesh_format, self.compress_cfp)
+            export_ts1.export_files(
+                context, pathlib.Path(self.properties.filepath), self.mesh_format, self.compress_cfp
+            )
         except export_ts1.ExportException as e:
             self.report({"ERROR"}, e.args[0])
 
@@ -225,8 +221,6 @@ def unregister():
 
     bpy.types.TOPBAR_MT_file_import.remove(menu_import)
     bpy.types.TOPBAR_MT_file_export.remove(menu_export)
-
-    del bpy.types.Scene.ts1_import_skin_color
 
 
 if __name__ == "__main__":

@@ -279,7 +279,7 @@ def write_cmx(file, cmx):
 
 
 def read_file(file_path):
-    with open(file_path) as file:
+    with file_path.open() as file:
         if not file.readline().strip().startswith("//"):
             raise Exception("Could not read cmx file " + file_path)
         if file.readline().strip() != "version 300":
@@ -294,5 +294,5 @@ def read_file(file_path):
 
 
 def write_file(file_path, cmx):
-    with open(file_path, 'w') as file:
+    with file_path.open('w') as file:
         write_cmx(file, cmx)

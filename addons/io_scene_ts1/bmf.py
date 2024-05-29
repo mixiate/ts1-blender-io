@@ -170,21 +170,18 @@ def write_bmf(file, bmf):
 
 
 def read_file(file_path):
-    file = open(file_path, mode='rb')
+    with file_path.open(mode='rb') as file:
+        bmf = read_bmf(file)
 
-    bmf = read_bmf(file)
+        try:
+            file.read(1)
+            raise Exception("data left unread at end of " + file_path)
+        except Exception as _:
+            pass
 
-    try:
-        file.read(1)
-        raise Exception("data left unread at end of " + file_path)
-    except Exception as _:
-        pass
-
-    file.close()
-
-    return bmf
+        return bmf
 
 
 def write_file(file_path, bmf):
-    with open(file_path, 'wb') as file:
+    with file_path.open('wb') as file:
         write_bmf(file, bmf)

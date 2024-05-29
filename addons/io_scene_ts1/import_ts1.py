@@ -179,7 +179,7 @@ def find_or_import_skeleton(context, file_list, skeleton_names):
     armature = bpy.data.armatures.get(skeleton_names[0])
     if armature is None:
         for file_path in file_list:
-            if os.path.basename(file_path) == skeleton_file_name:
+            if file_path.name == skeleton_file_name:
                 bcf_file = bcf.read_file(file_path)
                 return import_skeleton(context, bcf_file.skeletons[0])
 
@@ -205,23 +205,19 @@ def import_suit(
             logger.info(f"Could not find or import {skeleton_names[0]} skeleton used by {suit.name} .")
             continue
 
-        bmf_file_path = os.path.join(bcf_directory, skin.skin_name + ".bmf")
+        bmf_file_path = bcf_directory / (skin.skin_name + ".bmf")
         try:
             bmf_file = bmf.read_file(bmf_file_path)
         except Exception as _:
-            skn_file_path = os.path.join(bcf_directory, skin.skin_name + ".skn")
+            skn_file_path = bcf_directory / (skin.skin_name + ".skn")
             try:
                 bmf_file = skn.read_file(skn_file_path)
             except Exception as _:
-                logger.info(
-                    f"Could not load mesh {bmf_file_path} used by {suit.name}."
-                )
+                logger.info(f"Could not load mesh {bmf_file_path} used by {suit.name}.")
                 continue
 
         if not all(bone in armature.bones for bone in bmf_file.bones):
-            logger.info(
-                f"Could not apply mesh {skin.skin_name} to armature {armature.name}. The bones do not match."
-            )
+            logger.info(f"Could not apply mesh {skin.skin_name} to armature {armature.name}. The bones do not match.")
             continue
 
         mesh = bpy.data.meshes.new(skin.skin_name)
@@ -334,8 +330,8 @@ def create_fcurve_data(action, data_path, index, count, data):
     f_curve.update()
 
 
-def import_skill(context, logger, bcf_file_path, file_list, skill):
-    cfp_file_path = os.path.join(os.path.dirname(bcf_file_path), skill.animation_name + ".cfp")
+def import_skill(context, logger, file_directory, file_list, skill):
+    cfp_file_path = file_directory / (skill.animation_name + ".cfp")
     try:
         cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
     except Exception as _:
@@ -484,9 +480,15 @@ def import_files(
     fix_textures,
     preferred_skin_color,
 ):
+    if bpy.ops.object.mode_set.poll():
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+    if bpy.ops.object.select_all.poll():
+        bpy.ops.object.select_all(action='DESELECT')
+
     bcf_files = []
     for file_path in file_paths:
-        match os.path.splitext(file_path)[1]:
+        match file_path.suffix:
             case ".cmx":
                 bcf_files.append((file_path, cmx.read_file(file_path)))
             case ".bcf":
@@ -494,17 +496,15 @@ def import_files(
 
     file_search_directory = context.preferences.addons["io_scene_ts1"].preferences.file_search_directory
     if file_search_directory == "":
-        file_search_directory = os.path.dirname(file_paths[0])
-    file_list = list(map(lambda x: str(x), pathlib.Path(file_search_directory).rglob("*")))
+        file_search_directory = file_paths[0].parent
+    file_list = list(pathlib.Path(file_search_directory).rglob("*"))
 
     texture_file_list = [
-        file_name
-        for file_name in file_list
-        if os.path.splitext(file_name)[1].lower() == ".bmp" or os.path.splitext(file_name)[1].lower() == ".tga"
+        file_name for file_name in file_list if file_name.suffix.lower() == ".bmp" or file_name.suffix.lower() == ".tga"
     ]
 
     if import_skeletons:
-        for bcf_file_path, bcf_file in bcf_files:
+        for _, bcf_file in bcf_files:
             for skeleton in bcf_file.skeletons:
                 import_skeleton(context, skeleton)
 
@@ -515,7 +515,7 @@ def import_files(
                 import_suit(
                     context,
                     logger,
-                    os.path.dirname(bcf_file_path),
+                    bcf_file_path.parent,
                     file_list,
                     texture_file_list,
                     suit,
@@ -562,4 +562,4 @@ def import_files(
     if import_animations:
         for bcf_file_path, bcf_file in bcf_files:
             for skill in bcf_file.skills:
-                import_skill(context, logger, bcf_file_path, file_list, skill)
+                import_skill(context, logger, bcf_file_path.parent, file_list, skill)

@@ -107,17 +107,14 @@ class Cfp:
 
 
 def read_file(file_path, position_count, rotation_count):
-    file = open(file_path, mode='rb')
+    with file_path.open(mode='rb') as file:
+        decoded_values = decode_values(file, (position_count * 3) + (rotation_count * 4))
 
-    decoded_values = decode_values(file, (position_count * 3) + (rotation_count * 4))
-
-    file.close()
-
-    try:
-        file.read(1)
-        raise Exception("data left unread at end of cfp file")
-    except Exception as _:
-        pass
+        try:
+            file.read(1)
+            raise Exception("data left unread at end of cfp file")
+        except Exception as _:
+            pass
 
     positions_x = decoded_values[:position_count]
     positions_y = decoded_values[position_count : position_count * 2]
@@ -152,6 +149,6 @@ def write_file(
     values = itertools.chain(values, rotations_z)
     values = itertools.chain(values, rotations_w)
 
-    file = open(file_path, "wb")
-    file.write(encode_values(values, compress))
-    file.close()
+    with file_path.open('wb') as file:
+        file.write(encode_values(values, compress))
+        file.close()

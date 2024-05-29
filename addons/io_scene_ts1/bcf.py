@@ -371,7 +371,7 @@ def write_bcf(file, bcf):
 
 
 def read_file(file_path):
-    with open(file_path, mode='rb') as file:
+    with file_path.open(mode='rb') as file:
         bcf = read_bcf(file)
 
         try:
@@ -384,5 +384,5 @@ def read_file(file_path):
 
 
 def write_file(file_path, bcf):
-    with open(file_path, 'wb') as file:
+    with file_path.open('wb') as file:
         write_bcf(file, bcf)
