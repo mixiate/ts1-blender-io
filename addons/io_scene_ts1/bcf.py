@@ -127,8 +127,8 @@ def read_motions(file):
                 struct.unpack('<f', file.read(4))[0],
                 struct.unpack('<I', file.read(4))[0],
                 struct.unpack('<I', file.read(4))[0],
-                struct.unpack('<I', file.read(4))[0],
-                struct.unpack('<I', file.read(4))[0],
+                struct.unpack('<i', file.read(4))[0],
+                struct.unpack('<i', file.read(4))[0],
                 read_property_lists(file),
                 read_time_property_lists(file),
             )
@@ -144,8 +144,8 @@ def write_motions(file, motions):
         file.write(struct.pack('<f', motion.duration))
         file.write(struct.pack('<I', motion.positions_used_flag))
         file.write(struct.pack('<I', motion.rotations_used_flag))
-        file.write(struct.pack('<I', motion.position_offset))
-        file.write(struct.pack('<I', motion.rotation_offset))
+        file.write(struct.pack('<i', motion.position_offset))
+        file.write(struct.pack('<i', motion.rotation_offset))
         write_property_lists(file, motion.property_lists)
         write_time_property_lists(file, motion.time_property_lists)
 

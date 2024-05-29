@@ -1,8 +1,11 @@
+import dataclasses
 import math
 import struct
 
+
 def decode_delta(delta):
     return 3.9676e-10 * math.pow(float(delta) - 126.0, 3) * abs(float(delta) - 126.0)
+
 
 def decode_values(file, count):
     values = list()
@@ -92,6 +95,17 @@ def encode_values(values, compress):
     return encoded_bytes
 
 
+@dataclasses.dataclass
+class Cfp:
+    positions_x: list[float]
+    positions_y: list[float]
+    positions_z: list[float]
+    rotations_x: list[float]
+    rotations_y: list[float]
+    rotations_z: list[float]
+    rotations_w: list[float]
+
+
 def read_file(file_path, position_count, rotation_count):
     file = open(file_path, mode='rb')
 
@@ -105,19 +119,25 @@ def read_file(file_path, position_count, rotation_count):
     except:
         pass
 
-    values = {}
-
-    values["positions_x"] = decoded_values[:position_count]
-    values["positions_y"] = decoded_values[position_count:position_count * 2]
-    values["positions_z"] = decoded_values[position_count * 2:position_count * 3]
+    positions_x = decoded_values[:position_count]
+    positions_y = decoded_values[position_count:position_count * 2]
+    positions_z = decoded_values[position_count * 2:position_count * 3]
 
     rotation_offset = position_count * 3
-    values["rotations_x"] = decoded_values[rotation_offset:rotation_offset + rotation_count]
-    values["rotations_y"] = decoded_values[rotation_offset + rotation_count:rotation_offset + (rotation_count * 2)]
-    values["rotations_z"] = decoded_values[rotation_offset + (rotation_count * 2):rotation_offset + (rotation_count * 3)]
-    values["rotations_w"] = decoded_values[rotation_offset + (rotation_count * 3):rotation_offset + (rotation_count * 4)]
+    rotations_x = decoded_values[rotation_offset:rotation_offset + rotation_count]
+    rotations_y = decoded_values[rotation_offset + rotation_count:rotation_offset + (rotation_count * 2)]
+    rotations_z = decoded_values[rotation_offset + (rotation_count * 2):rotation_offset + (rotation_count * 3)]
+    rotations_w = decoded_values[rotation_offset + (rotation_count * 3):rotation_offset + (rotation_count * 4)]
 
-    return values
+    return Cfp(
+        positions_x,
+        positions_y,
+        positions_z,
+        rotations_x,
+        rotations_y,
+        rotations_z,
+        rotations_w,
+    )
 
 
 def write_file(

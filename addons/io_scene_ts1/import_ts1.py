@@ -57,7 +57,7 @@ def import_skeleton(context, skeleton):
                 armature_bone["ts1_" + prop.name] = prop.value
 
     for bone in armature.edit_bones:
-        if bone.parent != None:
+        if bone.parent:
             previous_parent_tail = copy.copy(bone.parent.tail)
             previous_parent_quat = bone.parent.matrix.to_4x4().to_quaternion()
             bone.parent.tail = bone.head
@@ -331,6 +331,146 @@ def import_suit(
         obj.scale = armature_obj.scale
 
 
+def create_fcurve_data(action, data_path, index, count, data):
+    f_curve = action.fcurves.new(data_path, index=index)
+    f_curve.keyframe_points.add(count=count)
+    f_curve.keyframe_points.foreach_set("co", data)
+    f_curve.update()
+
+
+def import_skill(context, logger, bcf_file_path, file_list, skill):
+    cfp_file_path = os.path.join(os.path.dirname(bcf_file_path), skill.animation_name + ".cfp")
+    try:
+        cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
+    except:
+        logger.info("Could not load cfp file {}".format(cfp_file_path))
+        return
+
+    skeleton_name = get_skill_type_skeleton_name(skill.skill_name)
+    armature = find_or_import_skeleton(context, file_list, skeleton_name)
+    if armature is None:
+        logger.info("Could not find or import {} skeleton used by {}".format(skeleton_name, skill.skill_name))
+        return
+
+    armature_object = bpy.data.objects[armature.name]
+
+    if skill.skill_name in bpy.data.actions:
+        return
+
+    if not all(x in armature.bones for x in map(lambda x: x.bone_name, skill.motions)):
+        logger.info(
+            "Could not apply animation {} to armature {}. The bones do not match.".format(
+                skill.skill_name,
+                armature.name
+            )
+        )
+        return
+
+    armature_object.animation_data_create()
+
+    original_action = armature_object.animation_data.action
+
+    armature_object.animation_data.action = bpy.data.actions.new(name=skill.skill_name)
+    action = armature_object.animation_data.action
+
+    action.frame_range = (1.0, skill.motions[0].frame_count)
+
+    action["Distance"] = skill.distance
+
+    for motion in skill.motions:
+        bone = armature_object.pose.bones[motion.bone_name]
+
+        parent_bone_matrix = mathutils.Matrix()
+        if bone.parent:
+            parent_bone_matrix = bone.parent.bone.matrix_local @ utils.BONE_ROTATION_OFFSET.inverted()
+
+        positions_x = list()
+        positions_y = list()
+        positions_z = list()
+        rotations_w = list()
+        rotations_x = list()
+        rotations_y = list()
+        rotations_z = list()
+
+        for frame in range(motion.frame_count):
+            translation = mathutils.Matrix()
+            if motion.positions_used_flag:
+                translation = mathutils.Matrix.Translation(mathutils.Vector((
+                    cfp_file.positions_x[motion.position_offset + frame] / utils.BONE_SCALE,
+                    cfp_file.positions_z[motion.position_offset + frame] / utils.BONE_SCALE, # swap y and z
+                    cfp_file.positions_y[motion.position_offset + frame] / utils.BONE_SCALE,
+                )))
+
+            rotation = mathutils.Matrix()
+            if motion.rotations_used_flag:
+                rotation = mathutils.Quaternion((
+                    cfp_file.rotations_w[motion.rotation_offset + frame],
+                    cfp_file.rotations_x[motion.rotation_offset + frame],
+                    cfp_file.rotations_z[motion.rotation_offset + frame], # swap y and z
+                    cfp_file.rotations_y[motion.rotation_offset + frame],
+                )).to_matrix().to_4x4()
+
+            bone_matrix = parent_bone_matrix @ (translation @ rotation)
+            bone_matrix = bone.bone.convert_local_to_pose(
+                bone_matrix,
+                bone.bone.matrix_local,
+                invert=True,
+            )
+            bone_matrix @= utils.BONE_ROTATION_OFFSET
+
+            if motion.positions_used_flag:
+                translation = bone_matrix.to_translation()
+                positions_x += (float(frame + 1), translation.x)
+                positions_y += (float(frame + 1), translation.y)
+                positions_z += (float(frame + 1), translation.z)
+
+
+            if motion.rotations_used_flag:
+                rotation = bone_matrix.to_quaternion()
+                rotations_w += (float(frame + 1), rotation.w)
+                rotations_x += (float(frame + 1), rotation.x)
+                rotations_y += (float(frame + 1), rotation.y)
+                rotations_z += (float(frame + 1), rotation.z)
+
+        if motion.positions_used_flag:
+            data_path = bone.path_from_id("location")
+            create_fcurve_data(action, data_path, 0, motion.frame_count, positions_x)
+            create_fcurve_data(action, data_path, 1, motion.frame_count, positions_y)
+            create_fcurve_data(action, data_path, 2, motion.frame_count, positions_z)
+
+        if motion.rotations_used_flag:
+            data_path = bone.path_from_id("rotation_quaternion")
+            create_fcurve_data(action, data_path, 0, motion.frame_count, rotations_w)
+            create_fcurve_data(action, data_path, 1, motion.frame_count, rotations_x)
+            create_fcurve_data(action, data_path, 2, motion.frame_count, rotations_y)
+            create_fcurve_data(action, data_path, 3, motion.frame_count, rotations_z)
+
+    for motion in skill.motions:
+        for time_property_list in motion.time_property_lists:
+            for time_property in time_property_list.time_properties:
+                for event in time_property.events:
+                    event_string = "{} {} {}".format(motion.bone_name, event.name, event.value)
+                    frame = int(round(time_property.time / 33.3333333)) + 1
+
+                    markers = [x for x in action.pose_markers if x.frame == frame]
+
+                    if len(markers) == 0:
+                        marker = action.pose_markers.new(name=event_string)
+                        marker.frame = frame
+                    else:
+                        last_marker = action.pose_markers[-1]
+                        if len(last_marker.name) + 1 + len(event_string) <= 63: # room for null
+                            last_marker.name = "{};{}".format(last_marker.name, event_string)
+                        else:
+                            marker = action.pose_markers.new(name=event_string)
+                            marker.frame = frame
+
+    track = armature_object.animation_data.nla_tracks.new(prev=None)
+    track.name = skill.animation_name
+    track.strips.new(skill.skill_name, 1, action)
+    armature_object.animation_data.action = original_action
+
+
 def import_files(
     context,
     logger,
@@ -417,99 +557,7 @@ def import_files(
 
         context.view_layer.objects.active = previous_active_object
 
-    for bcf_file_path, bcf_file in bcf_files:
-        if not import_animations:
-            break
-
-        for skill in bcf_file.skills:
-            skeleton_name = get_skill_type_skeleton_name(skill.skill_name)
-            armature = find_or_import_skeleton(context, file_list, skeleton_name)
-            if armature is None:
-                logger.info("Could not find or import {} skeleton used by {} .".format(skeleton_name, bcf_file_path))
-                continue
-
-            armature_object = bpy.data.objects[armature.name]
-
-            if skill.skill_name in bpy.data.actions:
-                continue
-
-            if not all(x in armature.bones for x in map(lambda x: x.bone_name, skill.motions)):
-                logger.info(
-                    "Could not apply animation {} to armature {}. The bones do not match.".format(
-                        skill.skill_name,
-                        armature.name
-                    )
-                )
-                continue
-
-            armature_object.animation_data_create()
-
-            original_action = armature_object.animation_data.action if armature_object.animation_data.action is not None else None
-
-            armature_object.animation_data.action = bpy.data.actions.new(name=skill.skill_name)
-            action = armature_object.animation_data.action
-
-            action.frame_range = (1.0, skill.motions[0].frame_count)
-
-            action["distance"] = skill.distance
-
-            cfp_file_path = os.path.join(os.path.dirname(bcf_file_path), skill.animation_name + ".cfp")
-            cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
-
-            for motion in skill.motions:
-                for frame in range(motion.frame_count):
-                    bone = next(x for x in armature_object.pose.bones if x.name == motion.bone_name)
-
-                    translation = mathutils.Matrix()
-                    if motion.positions_used_flag:
-                        translation = mathutils.Matrix.Translation(mathutils.Vector((
-                            cfp_file["positions_x"][motion.position_offset + frame] / utils.BONE_SCALE,
-                            cfp_file["positions_z"][motion.position_offset + frame] / utils.BONE_SCALE,
-                            cfp_file["positions_y"][motion.position_offset + frame] / utils.BONE_SCALE,
-                        )))
-
-                    rotation = mathutils.Matrix()
-                    if motion.rotations_used_flag:
-                        rotation = (mathutils.Quaternion((
-                            cfp_file["rotations_w"][motion.rotation_offset + frame],
-                            cfp_file["rotations_x"][motion.rotation_offset + frame],
-                            cfp_file["rotations_z"][motion.rotation_offset + frame],
-                            cfp_file["rotations_y"][motion.rotation_offset + frame],
-                        ))).normalized().to_matrix().to_4x4()
-
-                    parent_matrix = mathutils.Matrix()
-                    if bone.parent != None:
-                        parent_matrix = bone.parent.matrix @ utils.BONE_ROTATION_OFFSET.inverted()
-
-                    bone.matrix = (parent_matrix @ (translation @ rotation)) @ utils.BONE_ROTATION_OFFSET
-
-                    if motion.positions_used_flag:
-                        bone.keyframe_insert("location", frame=frame + 1)
-                    else:
-                        bone.location = (0.0, 0.0, 0.0)
-                    if motion.rotations_used_flag:
-                        bone.keyframe_insert("rotation_quaternion", frame=frame + 1)
-
-                for time_property_list in motion.time_property_lists:
-                    for time_property in time_property_list.time_properties:
-                        for event in time_property.events:
-                            event_string = "{} {} {}".format(motion.bone_name, event.name, event.value)
-                            frame = int(round(time_property.time / 33.3333333)) + 1
-
-                            markers = [x for x in action.pose_markers if x.frame == frame]
-
-                            if len(markers) == 0:
-                                marker = action.pose_markers.new(name=event_string)
-                                marker.frame = frame
-                            else:
-                                last_marker = action.pose_markers[-1]
-                                if len(last_marker.name) + 1 + len(event_string) <= 63: # room for null
-                                    last_marker.name = "{};{}".format(last_marker.name, event_string)
-                                else:
-                                    marker = action.pose_markers.new(name=event_string)
-                                    marker.frame = frame
-
-            track = armature_object.animation_data.nla_tracks.new(prev=None)
-            track.name = skill.animation_name
-            strip = track.strips.new(skill.skill_name, 1, action)
-            armature_object.animation_data.action = original_action
+    if import_animations:
+        for bcf_file_path, bcf_file in bcf_files:
+            for skill in bcf_file.skills:
+                import_skill(context, logger, bcf_file_path, file_list, skill)

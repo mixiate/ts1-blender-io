@@ -226,7 +226,7 @@ def export_files(context, file_path, mesh_format, compress_cfp):
     for armature in bpy.data.armatures:
         armature_object = bpy.data.objects[armature.name]
 
-        if armature_object.get("animation_data") is None:
+        if armature_object.animation_data is None:
             continue
 
         for track in armature_object.animation_data.nla_tracks:
@@ -242,12 +242,14 @@ def export_files(context, file_path, mesh_format, compress_cfp):
                 rotations_z = list()
                 rotations_w = list()
 
+                distance = strip.action.get("Distance", 0.0)
+
                 skill = bcf.Skill(
                     strip.action.name,
                     track.name,
                     math.floor((strip.action.frame_end) * 33.3333333),
-                    strip.action["distance"],
-                    1 if strip.action["distance"] != 0.0 else 0,
+                    distance,
+                    1 if distance != 0.0 else 0,
                     0,
                     0,
                     list(),
