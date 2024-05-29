@@ -433,6 +433,15 @@ def import_files(
             if skill.skill_name in bpy.data.actions:
                 continue
 
+            if not all(x in armature.bones for x in map(lambda x: x.bone_name, skill.motions)):
+                logger.info(
+                    "Could not apply animation {} to armature {}. The bones do not match.".format(
+                        skill.skill_name,
+                        armature.name
+                    )
+                )
+                continue
+
             armature_object.animation_data_create()
 
             original_action = armature_object.animation_data.action if armature_object.animation_data.action is not None else None
