@@ -51,7 +51,7 @@ def encode_value_delta(delta):
 def encode_values(values, compress):
     delta_table = create_delta_table()
 
-    encoded_bytes = bytes()
+    encoded_bytes = []
 
     values = iter(values)
     previous_value = next(values)
