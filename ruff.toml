@@ -1,7 +1,7 @@
 line-length = 120
 
 [lint]
-select = ["UP032", "PTH"]
+select = ["E4", "E7", "E9", "F", "UP032", "PTH"]
 
 [format]
 quote-style = "preserve"

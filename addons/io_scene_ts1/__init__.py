@@ -87,7 +87,6 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     def execute(self, context):
         import io
         import logging
-        import os
         import pathlib
         from . import import_ts1
 

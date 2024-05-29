@@ -1,7 +1,6 @@
 import bpy
 import copy
 import math
-import os
 
 
 from . import bcf
