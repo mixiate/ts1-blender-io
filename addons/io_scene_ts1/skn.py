@@ -1,5 +1,4 @@
 from . import bmf
-from . import utils
 
 
 def read_bones(file):

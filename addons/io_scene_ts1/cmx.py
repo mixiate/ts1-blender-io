@@ -1,5 +1,4 @@
 from . import bcf
-from . import utils
 
 
 def read_properties(file):

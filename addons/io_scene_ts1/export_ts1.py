@@ -1,8 +1,6 @@
-import bmesh
 import bpy
 import copy
 import math
-import mathutils
 import os
 
 
