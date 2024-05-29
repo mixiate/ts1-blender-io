@@ -115,7 +115,7 @@ def export_skin(context, directory, mesh_format, obj):
         normal_bone_matrix = bone_matrix.to_quaternion().to_matrix().to_4x4()
 
         for vertex_index, vertex in enumerate(new_vertices):
-            if not vertex[4] is None and vertex[4].group == vertex_group_index:
+            if vertex[4] is not None and vertex[4].group == vertex_group_index:
                 vertex_position = (bone_matrix @ vertex[0]) * utils.BONE_SCALE
                 vertex_normal = normal_bone_matrix @ vertex[1]
                 vertex_group_vertices.append(bmf.Vertex(vertex_position.xzy, vertex_normal.xzy))

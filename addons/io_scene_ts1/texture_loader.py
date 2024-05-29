@@ -102,13 +102,13 @@ def list_hand_texture_variants(skin_name, preferred_skin_color):
     split_skin_name = skin_name.split("-")
 
     sex = split_skin_name[1][1]
-    hand = split_skin_name[1][2]
+    hand_side = split_skin_name[1][2]
     position = split_skin_name[1][3]
 
     texture_names = list()
 
     for sex in ["u", sex.lower()]:
-        for side in ["a", "l", "r", "c"]:
+        for side in ["a", hand_side, "c"]:
             for skin_color in skin_colors:
                 texture_names.append(("h" + sex + side + position + skin_color).lower())
 
@@ -129,7 +129,6 @@ def list_nude_texture_variants(skin_name, preferred_skin_color):
     skin_type = split_skin_name[0]
     name = split_skin_name[1]
 
-    body_id = skin_type[1:4]
     sex = skin_type[1]
     weight = skin_type[2:5]
 
