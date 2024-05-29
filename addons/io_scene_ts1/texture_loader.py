@@ -101,20 +101,20 @@ def list_hand_texture_variants(skin_name, preferred_skin_color):
 
     split_skin_name = skin_name.split("-")
 
-    sex = split_skin_name[1][1]
+    hand_sex = split_skin_name[1][1]
     hand_side = split_skin_name[1][2]
-    position = split_skin_name[1][3]
+    hand_position = split_skin_name[1][3]
 
     texture_names = []
 
-    for sex in ["u", sex.lower()]:
+    for sex in ["u", hand_sex.lower()]:
         for side in ["a", hand_side, "c"]:
             for skin_color in skin_colors:
-                texture_names.append(("h" + sex + side + position + skin_color).lower())
+                texture_names.append(("h" + sex + side + hand_position + skin_color).lower())
 
-            texture_names.append(("h" + sex + side + position).lower())
-            texture_names.append(("g" + sex + side + position).lower())
-            texture_names.append(("_g" + sex + side + position).lower())
+            texture_names.append(("h" + sex + side + hand_position).lower())
+            texture_names.append(("g" + sex + side + hand_position).lower())
+            texture_names.append(("_g" + sex + side + hand_position).lower())
 
     return texture_names
 
