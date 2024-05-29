@@ -20,12 +20,12 @@ def export_skin(context, directory, mesh_format, obj):
     mesh = obj.data
     uv_layer = mesh.uv_layers[0]
 
-    new_vertices = list()
-    new_faces = list()
+    new_vertices = []
+    new_faces = []
 
     # create unique vertices and faces
     for triangle in mesh.loop_triangles:
-        face = list()
+        face = []
         for loop_index in triangle.loops:
             vertex_index = mesh.loops[loop_index].vertex_index
 
@@ -51,29 +51,27 @@ def export_skin(context, directory, mesh_format, obj):
 
         new_faces.append(face)
 
-    bones = list()
-    bone_bindings = list()
-    blends = list()
-    vertices = list()
-    uvs = list()
-    faces = list()
+    bones = []
+    bone_bindings = []
+    blends = []
+    vertices = []
+    uvs = []
+    faces = []
 
     armature = obj.parent.data
 
-    vertex_index_map = list()
+    vertex_index_map = []
 
     # create main vertices
     for vertex_group in obj.vertex_groups:
-        vertex_group_vertices = list()
-        vertex_group_uvs = list()
+        vertex_group_vertices = []
+        vertex_group_uvs = []
 
         armature_bone = armature.bones.get(vertex_group.name)
         if armature_bone is None:
             raise ExportException(
                 "Vertex group {} in {} is not a bone in armature {}".format(
-                    vertex_group.name,
-                    obj.name,
-                    obj.parent.name
+                    vertex_group.name, obj.name, obj.parent.name
                 )
             )
 
@@ -106,9 +104,9 @@ def export_skin(context, directory, mesh_format, obj):
         uvs += vertex_group_uvs
 
     # create blended vertices
-    blended_vertices = list()
+    blended_vertices = []
     for vertex_group_index, vertex_group in enumerate(obj.vertex_groups):
-        vertex_group_vertices = list()
+        vertex_group_vertices = []
 
         armature_bone = armature.bones[vertex_group.name]
         bone_matrix = (armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET.inverted()).inverted()
@@ -165,7 +163,7 @@ def export_skin(context, directory, mesh_format, obj):
 
 
 def export_suit(context, directory, mesh_format, suit_name, suit_type, objects):
-    skins = list()
+    skins = []
     for obj in objects:
         bone_name = obj.get("Bone Name")
         if bone_name is None:
@@ -183,12 +181,14 @@ def export_suit(context, directory, mesh_format, suit_name, suit_type, objects):
         if not obj.parent or obj.parent.type != 'ARMATURE':
             raise ExportException("{} object is not parented to an armature".format(obj.name))
 
-        skins.append(bcf.Skin(
-            bone_name,
-            obj.name,
-            obj.get("Censor Flags", 0),
-            0,
-        ))
+        skins.append(
+            bcf.Skin(
+                bone_name,
+                obj.name,
+                obj.get("Censor Flags", 0),
+                0,
+            )
+        )
 
         export_skin(context, directory, mesh_format, obj)
 
@@ -201,9 +201,9 @@ def export_suit(context, directory, mesh_format, suit_name, suit_type, objects):
 
 
 def export_files(context, file_path, mesh_format, compress_cfp):
-    skeletons = list()
-    suits = list()
-    skills = list()
+    skeletons = []
+    suits = []
+    skills = []
 
     for collection in context.scene.collection.children:
         objects = [obj for obj in collection.objects if obj.type == 'MESH']
@@ -231,14 +231,14 @@ def export_files(context, file_path, mesh_format, compress_cfp):
             for strip in track.strips:
                 armature_object.animation_data.action = strip.action
 
-                positions_x = list()
-                positions_y = list()
-                positions_z = list()
+                positions_x = []
+                positions_y = []
+                positions_z = []
 
-                rotations_x = list()
-                rotations_y = list()
-                rotations_z = list()
-                rotations_w = list()
+                rotations_x = []
+                rotations_y = []
+                rotations_z = []
+                rotations_w = []
 
                 distance = strip.action.get("Distance", 0.0)
 
@@ -250,7 +250,7 @@ def export_files(context, file_path, mesh_format, compress_cfp):
                     1 if distance != 0.0 else 0,
                     0,
                     0,
-                    list(),
+                    [],
                 )
 
                 for bone in armature_object.pose.bones:
@@ -262,8 +262,8 @@ def export_files(context, file_path, mesh_format, compress_cfp):
                         0,
                         0,
                         0,
-                        list(),
-                        list(),
+                        [],
+                        [],
                     )
 
                     for frame in range(int(strip.action.frame_start), int(strip.action.frame_end) + 1):
@@ -290,22 +290,24 @@ def export_files(context, file_path, mesh_format, compress_cfp):
                                 position = utils.BONE_ROTATION_OFFSET @ position
                             position *= utils.BONE_SCALE
                             positions_x.append(position.x)
-                            positions_y.append(position.z) # swap y and z
+                            positions_y.append(position.z)  # swap y and z
                             positions_z.append(position.y)
                         if motion.rotations_used_flag:
                             rotation = bone.matrix @ utils.BONE_ROTATION_OFFSET.inverted()
                             if bone.parent is not None:
-                                rotation = (bone.parent.matrix @ utils.BONE_ROTATION_OFFSET.inverted()).inverted() @ rotation
+                                rotation = (
+                                    bone.parent.matrix @ utils.BONE_ROTATION_OFFSET.inverted()
+                                ).inverted() @ rotation
                             rotation = rotation.to_quaternion()
                             rotations_x.append(rotation.x)
-                            rotations_y.append(rotation.z) # swap y and z
+                            rotations_y.append(rotation.z)  # swap y and z
                             rotations_z.append(rotation.y)
                             rotations_w.append(rotation.w)
 
                     bpy.context.scene.frame_set(original_current_frame)
 
                     # there's never more than one time property list in official animations
-                    time_property_list = bcf.TimePropertyList(list())
+                    time_property_list = bcf.TimePropertyList([])
 
                     for frame in range(int(strip.action.frame_start), int(strip.action.frame_end) + 1):
                         markers = [x for x in strip.action.pose_markers if x.frame == frame]
@@ -313,7 +315,7 @@ def export_files(context, file_path, mesh_format, compress_cfp):
                             continue
 
                         time = int(round((frame - int(strip.action.frame_start)) * 33.33333))
-                        events = list()
+                        events = []
 
                         for marker in markers:
                             event_strings = marker.name.split(";")
@@ -321,10 +323,12 @@ def export_files(context, file_path, mesh_format, compress_cfp):
                                 event_components = event_string.split()
                                 if not event_components[0] == bone.name:
                                     continue
-                                events.append(bcf.Property(
-                                    event_components[1],
-                                    event_components[2],
-                                ))
+                                events.append(
+                                    bcf.Property(
+                                        event_components[1],
+                                        event_components[2],
+                                    )
+                                )
 
                         if len(events) == 0:
                             continue
@@ -368,14 +372,10 @@ def export_files(context, file_path, mesh_format, compress_cfp):
                     rotations_x,
                     rotations_y,
                     rotations_z,
-                    rotations_w
+                    rotations_w,
                 )
 
-    bcf_desc = bcf.Bcf(
-        skeletons,
-        suits,
-        skills
-    )
+    bcf_desc = bcf.Bcf(skeletons, suits, skills)
 
     match os.path.splitext(file_path)[1]:
         case ".cmx":

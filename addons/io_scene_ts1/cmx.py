@@ -3,7 +3,7 @@ from . import bcf
 
 def read_properties(file):
     count = int(file.readline())
-    properties = list()
+    properties = []
     for i in range(count):
         properties.append(
             bcf.Property(
@@ -23,7 +23,7 @@ def write_properties(file, properties):
 
 def read_property_lists(file):
     count = int(file.readline())
-    property_lists = list()
+    property_lists = []
     for i in range(count):
         property_lists.append(
             bcf.PropertyList(
@@ -41,7 +41,7 @@ def write_property_lists(file, property_lists):
 
 def read_time_properties(file):
     count = int(file.readline())
-    time_properties = list()
+    time_properties = []
     for i in range(count):
         time_properties.append(
             bcf.TimeProperty(
@@ -61,7 +61,7 @@ def write_time_properties(file, time_properties):
 
 def read_time_property_lists(file):
     count = int(file.readline())
-    time_property_lists = list()
+    time_property_lists = []
     for i in range(count):
         time_property_lists.append(
             bcf.TimePropertyList(
@@ -79,7 +79,7 @@ def write_time_property_lists(file, time_property_lists):
 
 def read_motions(file):
     count = int(file.readline())
-    motions = list()
+    motions = []
     for i in range(count):
         motions.append(
             bcf.Motion(
@@ -113,7 +113,7 @@ def write_motions(file, motions):
 
 def read_skills(file):
     count = int(file.readline())
-    skills = list()
+    skills = []
     for i in range(count):
         skills.append(
             bcf.Skill(
@@ -145,7 +145,7 @@ def write_skills(file, skills):
 
 def read_skins(file):
     count = int(file.readline())
-    skins = list()
+    skins = []
     for i in range(count):
         skins.append(
             bcf.Skin(
@@ -169,7 +169,7 @@ def write_skins(file, skins):
 
 def read_suits(file):
     count = int(file.readline())
-    suits = list()
+    suits = []
     for i in range(count):
         suits.append(
             bcf.Suit(
@@ -193,7 +193,7 @@ def write_suits(file, suits):
 
 def read_bones(file):
     count = int(file.readline())
-    bones = list()
+    bones = []
     for i in range(count):
         name = file.readline().strip()
         parent = file.readline().strip()
@@ -233,10 +233,10 @@ def write_bones(file, bones):
         file.write(bone.name + "\n")
         file.write(bone.parent + "\n")
         write_property_lists(file, bone.property_lists)
-        file.write("| {} {} {} |\n".format(bone.position_x, bone.position_y, bone.position_z)),
-        file.write("| {} {} {} {} |\n".format(bone.rotation_x, bone.rotation_y, bone.rotation_z, bone.rotation_w)),
-        file.write(str(bone.translate) + "\n"),
-        file.write(str(bone.rotate) + "\n"),
+        file.write("| {} {} {} |\n".format(bone.position_x, bone.position_y, bone.position_z))
+        file.write("| {} {} {} {} |\n".format(bone.rotation_x, bone.rotation_y, bone.rotation_z, bone.rotation_w))
+        file.write(str(bone.translate) + "\n")
+        file.write(str(bone.rotate) + "\n")
         file.write(str(bone.blend_suits) + "\n")
         file.write(str(bone.wiggle_value) + "\n")
         file.write(str(bone.wiggle_power) + "\n")
@@ -244,7 +244,7 @@ def write_bones(file, bones):
 
 def read_skeletons(file):
     count = int(file.readline())
-    skeletons = list()
+    skeletons = []
     for i in range(count):
         skeletons.append(
             bcf.Skeleton(

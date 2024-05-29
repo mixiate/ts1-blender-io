@@ -36,13 +36,15 @@ def import_skeleton(context, skeleton):
         armature_bone.head = mathutils.Vector((0.0, 0.0, 0.0))
         armature_bone.tail = mathutils.Vector((0.1, 0.0, 0.0))
 
-        rotation = mathutils.Quaternion(
-            (bone.rotation_w, bone.rotation_x, bone.rotation_z, bone.rotation_y)
-        ).to_matrix().to_4x4()
+        rotation = (
+            mathutils.Quaternion((bone.rotation_w, bone.rotation_x, bone.rotation_z, bone.rotation_y))
+            .to_matrix()
+            .to_4x4()
+        )
 
-        translation = mathutils.Matrix.Translation(mathutils.Vector(
-            (bone.position_x, bone.position_z, bone.position_y)
-        ) / utils.BONE_SCALE)
+        translation = mathutils.Matrix.Translation(
+            mathutils.Vector((bone.position_x, bone.position_z, bone.position_y)) / utils.BONE_SCALE
+        )
 
         armature_bone.matrix = (parent_matrix @ (translation @ rotation)) @ utils.BONE_ROTATION_OFFSET
 
@@ -206,11 +208,11 @@ def import_suit(
         bmf_file_path = os.path.join(bcf_directory, skin.skin_name + ".bmf")
         try:
             bmf_file = bmf.read_file(bmf_file_path)
-        except:
+        except Exception as _:
             skn_file_path = os.path.join(bcf_directory, skin.skin_name + ".skn")
             try:
                 bmf_file = skn.read_file(skn_file_path)
-            except:
+            except Exception as _:
                 logger.info(
                     "Could not load mesh {} used by {}.".format(
                         bmf_file_path,
@@ -221,10 +223,7 @@ def import_suit(
 
         if not all(bone in armature.bones for bone in bmf_file.bones):
             logger.info(
-                "Could not apply mesh {} to armature {}. The bones do not match.".format(
-                    skin.skin_name,
-                    armature.name
-                )
+                "Could not apply mesh {} to armature {}. The bones do not match.".format(skin.skin_name, armature.name)
             )
             continue
 
@@ -244,7 +243,7 @@ def import_suit(
 
         b_mesh = bmesh.new()
 
-        normals = list()
+        normals = []
         deform_layer = b_mesh.verts.layers.deform.verify()
 
         for bone_binding in bmf_file.bone_bindings:
@@ -292,7 +291,7 @@ def import_suit(
         for face in bmf_file.faces:
             try:
                 b_mesh.faces.new((b_mesh.verts[face[2]], b_mesh.verts[face[1]], b_mesh.verts[face[0]]))
-            except:
+            except Exception as _:
                 invalid_face_count += 1
         if invalid_face_count > 0:
             logger.info("Skipped {} invalid faces in mesh {}".format(invalid_face_count, skin.skin_name))
@@ -321,7 +320,7 @@ def import_suit(
             logger.info("Could not find a texture for mesh {}".format(skin.skin_name))
 
         if armature_object_map.get(armature.name) is None:
-            armature_object_map[armature.name] = list()
+            armature_object_map[armature.name] = []
 
         armature_object_map[armature.name] += [obj.name]
 
@@ -342,7 +341,7 @@ def import_skill(context, logger, bcf_file_path, file_list, skill):
     cfp_file_path = os.path.join(os.path.dirname(bcf_file_path), skill.animation_name + ".cfp")
     try:
         cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
-    except:
+    except Exception as _:
         logger.info("Could not load cfp file {}".format(cfp_file_path))
         return
 
@@ -360,8 +359,7 @@ def import_skill(context, logger, bcf_file_path, file_list, skill):
     if not all(x in armature.bones for x in map(lambda x: x.bone_name, skill.motions)):
         logger.info(
             "Could not apply animation {} to armature {}. The bones do not match.".format(
-                skill.skill_name,
-                armature.name
+                skill.skill_name, armature.name
             )
         )
         return
@@ -384,31 +382,41 @@ def import_skill(context, logger, bcf_file_path, file_list, skill):
         if bone.parent:
             parent_bone_matrix = bone.parent.bone.matrix_local @ utils.BONE_ROTATION_OFFSET.inverted()
 
-        positions_x = list()
-        positions_y = list()
-        positions_z = list()
-        rotations_w = list()
-        rotations_x = list()
-        rotations_y = list()
-        rotations_z = list()
+        positions_x = []
+        positions_y = []
+        positions_z = []
+        rotations_w = []
+        rotations_x = []
+        rotations_y = []
+        rotations_z = []
 
         for frame in range(motion.frame_count):
             translation = mathutils.Matrix()
             if motion.positions_used_flag:
-                translation = mathutils.Matrix.Translation(mathutils.Vector((
-                    cfp_file.positions_x[motion.position_offset + frame] / utils.BONE_SCALE,
-                    cfp_file.positions_z[motion.position_offset + frame] / utils.BONE_SCALE, # swap y and z
-                    cfp_file.positions_y[motion.position_offset + frame] / utils.BONE_SCALE,
-                )))
+                translation = mathutils.Matrix.Translation(
+                    mathutils.Vector(
+                        (
+                            cfp_file.positions_x[motion.position_offset + frame] / utils.BONE_SCALE,
+                            cfp_file.positions_z[motion.position_offset + frame] / utils.BONE_SCALE,  # swap y and z
+                            cfp_file.positions_y[motion.position_offset + frame] / utils.BONE_SCALE,
+                        )
+                    )
+                )
 
             rotation = mathutils.Matrix()
             if motion.rotations_used_flag:
-                rotation = mathutils.Quaternion((
-                    cfp_file.rotations_w[motion.rotation_offset + frame],
-                    cfp_file.rotations_x[motion.rotation_offset + frame],
-                    cfp_file.rotations_z[motion.rotation_offset + frame], # swap y and z
-                    cfp_file.rotations_y[motion.rotation_offset + frame],
-                )).to_matrix().to_4x4()
+                rotation = (
+                    mathutils.Quaternion(
+                        (
+                            cfp_file.rotations_w[motion.rotation_offset + frame],
+                            cfp_file.rotations_x[motion.rotation_offset + frame],
+                            cfp_file.rotations_z[motion.rotation_offset + frame],  # swap y and z
+                            cfp_file.rotations_y[motion.rotation_offset + frame],
+                        )
+                    )
+                    .to_matrix()
+                    .to_4x4()
+                )
 
             bone_matrix = parent_bone_matrix @ (translation @ rotation)
             bone_matrix = bone.bone.convert_local_to_pose(
@@ -423,7 +431,6 @@ def import_skill(context, logger, bcf_file_path, file_list, skill):
                 positions_x += (float(frame + 1), translation.x)
                 positions_y += (float(frame + 1), translation.y)
                 positions_z += (float(frame + 1), translation.z)
-
 
             if motion.rotations_used_flag:
                 rotation = bone_matrix.to_quaternion()
@@ -459,7 +466,7 @@ def import_skill(context, logger, bcf_file_path, file_list, skill):
                         marker.frame = frame
                     else:
                         last_marker = action.pose_markers[-1]
-                        if len(last_marker.name) + 1 + len(event_string) <= 63: # room for null
+                        if len(last_marker.name) + 1 + len(event_string) <= 63:  # room for null
                             last_marker.name = "{};{}".format(last_marker.name, event_string)
                         else:
                             marker = action.pose_markers.new(name=event_string)
@@ -496,9 +503,9 @@ def import_files(
     file_list = list(map(lambda x: str(x), pathlib.Path(file_search_directory).rglob("*")))
 
     texture_file_list = [
-        file_name for file_name in file_list
-        if os.path.splitext(file_name)[1].lower() == ".bmp" \
-        or os.path.splitext(file_name)[1].lower() == ".tga"
+        file_name
+        for file_name in file_list
+        if os.path.splitext(file_name)[1].lower() == ".bmp" or os.path.splitext(file_name)[1].lower() == ".tga"
     ]
 
     if import_skeletons:

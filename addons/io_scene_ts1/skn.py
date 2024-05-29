@@ -3,7 +3,7 @@ from . import bmf
 
 def read_bones(file):
     count = int(file.readline())
-    bones = list()
+    bones = []
     for i in range(count):
         bones.append(file.readline().strip())
     return bones
@@ -17,7 +17,7 @@ def write_bones(file, bones):
 
 def read_faces(file):
     count = int(file.readline())
-    faces = list()
+    faces = []
     for i in range(count):
         values = file.readline().split(" ")
         faces.append((int(values[0]), int(values[1]), int(values[2])))
@@ -32,7 +32,7 @@ def write_faces(file, faces):
 
 def read_bone_bindings(file):
     count = int(file.readline())
-    bone_bindings = list()
+    bone_bindings = []
     for i in range(count):
         values = file.readline().split(" ")
         bone_bindings.append(
@@ -59,7 +59,7 @@ def write_bone_bindings(file, bone_bindings):
 
 def read_uvs(file):
     count = int(file.readline())
-    uvs = list()
+    uvs = []
     for i in range(count):
         values = file.readline().split(" ")
         uvs.append((float(values[0]), float(values[1])))
@@ -74,7 +74,7 @@ def write_uvs(file, uvs):
 
 def read_blends(file):
     count = int(file.readline())
-    blends = list()
+    blends = []
     for i in range(count):
         values = file.readline().split(" ")
         blends.append(
@@ -94,7 +94,7 @@ def write_blends(file, blends):
 
 def read_vertices(file):
     count = int(file.readline())
-    vertices = list()
+    vertices = []
     for i in range(count):
         values = file.readline().split(" ")
         vertices.append(

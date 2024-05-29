@@ -16,13 +16,14 @@ bl_info = {
 if "bpy" in locals():
     import sys
     import importlib
+
     for name in tuple(sys.modules):
         if name.startswith(__name__ + "."):
             importlib.reload(sys.modules[name])
 
 
-import bpy
-import bpy_extras
+import bpy  # noqa: E402
+import bpy_extras  # noqa: E402
 
 
 class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
@@ -114,7 +115,7 @@ class ImportTS1(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             self.import_animations,
             self.cleanup_meshes,
             self.fix_textures,
-            self.skin_color
+            self.skin_color,
         )
 
         log_output = log_stream.getvalue()

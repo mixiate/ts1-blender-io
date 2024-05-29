@@ -6,7 +6,7 @@ from . import utils
 
 def read_bones(file):
     count = struct.unpack('<I', file.read(4))[0]
-    bones = list()
+    bones = []
     for i in range(count):
         bones.append(utils.read_string(file))
     return bones
@@ -20,7 +20,7 @@ def write_bones(file, bones):
 
 def read_faces(file):
     count = struct.unpack('<I', file.read(4))[0]
-    faces = list()
+    faces = []
     for i in range(count):
         faces.append(struct.unpack('<3I', file.read(4 * 3)))
     return faces
@@ -43,7 +43,7 @@ class BoneBinding:
 
 def read_bone_bindings(file):
     count = struct.unpack('<I', file.read(4))[0]
-    bone_bindings = list()
+    bone_bindings = []
     for i in range(count):
         bone_bindings.append(
             BoneBinding(
@@ -69,7 +69,7 @@ def write_bone_bindings(file, bone_bindings):
 
 def read_uvs(file):
     count = struct.unpack('<I', file.read(4))[0]
-    uvs = list()
+    uvs = []
     for i in range(count):
         uvs.append(struct.unpack('<2f', file.read(4 * 2)))
     return uvs
@@ -89,7 +89,7 @@ class Blend:
 
 def read_blends(file):
     count = struct.unpack('<I', file.read(4))[0]
-    blends = list()
+    blends = []
     for i in range(count):
         blends.append(
             Blend(
@@ -115,7 +115,7 @@ class Vertex:
 
 def read_vertices(file):
     count = struct.unpack('<I', file.read(4))[0]
-    vertices = list()
+    vertices = []
     for i in range(count):
         vertices.append(
             Vertex(
@@ -159,14 +159,14 @@ def read_bmf(file):
 
 
 def write_bmf(file, bmf):
-    utils.write_string(file, bmf.skin_name),
-    utils.write_string(file, bmf.default_texture_name),
-    write_bones(file, bmf.bones),
-    write_faces(file, bmf.faces),
-    write_bone_bindings(file, bmf.bone_bindings),
-    write_uvs(file, bmf.uvs),
-    write_blends(file, bmf.blends),
-    write_vertices(file, bmf.vertices),
+    utils.write_string(file, bmf.skin_name)
+    utils.write_string(file, bmf.default_texture_name)
+    write_bones(file, bmf.bones)
+    write_faces(file, bmf.faces)
+    write_bone_bindings(file, bmf.bone_bindings)
+    write_uvs(file, bmf.uvs)
+    write_blends(file, bmf.blends)
+    write_vertices(file, bmf.vertices)
 
 
 def read_file(file_path):
@@ -177,7 +177,7 @@ def read_file(file_path):
     try:
         file.read(1)
         raise Exception("data left unread at end of " + file_path)
-    except:
+    except Exception as _:
         pass
 
     file.close()

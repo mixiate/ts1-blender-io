@@ -13,7 +13,7 @@ class Property:
 
 def read_properties(file):
     count = struct.unpack('<I', file.read(4))[0]
-    properties = list()
+    properties = []
     for i in range(count):
         properties.append(
             Property(
@@ -38,7 +38,7 @@ class PropertyList:
 
 def read_property_lists(file):
     count = struct.unpack('<I', file.read(4))[0]
-    property_lists = list()
+    property_lists = []
     for i in range(count):
         property_lists.append(
             PropertyList(
@@ -62,7 +62,7 @@ class TimeProperty:
 
 def read_time_properties(file):
     count = struct.unpack('<I', file.read(4))[0]
-    time_properties = list()
+    time_properties = []
     for i in range(count):
         time_properties.append(
             TimeProperty(
@@ -87,7 +87,7 @@ class TimePropertyList:
 
 def read_time_property_lists(file):
     count = struct.unpack('<I', file.read(4))[0]
-    time_property_lists = list()
+    time_property_lists = []
     for i in range(count):
         time_property_lists.append(
             TimePropertyList(
@@ -118,7 +118,7 @@ class Motion:
 
 def read_motions(file):
     count = struct.unpack('<I', file.read(4))[0]
-    motions = list()
+    motions = []
     for i in range(count):
         motions.append(
             Motion(
@@ -164,7 +164,7 @@ class Skill:
 
 def read_skills(file):
     count = struct.unpack('<I', file.read(4))[0]
-    skills = list()
+    skills = []
     for i in range(count):
         skills.append(
             Skill(
@@ -204,7 +204,7 @@ class Skin:
 
 def read_skins(file):
     count = struct.unpack('<I', file.read(4))[0]
-    skins = list()
+    skins = []
     for i in range(count):
         skins.append(
             Skin(
@@ -236,7 +236,7 @@ class Suit:
 
 def read_suits(file):
     count = struct.unpack('<I', file.read(4))[0]
-    suits = list()
+    suits = []
     for i in range(count):
         suits.append(
             Suit(
@@ -279,7 +279,7 @@ class Bone:
 
 def read_bones(file):
     count = struct.unpack('<I', file.read(4))[0]
-    bones = list()
+    bones = []
     for i in range(count):
         bones.append(
             Bone(
@@ -331,7 +331,7 @@ class Skeleton:
 
 def read_skeletons(file):
     count = struct.unpack('<I', file.read(4))[0]
-    skeletons = list()
+    skeletons = []
     for i in range(count):
         skeletons.append(
             Skeleton(
@@ -377,7 +377,7 @@ def read_file(file_path):
         try:
             file.read(1)
             raise Exception("data left unread at end of " + file_path)
-        except:
+        except Exception as _:
             pass
 
         return bcf

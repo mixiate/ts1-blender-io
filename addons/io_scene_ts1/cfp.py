@@ -8,20 +8,20 @@ def decode_delta(delta):
 
 
 def decode_values(file, count):
-    values = list()
+    values = []
 
     previous_value = 0.0
 
     while len(values) < count:
         compression_type = struct.unpack('<B', file.read(1))[0]
 
-        if compression_type == 0xFF: # full 4 byte float
+        if compression_type == 0xFF:  # full 4 byte float
             values.append(struct.unpack('<f', file.read(4))[0])
-        elif compression_type == 0xFE: # repeat previous
+        elif compression_type == 0xFE:  # repeat previous
             repeat_count = struct.unpack('<H', file.read(2))[0]
             for i in range(repeat_count + 1):
                 values.append(previous_value)
-        else: # delta
+        else:  # delta
             values.append(previous_value + decode_delta(compression_type))
 
         previous_value = values[-1]
@@ -30,7 +30,7 @@ def decode_values(file, count):
 
 
 def create_delta_table():
-    delta_table = list()
+    delta_table = []
     for i in range(253):
         delta_table.append(decode_delta(i))
     return delta_table
@@ -116,18 +116,18 @@ def read_file(file_path, position_count, rotation_count):
     try:
         file.read(1)
         raise Exception("data left unread at end of cfp file")
-    except:
+    except Exception as _:
         pass
 
     positions_x = decoded_values[:position_count]
-    positions_y = decoded_values[position_count:position_count * 2]
-    positions_z = decoded_values[position_count * 2:position_count * 3]
+    positions_y = decoded_values[position_count : position_count * 2]
+    positions_z = decoded_values[position_count * 2 : position_count * 3]
 
     rotation_offset = position_count * 3
-    rotations_x = decoded_values[rotation_offset:rotation_offset + rotation_count]
-    rotations_y = decoded_values[rotation_offset + rotation_count:rotation_offset + (rotation_count * 2)]
-    rotations_z = decoded_values[rotation_offset + (rotation_count * 2):rotation_offset + (rotation_count * 3)]
-    rotations_w = decoded_values[rotation_offset + (rotation_count * 3):rotation_offset + (rotation_count * 4)]
+    rotations_x = decoded_values[rotation_offset : rotation_offset + rotation_count]
+    rotations_y = decoded_values[rotation_offset + rotation_count : rotation_offset + (rotation_count * 2)]
+    rotations_z = decoded_values[rotation_offset + (rotation_count * 2) : rotation_offset + (rotation_count * 3)]
+    rotations_w = decoded_values[rotation_offset + (rotation_count * 3) : rotation_offset + (rotation_count * 4)]
 
     return Cfp(
         positions_x,
@@ -141,17 +141,10 @@ def read_file(file_path, position_count, rotation_count):
 
 
 def write_file(
-    file_path,
-    compress,
-    positions_x,
-    positions_y,
-    positions_z,
-    rotations_x,
-    rotations_y,
-    rotations_z,
-    rotations_w
+    file_path, compress, positions_x, positions_y, positions_z, rotations_x, rotations_y, rotations_z, rotations_w
 ):
     import itertools
+
     values = itertools.chain(positions_x, positions_y)
     values = itertools.chain(values, positions_z)
     values = itertools.chain(values, rotations_x)
