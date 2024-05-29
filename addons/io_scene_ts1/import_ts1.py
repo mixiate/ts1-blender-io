@@ -202,7 +202,7 @@ def import_suit(
         skeleton_names = get_skin_type_skeleton_names(skin.skin_name)
         armature = find_or_import_skeleton(context, file_list, skeleton_names)
         if armature is None:
-            logger.info("Could not find or import {} skeleton used by {} .".format(skeleton_names[0], suit.name))
+            logger.info(f"Could not find or import {skeleton_names[0]} skeleton used by {suit.name} .")
             continue
 
         bmf_file_path = os.path.join(bcf_directory, skin.skin_name + ".bmf")
@@ -214,16 +214,13 @@ def import_suit(
                 bmf_file = skn.read_file(skn_file_path)
             except Exception as _:
                 logger.info(
-                    "Could not load mesh {} used by {}.".format(
-                        bmf_file_path,
-                        suit.name,
-                    )
+                    f"Could not load mesh {bmf_file_path} used by {suit.name}."
                 )
                 continue
 
         if not all(bone in armature.bones for bone in bmf_file.bones):
             logger.info(
-                "Could not apply mesh {} to armature {}. The bones do not match.".format(skin.skin_name, armature.name)
+                f"Could not apply mesh {skin.skin_name} to armature {armature.name}. The bones do not match."
             )
             continue
 
@@ -294,7 +291,7 @@ def import_suit(
             except Exception as _:
                 invalid_face_count += 1
         if invalid_face_count > 0:
-            logger.info("Skipped {} invalid faces in mesh {}".format(invalid_face_count, skin.skin_name))
+            logger.info(f"Skipped {invalid_face_count} invalid faces in mesh {skin.skin_name}")
 
         uv_layer = b_mesh.loops.layers.uv.verify()
         for face in b_mesh.faces:
@@ -317,7 +314,7 @@ def import_suit(
         )
 
         if not obj.data.materials:
-            logger.info("Could not find a texture for mesh {}".format(skin.skin_name))
+            logger.info(f"Could not find a texture for mesh {skin.skin_name}")
 
         if armature_object_map.get(armature.name) is None:
             armature_object_map[armature.name] = []
@@ -342,13 +339,13 @@ def import_skill(context, logger, bcf_file_path, file_list, skill):
     try:
         cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
     except Exception as _:
-        logger.info("Could not load cfp file {}".format(cfp_file_path))
+        logger.info(f"Could not load cfp file {cfp_file_path}")
         return
 
     skeleton_name = get_skill_type_skeleton_name(skill.skill_name)
     armature = find_or_import_skeleton(context, file_list, skeleton_name)
     if armature is None:
-        logger.info("Could not find or import {} skeleton used by {}".format(skeleton_name, skill.skill_name))
+        logger.info(f"Could not find or import {skeleton_name} skeleton used by {skill.skill_name}")
         return
 
     armature_object = bpy.data.objects[armature.name]
@@ -358,9 +355,7 @@ def import_skill(context, logger, bcf_file_path, file_list, skill):
 
     if not all(x in armature.bones for x in map(lambda x: x.bone_name, skill.motions)):
         logger.info(
-            "Could not apply animation {} to armature {}. The bones do not match.".format(
-                skill.skill_name, armature.name
-            )
+            f"Could not apply animation {skill.skill_name} to armature {armature.name}. The bones do not match."
         )
         return
 
@@ -456,7 +451,7 @@ def import_skill(context, logger, bcf_file_path, file_list, skill):
         for time_property_list in motion.time_property_lists:
             for time_property in time_property_list.time_properties:
                 for event in time_property.events:
-                    event_string = "{} {} {}".format(motion.bone_name, event.name, event.value)
+                    event_string = f"{motion.bone_name} {event.name} {event.value}"
                     frame = int(round(time_property.time / 33.3333333)) + 1
 
                     markers = [x for x in action.pose_markers if x.frame == frame]
@@ -467,7 +462,7 @@ def import_skill(context, logger, bcf_file_path, file_list, skill):
                     else:
                         last_marker = action.pose_markers[-1]
                         if len(last_marker.name) + 1 + len(event_string) <= 63:  # room for null
-                            last_marker.name = "{};{}".format(last_marker.name, event_string)
+                            last_marker.name = f"{last_marker.name};{event_string}"
                         else:
                             marker = action.pose_markers.new(name=event_string)
                             marker.frame = frame

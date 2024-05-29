@@ -50,11 +50,11 @@ def read_bone_bindings(file):
 def write_bone_bindings(file, bone_bindings):
     file.write(str(len(bone_bindings)) + "\n")
     for bone_binding in bone_bindings:
-        file.write("{}\n".format(bone_binding.bone_index))
-        file.write("{}\n".format(bone_binding.vertex_index))
-        file.write("{}\n".format(bone_binding.vertex_count))
-        file.write("{}\n".format(bone_binding.blended_vertex_index))
-        file.write("{}\n".format(bone_binding.blended_vertex_count))
+        file.write(f"{bone_binding.bone_index}\n")
+        file.write(f"{bone_binding.vertex_index}\n")
+        file.write(f"{bone_binding.vertex_count}\n")
+        file.write(f"{bone_binding.blended_vertex_index}\n")
+        file.write(f"{bone_binding.blended_vertex_count}\n")
 
 
 def read_uvs(file):
@@ -89,7 +89,7 @@ def read_blends(file):
 def write_blends(file, blends):
     file.write(str(len(blends)) + "\n")
     for blend in blends:
-        file.write("{} {}\n".format(blend.vertex_index, blend.weight))
+        file.write(f"{blend.vertex_index} {blend.weight}\n")
 
 
 def read_vertices(file):

@@ -1,4 +1,7 @@
 line-length = 120
 
+[lint]
+select = ["UP032"]
+
 [format]
 quote-style = "preserve"

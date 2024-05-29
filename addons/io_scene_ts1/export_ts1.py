@@ -30,10 +30,10 @@ def export_skin(context, directory, mesh_format, obj):
             vertex_index = mesh.loops[loop_index].vertex_index
 
             if len(mesh.vertices[vertex_index].groups) == 0:
-                raise ExportException("{} mesh has vertices that are not in a vertex group".format(obj.name))
+                raise ExportException(f"{obj.name} mesh has vertices that are not in a vertex group")
 
             if len(mesh.vertices[vertex_index].groups) > 2:
-                raise ExportException("{} mesh has vertices in more than 2 vertex groups".format(obj.name))
+                raise ExportException(f"{obj.name} mesh has vertices in more than 2 vertex groups")
 
             vertex = (
                 mesh.vertices[vertex_index].co,
@@ -70,9 +70,7 @@ def export_skin(context, directory, mesh_format, obj):
         armature_bone = armature.bones.get(vertex_group.name)
         if armature_bone is None:
             raise ExportException(
-                "Vertex group {} in {} is not a bone in armature {}".format(
-                    vertex_group.name, obj.name, obj.parent.name
-                )
+                f"Vertex group {vertex_group.name} in {obj.name} is not a bone in armature {obj.parent.name}"
             )
 
         bone_matrix = (armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET.inverted()).inverted()
@@ -159,7 +157,7 @@ def export_skin(context, directory, mesh_format, obj):
         case 'skn':
             skn.write_file(os.path.join(directory, obj.name) + ".skn", bmf_file)
         case _:
-            raise ExportException("Unkown mesh format {}".format(mesh_format))
+            raise ExportException(f"Unkown mesh format {mesh_format}")
 
 
 def export_suit(context, directory, mesh_format, suit_name, suit_type, objects):
@@ -167,19 +165,16 @@ def export_suit(context, directory, mesh_format, suit_name, suit_type, objects):
     for obj in objects:
         bone_name = obj.get("Bone Name")
         if bone_name is None:
-            raise ExportException("{} object does not have a Bone Name custom property".format(obj.name))
+            raise ExportException(f"{obj.name} object does not have a Bone Name custom property")
 
-        expected_object_name_prefix = "xskin-{}-{}-".format(suit_name, bone_name)
+        expected_object_name_prefix = f"xskin-{suit_name}-{bone_name}-"
         if not obj.name.startswith(expected_object_name_prefix):
             raise ExportException(
-                "{} object name is invalid. It's name should start with {}".format(
-                    obj.name,
-                    expected_object_name_prefix,
-                )
+                f"{obj.name} object name is invalid. It's name should start with {expected_object_name_prefix}"
             )
 
         if not obj.parent or obj.parent.type != 'ARMATURE':
-            raise ExportException("{} object is not parented to an armature".format(obj.name))
+            raise ExportException(f"{obj.name} object is not parented to an armature")
 
         skins.append(
             bcf.Skin(
