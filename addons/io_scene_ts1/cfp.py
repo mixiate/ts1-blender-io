@@ -4,29 +4,35 @@ import dataclasses
 import math
 import pathlib
 import struct
+import typing
 
 
 from . import utils
 
 
-def decode_delta(delta):
+def decode_delta(delta: int) -> float:
+    """Decode a compressed delta to it's float value."""
     return 3.9676e-10 * math.pow(float(delta) - 126.0, 3) * abs(float(delta) - 126.0)
 
 
-def decode_values(file, count):
-    values = []
+COMPRESSION_TYPE_FULL = 0xFF
+COMPRESSION_TYPE_REPEAT = 0xFE
+
+
+def decode_values(file: typing.BinaryIO, count: int) -> list[float]:
+    """Decode count values from the file."""
+    values: list[float] = []
 
     previous_value = 0.0
 
     while len(values) < count:
         compression_type = struct.unpack('<B', file.read(1))[0]
 
-        if compression_type == 0xFF:  # full 4 byte float
+        if compression_type == COMPRESSION_TYPE_FULL:
             values.append(struct.unpack('<f', file.read(4))[0])
-        elif compression_type == 0xFE:  # repeat previous
+        elif compression_type == COMPRESSION_TYPE_REPEAT:
             repeat_count = struct.unpack('<H', file.read(2))[0]
-            for i in range(repeat_count + 1):
-                values.append(previous_value)
+            values.extend(previous_value for _ in range(repeat_count + 1))
         else:  # delta
             values.append(previous_value + decode_delta(compression_type))
 
@@ -35,31 +41,39 @@ def decode_values(file, count):
     return values
 
 
-def create_delta_table():
-    delta_table = []
-    for i in range(253):
-        delta_table.append(decode_delta(i))
-    return delta_table
+def create_delta_table() -> list[float]:
+    """Create a table of all delta values."""
+    return [decode_delta(i) for i in range(253)]
 
 
-def encode_value_full(value):
+def encode_value_full(value: float) -> bytes:
+    """Encode a value as a single value in full."""
     return bytes([0xFF]) + struct.pack('<f', value)
 
 
-def encode_value_repeat(repeat_count):
+def encode_value_repeat(repeat_count: int) -> bytes:
+    """Encode a value as a repeat sequence."""
     return bytes([0xFE]) + struct.pack('<H', repeat_count - 1)
 
 
-def encode_value_delta(delta):
+def encode_value_delta(delta: int) -> bytes:
+    """Encode a value as a delta to the previous value."""
     return struct.pack('<B', delta)
 
 
-def encode_values(values, compress):
+UNUSED_DELTA_START = 120
+UNUSED_DELTA_END = 133
+DELTA_ZERO = 126
+MAX_REPEAT_COUNT = 65535
+DELTA_DIFFERENCE_THRESHOLD = 0.001
+
+
+def encode_values(values: typing.Iterator[float], *, compress: bool) -> bytes:
+    """Encode values to a list of bytes with or without compression."""
     delta_table = create_delta_table()
 
-    encoded_bytes = []
+    encoded_bytes = b""
 
-    values = iter(values)
     previous_value = next(values)
     encoded_bytes += encode_value_full(previous_value)
 
@@ -69,26 +83,25 @@ def encode_values(values, compress):
         delta_index, delta = min(enumerate(delta_table), key=lambda x: abs(x[1] - difference))
 
         if compress:
-            if delta_index >= 120 and delta_index < 133 and repeat_count < 65535:
+            if delta_index >= UNUSED_DELTA_START and delta_index < UNUSED_DELTA_END and repeat_count < MAX_REPEAT_COUNT:
                 # if the sign of the value changes, we need to make sure
                 # that this change is outputted for the quaternions to work
-                if delta_index != 126 and not (value * previous_value >= 0.0):
-                    delta_index = 133 if value >= 0.0 else 119
+                if delta_index != DELTA_ZERO and not (value * previous_value >= 0.0):
+                    delta_index = UNUSED_DELTA_END if value >= 0.0 else UNUSED_DELTA_START - 1
                     delta = delta_table[delta_index]
                 else:
                     repeat_count += 1
                     continue
-        else:
-            if value == previous_value and repeat_count < 65535:
-                repeat_count += 1
-                continue
+        elif value == previous_value and repeat_count < MAX_REPEAT_COUNT:
+            repeat_count += 1
+            continue
 
         if repeat_count > 0:
             encoded_bytes += encode_value_repeat(repeat_count)
             repeat_count = 0
 
         delta_difference = abs(difference - delta)
-        if not compress or delta_difference > 0.001:
+        if not compress or delta_difference > DELTA_DIFFERENCE_THRESHOLD:
             encoded_bytes += encode_value_full(value)
             previous_value = value
         else:
@@ -103,6 +116,8 @@ def encode_values(values, compress):
 
 @dataclasses.dataclass
 class Cfp:
+    """Individual lists of all the CFP values."""
+
     positions_x: list[float]
     positions_y: list[float]
     positions_z: list[float]
@@ -146,17 +161,21 @@ def read_file(file_path: pathlib.Path, position_count: int, rotation_count: int)
 
 
 def write_file(
-    file_path, compress, positions_x, positions_y, positions_z, rotations_x, rotations_y, rotations_z, rotations_w
-):
+    file_path: pathlib.Path,
+    cfp: Cfp,
+    *,
+    compress: bool,
+) -> None:
+    """Write a CFP to a file."""
     import itertools
 
-    values = itertools.chain(positions_x, positions_y)
-    values = itertools.chain(values, positions_z)
-    values = itertools.chain(values, rotations_x)
-    values = itertools.chain(values, rotations_y)
-    values = itertools.chain(values, rotations_z)
-    values = itertools.chain(values, rotations_w)
+    values = itertools.chain(cfp.positions_x, cfp.positions_y)
+    values = itertools.chain(values, cfp.positions_z)
+    values = itertools.chain(values, cfp.rotations_x)
+    values = itertools.chain(values, cfp.rotations_y)
+    values = itertools.chain(values, cfp.rotations_z)
+    values = itertools.chain(values, cfp.rotations_w)
 
     with file_path.open('wb') as file:
-        file.write(encode_values(values, compress))
+        file.write(encode_values(values, compress=compress))
         file.close()

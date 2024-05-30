@@ -236,14 +236,7 @@ def export_files(context, file_path, mesh_format, compress_cfp):
             for strip in track.strips:
                 armature_object.animation_data.action = strip.action
 
-                positions_x = []
-                positions_y = []
-                positions_z = []
-
-                rotations_x = []
-                rotations_y = []
-                rotations_z = []
-                rotations_w = []
+                cfp_values = cfp.Cfp([], [], [], [], [], [], [])
 
                 distance = strip.action.get("Distance", 0.0)
 
@@ -294,9 +287,9 @@ def export_files(context, file_path, mesh_format, compress_cfp):
                                 position = bone.parent.matrix.inverted() @ bone.head
                                 position = utils.BONE_ROTATION_OFFSET @ position
                             position *= utils.BONE_SCALE
-                            positions_x.append(position.x)
-                            positions_y.append(position.z)  # swap y and z
-                            positions_z.append(position.y)
+                            cfp_values.positions_x.append(position.x)
+                            cfp_values.positions_y.append(position.z)  # swap y and z
+                            cfp_values.positions_z.append(position.y)
                         if motion.rotations_used_flag:
                             rotation = bone.matrix @ utils.BONE_ROTATION_OFFSET_INVERTED
                             if bone.parent is not None:
@@ -304,10 +297,10 @@ def export_files(context, file_path, mesh_format, compress_cfp):
                                     bone.parent.matrix @ utils.BONE_ROTATION_OFFSET_INVERTED
                                 ).inverted() @ rotation
                             rotation = rotation.to_quaternion()
-                            rotations_x.append(rotation.x)
-                            rotations_y.append(rotation.z)  # swap y and z
-                            rotations_z.append(rotation.y)
-                            rotations_w.append(rotation.w)
+                            cfp_values.rotations_x.append(rotation.x)
+                            cfp_values.rotations_y.append(rotation.z)  # swap y and z
+                            cfp_values.rotations_z.append(rotation.y)
+                            cfp_values.rotations_w.append(rotation.w)
 
                     bpy.context.scene.frame_set(original_current_frame)
 
@@ -370,14 +363,8 @@ def export_files(context, file_path, mesh_format, compress_cfp):
                 cfp_file_path = file_path.parent / (track.name + ".cfp")
                 cfp.write_file(
                     cfp_file_path,
-                    compress_cfp,
-                    positions_x,
-                    positions_y,
-                    positions_z,
-                    rotations_x,
-                    rotations_y,
-                    rotations_z,
-                    rotations_w,
+                    cfp_values,
+                    compress=compress_cfp,
                 )
 
     bcf_desc = bcf.Bcf(skeletons, suits, skills)
