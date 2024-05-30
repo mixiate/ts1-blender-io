@@ -1,8 +1,9 @@
-"""Export to The Sims 1 files"""
+"""Export to The Sims 1 files."""
 
 import bpy
 import copy
 import math
+import pathlib
 
 
 from . import bcf
@@ -14,10 +15,14 @@ from . import utils
 
 
 class ExportError(Exception):
-    """General purpose export error"""
+    """General purpose export error."""
 
 
-def export_skin(context, directory, mesh_format, obj) -> None:
+MAX_VERTEX_GROUP_COUNT = 2
+
+
+def export_skin(directory: pathlib.Path, mesh_format: str, obj: bpy.types.Object) -> None:
+    """Export the object's mesh to a BMF or SKN file."""
     mesh = obj.data
     uv_layer = mesh.uv_layers[0]
 
@@ -33,8 +38,6 @@ def export_skin(context, directory, mesh_format, obj) -> None:
             if len(mesh.vertices[vertex_index].groups) == 0:
                 error_message = f"{obj.name} mesh has vertices that are not in a vertex group"
                 raise ExportError(error_message)
-
-            MAX_VERTEX_GROUP_COUNT = 2
 
             if len(mesh.vertices[vertex_index].groups) > MAX_VERTEX_GROUP_COUNT:
                 error_message = f"{obj.name} mesh has vertices in more than 2 vertex groups"
@@ -56,12 +59,11 @@ def export_skin(context, directory, mesh_format, obj) -> None:
 
         new_faces.append(face)
 
-    bones = []
-    bone_bindings = []
-    blends = []
-    vertices = []
-    uvs = []
-    faces = []
+    bones: list[str] = []
+    bone_bindings: list[bmf.BoneBinding] = []
+    blends: list[bmf.Blend] = []
+    vertices: list[bmf.Vertex] = []
+    uvs: list[tuple[float, float]] = []
 
     armature = obj.parent.data
 
@@ -100,7 +102,7 @@ def export_skin(context, directory, mesh_format, obj) -> None:
                 len(vertex_group_vertices),
                 -1,
                 0,
-            )
+            ),
         )
         bones.append(vertex_group.name)
 
@@ -108,7 +110,7 @@ def export_skin(context, directory, mesh_format, obj) -> None:
         uvs += vertex_group_uvs
 
     # create blended vertices
-    blended_vertices = []
+    blended_vertices: list[bmf.Vertex] = []
     for vertex_group_index, vertex_group in enumerate(obj.vertex_groups):
         vertex_group_vertices = []
 
@@ -133,14 +135,14 @@ def export_skin(context, directory, mesh_format, obj) -> None:
 
     vertices += blended_vertices
 
-    for face in new_faces:
-        faces.append(
-            (
-                vertex_index_map.index(face[2]),
-                vertex_index_map.index(face[1]),
-                vertex_index_map.index(face[0]),
-            )
+    faces = [
+        (
+            vertex_index_map.index(face[2]),
+            vertex_index_map.index(face[1]),
+            vertex_index_map.index(face[0]),
         )
+        for face in new_faces
+    ]
 
     default_texture = "x"
     if len(obj.data.materials) > 0:
@@ -167,7 +169,14 @@ def export_skin(context, directory, mesh_format, obj) -> None:
             raise ExportError(error_message)
 
 
-def export_suit(context, directory, mesh_format, suit_name, suit_type, objects):
+def export_suit(
+    directory: pathlib.Path,
+    mesh_format: str,
+    suit_name: str,
+    suit_type: int,
+    objects: list[bpy.types.Object],
+) -> bcf.Suit:
+    """Create a BCF suit from the list of objects, and export the meshes of the objects."""
     skins = []
     for obj in objects:
         bone_name = obj.get("Bone Name")
@@ -192,10 +201,10 @@ def export_suit(context, directory, mesh_format, suit_name, suit_type, objects):
                 obj.name,
                 obj.get("Censor Flags", 0),
                 0,
-            )
+            ),
         )
 
-        export_skin(context, directory, mesh_format, obj)
+        export_skin(directory, mesh_format, obj)
 
     return bcf.Suit(
         suit_name,
@@ -205,10 +214,11 @@ def export_suit(context, directory, mesh_format, suit_name, suit_type, objects):
     )
 
 
-def export_files(context, file_path, mesh_format, compress_cfp):
-    skeletons = []
-    suits = []
-    skills = []
+def export_files(context: bpy.types.Context, file_path: pathlib.Path, mesh_format: str, *, compress_cfp: bool) -> None:
+    """Export all the meshes and animations in the scene to the selected file."""
+    skeletons: list[bcf.Skeleton] = []
+    suits: list[bcf.Suit] = []
+    skills: list[bcf.Skill] = []
 
     for collection in context.scene.collection.children:
         objects = [obj for obj in collection.objects if obj.type == 'MESH']
@@ -217,13 +227,12 @@ def export_files(context, file_path, mesh_format, compress_cfp):
 
         suits.append(
             export_suit(
-                context,
                 file_path.parent,
                 mesh_format,
                 collection.name,
                 collection.get("Suit Type", 0),
                 objects,
-            )
+            ),
         )
 
     for armature in bpy.data.armatures:
@@ -266,12 +275,14 @@ def export_files(context, file_path, mesh_format, compress_cfp):
 
                     for frame in range(int(strip.action.frame_start), int(strip.action.frame_end) + 1):
                         for fcu in strip.action.fcurves:
-                            if fcu.data_path == bone.path_from_id("location"):
-                                if frame in (p.co.x for p in fcu.keyframe_points):
-                                    motion.positions_used_flag = 1
-                            if fcu.data_path == bone.path_from_id("rotation_quaternion"):
-                                if frame in (p.co.x for p in fcu.keyframe_points):
-                                    motion.rotations_used_flag = 1
+                            if fcu.data_path == bone.path_from_id("location") and frame in (
+                                p.co.x for p in fcu.keyframe_points
+                            ):
+                                motion.positions_used_flag = 1
+                            if fcu.data_path == bone.path_from_id("rotation_quaternion") and frame in (
+                                p.co.x for p in fcu.keyframe_points
+                            ):
+                                motion.rotations_used_flag = 1
 
                     if not motion.positions_used_flag and not motion.rotations_used_flag:
                         continue
@@ -319,13 +330,13 @@ def export_files(context, file_path, mesh_format, compress_cfp):
                             event_strings = marker.name.split(";")
                             for event_string in event_strings:
                                 event_components = event_string.split()
-                                if not event_components[0] == bone.name:
+                                if event_components[0] != bone.name:
                                     continue
                                 events.append(
                                     bcf.Property(
                                         event_components[1],
                                         event_components[2],
-                                    )
+                                    ),
                                 )
 
                         if len(events) == 0:

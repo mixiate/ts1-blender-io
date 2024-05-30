@@ -175,7 +175,7 @@ class TS1IOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
                 context,
                 pathlib.Path(self.properties.filepath),
                 self.mesh_format,
-                self.compress_cfp,
+                compress_cfp=self.compress_cfp,
             )
         except export_ts1.ExportError as exception:
             self.report({"ERROR"}, exception.args[0])
