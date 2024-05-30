@@ -320,8 +320,8 @@ def import_suit(
             texture_file_list,
             skin.skin_name,
             bmf_file.default_texture_name,
-            fix_textures,
             preferred_skin_color,
+            fix_textures=fix_textures,
         )
 
         if not obj.data.materials:
