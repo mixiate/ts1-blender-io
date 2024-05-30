@@ -1,6 +1,9 @@
+"""Import The Sims 1 3D formats in to Blender."""
+
 import bmesh
 import bpy
 import copy
+import logging
 import math
 import mathutils
 import pathlib
@@ -16,7 +19,8 @@ from . import texture_loader
 from . import utils
 
 
-def import_skeleton(context, skeleton):
+def import_skeleton(context: bpy.types.Context, skeleton: bcf.Skeleton) -> bpy.types.Armature:
+    """Create an armature for the described skeleton."""
     armature = bpy.data.armatures.new(name=skeleton.name)
     armature_obj = bpy.data.objects.new(name=skeleton.name, object_data=armature)
     context.collection.objects.link(armature_obj)
@@ -42,7 +46,7 @@ def import_skeleton(context, skeleton):
         )
 
         translation = mathutils.Matrix.Translation(
-            mathutils.Vector((bone.position_x, bone.position_z, bone.position_y)) / utils.BONE_SCALE
+            mathutils.Vector((bone.position_x, bone.position_z, bone.position_y)) / utils.BONE_SCALE,
         )
 
         armature_bone.matrix = (parent_matrix @ (translation @ rotation)) @ utils.BONE_ROTATION_OFFSET
@@ -62,7 +66,8 @@ def import_skeleton(context, skeleton):
             previous_parent_tail = copy.copy(bone.parent.tail)
             previous_parent_quat = bone.parent.matrix.to_4x4().to_quaternion()
             bone.parent.tail = bone.head
-            if bone.parent.matrix.to_4x4().to_quaternion().dot(previous_parent_quat) < 0.999999:
+            quaternion_difference = bone.parent.matrix.to_4x4().to_quaternion().dot(previous_parent_quat)
+            if not math.isclose(quaternion_difference, 1.0, rel_tol=1e-06):
                 bone.parent.tail = previous_parent_tail
             else:
                 bone.use_connect = True
@@ -73,12 +78,12 @@ def import_skeleton(context, skeleton):
     bpy.ops.object.mode_set(mode='OBJECT')
 
     bpy.ops.object.select_all(action='DESELECT')
-    armature_obj.select_set(True)
+    armature_obj.select_set(state=True)
     return armature
 
 
 def get_skin_type_skeleton_names(skin_name: str) -> list[str]:
-    """Get a list of skeletons that a skin can be applied to"""
+    """Get a list of skeletons that a skin can be applied to."""
     # adult head
     if re.match("^xskin-c\\d{3}(f|m|u)a.*-head", skin_name.lower()):
         return ["adult"]
@@ -147,7 +152,7 @@ class UnknownSkillTypeError(Exception):
 
 
 def get_skill_type_skeleton_name(skill_name: str) -> list[str]:
-    """Return the name of the skeleton that the skill type uses"""
+    """Return the name of the skeleton that the skill type uses."""
     if skill_name.startswith("a2"):
         return ["adult"]
     if skill_name.startswith("c2"):
@@ -164,22 +169,25 @@ def get_skill_type_skeleton_name(skill_name: str) -> list[str]:
     raise UnknownSkillTypeError
 
 
-def find_or_import_skeleton(context, file_list, skeleton_names):
+def find_or_import_skeleton(
+    context: bpy.types.Context,
+    file_list: list[pathlib.Path],
+    skeleton_names: list[str],
+) -> bpy.types.Armature | None:
+    """Find a skeleton from the list of names, or import it if it doesn't exist."""
     if context.active_object is not None:
         for skeleton_name in skeleton_names:
             if context.active_object.name.startswith(skeleton_name):
                 return bpy.data.armatures[context.active_object.name]
 
-    if skeleton_names[0] == "adult":
-        skeleton_file_name = "adult-skeleton.cmx.bcf"
-    elif skeleton_names[0] == "child":
-        skeleton_file_name = "child-skeleton.cmx.bcf"
-    elif skeleton_names[0] == "kat":
-        skeleton_file_name = "kat_skeleton.cmx.bcf"
-    elif skeleton_names[0] == "dog":
-        skeleton_file_name = "dog_skeleton.cmx.bcf"
-    elif skeleton_names[0] == "effects1":
-        skeleton_file_name = "effects1-skeleton.cmx.bcf"
+    skeleton_file_name_map = {
+        "adult": "adult-skeleton.cmx.bcf",
+        "child": "child-skeleton.cmx.bcf",
+        "kat": "kat_skeleton.cmx.bcf",
+        "dog": "dog_skeleton.cmx.bcf",
+        "effects1": "effects1-skeleton.cmx.bcf",
+    }
+    skeleton_file_name = skeleton_file_name_map.get(skeleton_names[0])
 
     armature = bpy.data.armatures.get(skeleton_names[0])
     if armature is None:
@@ -192,21 +200,23 @@ def find_or_import_skeleton(context, file_list, skeleton_names):
 
 
 def import_suit(
-    context,
-    logger,
-    bcf_directory,
-    file_list,
-    texture_file_list,
-    suit,
-    fix_textures,
-    preferred_skin_color,
-    armature_object_map,
-):
+    context: bpy.types.Context,
+    logger: logging.Logger,
+    bcf_directory: pathlib.Path,
+    file_list: list[pathlib.Path],
+    texture_file_list: list[pathlib.Path],
+    suit: bcf.Suit,
+    preferred_skin_color: str,
+    armature_object_map: dict[str, list[str]],
+    *,
+    fix_textures: bool,
+) -> None:
+    """Create the meshes for the described suit."""
     for skin in suit.skins:
         skeleton_names = get_skin_type_skeleton_names(skin.skin_name)
         armature = find_or_import_skeleton(context, file_list, skeleton_names)
         if armature is None:
-            logger.info(f"Could not find or import {skeleton_names[0]} skeleton used by {suit.name} .")
+            logger.info(f"Could not find or import {skeleton_names[0]} skeleton used by {suit.name}.")
             continue
 
         try:
@@ -273,11 +283,11 @@ def import_suit(
             blend_index_start = bone_binding.blended_vertex_index
             blend_index_end = blend_index_start + bone_binding.blended_vertex_count
             for blend in bmf_file.blends[blend_index_start:blend_index_end]:
-                for bone_binding in bmf_file.bone_bindings:
-                    vertex_index_start = bone_binding.vertex_index
-                    vertex_index_end = vertex_index_start + bone_binding.vertex_count
+                for inner_bone_binding in bmf_file.bone_bindings:
+                    vertex_index_start = inner_bone_binding.vertex_index
+                    vertex_index_end = vertex_index_start + inner_bone_binding.vertex_count
                     if blend.vertex_index >= vertex_index_start and blend.vertex_index < vertex_index_end:
-                        original_bone_name = bmf_file.bones[bone_binding.bone_index]
+                        original_bone_name = bmf_file.bones[inner_bone_binding.bone_index]
 
                 original_vertex_group = obj.vertex_groups[original_bone_name]
                 weight = float(blend.weight) * math.pow(2, -15)
@@ -288,7 +298,7 @@ def import_suit(
         for face in bmf_file.faces:
             try:
                 b_mesh.faces.new((b_mesh.verts[face[2]], b_mesh.verts[face[1]], b_mesh.verts[face[0]]))
-            except ValueError as _:
+            except ValueError as _:  # noqa: PERF203
                 invalid_face_count += 1
 
         if invalid_face_count > 0:
@@ -328,14 +338,25 @@ def import_suit(
         obj.scale = armature_obj.scale
 
 
-def create_fcurve_data(action, data_path, index, count, data):
+def create_fcurve_data(action: bpy.types.Action, data_path: str, index: int, count: int, data: list[float]) -> None:
+    """Create the fcurve data for all frames at once."""
     f_curve = action.fcurves.new(data_path, index=index)
     f_curve.keyframe_points.add(count=count)
     f_curve.keyframe_points.foreach_set("co", data)
     f_curve.update()
 
 
-def import_skill(context, logger, file_directory, file_list, skill):
+MAX_TIMELINE_MARKER_NAME_LENGTH = 63  # 64 - null
+
+
+def import_skill(
+    context: bpy.types.Context,
+    logger: logging.Logger,
+    file_directory: pathlib.Path,
+    file_list: list[pathlib.Path],
+    skill: bcf.Skill,
+) -> None:
+    """Create the actions and nla track for the described skill."""
     cfp_file_path = file_directory / (skill.animation_name + ".cfp")
     try:
         cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
@@ -356,7 +377,7 @@ def import_skill(context, logger, file_directory, file_list, skill):
 
     if not all(x in armature.bones for x in (x.bone_name for x in skill.motions)):
         logger.info(
-            f"Could not apply animation {skill.skill_name} to armature {armature.name}. The bones do not match."
+            f"Could not apply animation {skill.skill_name} to armature {armature.name}. The bones do not match.",
         )
         return
 
@@ -378,13 +399,13 @@ def import_skill(context, logger, file_directory, file_list, skill):
         if bone.parent:
             parent_bone_matrix = bone.parent.bone.matrix_local @ utils.BONE_ROTATION_OFFSET_INVERTED
 
-        positions_x = []
-        positions_y = []
-        positions_z = []
-        rotations_w = []
-        rotations_x = []
-        rotations_y = []
-        rotations_z = []
+        positions_x: list[float] = []
+        positions_y: list[float] = []
+        positions_z: list[float] = []
+        rotations_w: list[float] = []
+        rotations_x: list[float] = []
+        rotations_y: list[float] = []
+        rotations_z: list[float] = []
 
         for frame in range(motion.frame_count):
             translation = mathutils.Matrix()
@@ -395,8 +416,8 @@ def import_skill(context, logger, file_directory, file_list, skill):
                             cfp_file.positions_x[motion.position_offset + frame] / utils.BONE_SCALE,
                             cfp_file.positions_z[motion.position_offset + frame] / utils.BONE_SCALE,  # swap y and z
                             cfp_file.positions_y[motion.position_offset + frame] / utils.BONE_SCALE,
-                        )
-                    )
+                        ),
+                    ),
                 )
 
             rotation = mathutils.Matrix()
@@ -408,7 +429,7 @@ def import_skill(context, logger, file_directory, file_list, skill):
                             cfp_file.rotations_x[motion.rotation_offset + frame],
                             cfp_file.rotations_z[motion.rotation_offset + frame],  # swap y and z
                             cfp_file.rotations_y[motion.rotation_offset + frame],
-                        )
+                        ),
                     )
                     .to_matrix()
                     .to_4x4()
@@ -462,7 +483,7 @@ def import_skill(context, logger, file_directory, file_list, skill):
                         marker.frame = frame
                     else:
                         last_marker = action.pose_markers[-1]
-                        if len(last_marker.name) + 1 + len(event_string) <= 63:  # room for null
+                        if len(last_marker.name) + 1 + len(event_string) <= MAX_TIMELINE_MARKER_NAME_LENGTH:
                             last_marker.name = f"{last_marker.name};{event_string}"
                         else:
                             marker = action.pose_markers.new(name=event_string)
@@ -475,16 +496,18 @@ def import_skill(context, logger, file_directory, file_list, skill):
 
 
 def import_files(
-    context,
-    logger,
-    file_paths,
-    import_skeletons,
-    import_meshes,
-    import_animations,
-    cleanup_meshes,
-    fix_textures,
-    preferred_skin_color,
-):
+    context: bpy.types.Context,
+    logger: logging.Logger,
+    file_paths: list[pathlib.Path],
+    preferred_skin_color: str,
+    *,
+    import_skeletons: bool,
+    import_meshes: bool,
+    import_animations: bool,
+    cleanup_meshes: bool,
+    fix_textures: bool,
+) -> None:
+    """Import all the skeletons, meshes and animations in the selected files."""
     if bpy.ops.object.mode_set.poll():
         bpy.ops.object.mode_set(mode='OBJECT')
 
@@ -514,7 +537,7 @@ def import_files(
                 import_skeleton(context, skeleton)
 
     if import_meshes:
-        armature_object_map = {}
+        armature_object_map: dict[str, list[str]] = {}
         for bcf_file_path, bcf_file in bcf_files:
             for suit in bcf_file.suits:
                 import_suit(
@@ -524,9 +547,9 @@ def import_files(
                     file_list,
                     texture_file_list,
                     suit,
-                    fix_textures,
                     preferred_skin_color,
                     armature_object_map,
+                    fix_textures=fix_textures,
                 )
 
         previous_active_object = context.view_layer.objects.active
@@ -536,7 +559,7 @@ def import_files(
 
             for object_name in armature_object_map[armature_name]:
                 obj = bpy.data.objects[object_name]
-                obj.select_set(True)
+                obj.select_set(state=True)
 
             if cleanup_meshes:
                 context.view_layer.objects.active = bpy.data.objects[armature_object_map[armature_name][0]]
@@ -555,7 +578,7 @@ def import_files(
                 bpy.ops.object.mode_set(mode='OBJECT')
 
             armature_object = bpy.data.objects[armature_name]
-            armature_object.select_set(True)
+            armature_object.select_set(state=True)
             context.view_layer.objects.active = armature_object
             bpy.ops.object.parent_set(type='ARMATURE')
 

@@ -108,12 +108,12 @@ class TS1IOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             context,
             logger,
             paths,
-            self.import_skeletons,
-            self.import_meshes,
-            self.import_animations,
-            self.cleanup_meshes,
-            self.fix_textures,
             self.skin_color,
+            import_skeletons=self.import_skeletons,
+            import_meshes=self.import_meshes,
+            import_animations=self.import_animations,
+            cleanup_meshes=self.cleanup_meshes,
+            fix_textures=self.fix_textures,
         )
 
         log_output = log_stream.getvalue()
