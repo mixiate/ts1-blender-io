@@ -21,7 +21,7 @@ class ExportError(Exception):
 MAX_VERTEX_GROUP_COUNT = 2
 
 
-def export_skin(directory: pathlib.Path, mesh_format: str, obj: bpy.types.Object) -> None:
+def export_skin(directory: pathlib.Path, mesh_format: str, obj: bpy.types.Object) -> None:  # noqa: C901 PLR0912 PLR0915
     """Export the object's mesh to a BMF or SKN file."""
     mesh = obj.data
     uv_layer = mesh.uv_layers[0]
@@ -214,7 +214,7 @@ def export_suit(
     )
 
 
-def export_files(context: bpy.types.Context, file_path: pathlib.Path, mesh_format: str, *, compress_cfp: bool) -> None:
+def export_files(context: bpy.types.Context, file_path: pathlib.Path, mesh_format: str, *, compress_cfp: bool) -> None:  # noqa: C901 PLR0912 PLR0915
     """Export all the meshes and animations in the scene to the selected file."""
     skeletons: list[bcf.Skeleton] = []
     suits: list[bcf.Suit] = []

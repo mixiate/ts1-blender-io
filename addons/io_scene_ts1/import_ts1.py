@@ -82,7 +82,7 @@ def import_skeleton(context: bpy.types.Context, skeleton: bcf.Skeleton) -> bpy.t
     return armature
 
 
-def get_skin_type_skeleton_names(skin_name: str) -> list[str]:
+def get_skin_type_skeleton_names(skin_name: str) -> list[str]:  # noqa: C901 PLR0911 PLR0912
     """Get a list of skeletons that a skin can be applied to."""
     # adult head
     if re.match("^xskin-c\\d{3}(f|m|u)a.*-head", skin_name.lower()):
@@ -199,7 +199,7 @@ def find_or_import_skeleton(
     return armature
 
 
-def import_suit(
+def import_suit(  # noqa: C901 PLR0912 PLR0913 PLR0915
     context: bpy.types.Context,
     logger: logging.Logger,
     bcf_directory: pathlib.Path,
@@ -216,7 +216,7 @@ def import_suit(
         skeleton_names = get_skin_type_skeleton_names(skin.skin_name)
         armature = find_or_import_skeleton(context, file_list, skeleton_names)
         if armature is None:
-            logger.info(f"Could not find or import {skeleton_names[0]} skeleton used by {suit.name}.")
+            logger.info(f"Could not find or import {skeleton_names[0]} skeleton used by {suit.name}.")  # noqa: G004
             continue
 
         try:
@@ -227,11 +227,11 @@ def import_suit(
                 skn_file_path = bcf_directory / (skin.skin_name + ".skn")
                 bmf_file = skn.read_file(skn_file_path)
         except utils.FileReadError as _:
-            logger.info(f"Could not load mesh {skin.skin_name} used by {suit.name}.")
+            logger.info(f"Could not load mesh {skin.skin_name} used by {suit.name}.")  # noqa: G004
             continue
 
         if not all(bone in armature.bones for bone in bmf_file.bones):
-            logger.info(f"Could not apply mesh {skin.skin_name} to armature {armature.name}. The bones do not match.")
+            logger.info(f"Could not apply mesh {skin.skin_name} to armature {armature.name}. The bones do not match.")  # noqa: G004
             continue
 
         mesh = bpy.data.meshes.new(skin.skin_name)
@@ -302,7 +302,7 @@ def import_suit(
                 invalid_face_count += 1
 
         if invalid_face_count > 0:
-            logger.info(f"Skipped {invalid_face_count} invalid faces in mesh {skin.skin_name}")
+            logger.info(f"Skipped {invalid_face_count} invalid faces in mesh {skin.skin_name}")  # noqa: G004
 
         uv_layer = b_mesh.loops.layers.uv.verify()
         for face in b_mesh.faces:
@@ -325,7 +325,7 @@ def import_suit(
         )
 
         if not obj.data.materials:
-            logger.info(f"Could not find a texture for mesh {skin.skin_name}")
+            logger.info(f"Could not find a texture for mesh {skin.skin_name}")  # noqa: G004
 
         if armature_object_map.get(armature.name) is None:
             armature_object_map[armature.name] = []
@@ -349,7 +349,7 @@ def create_fcurve_data(action: bpy.types.Action, data_path: str, index: int, cou
 MAX_TIMELINE_MARKER_NAME_LENGTH = 63  # 64 - null
 
 
-def import_skill(
+def import_skill(  # noqa: C901 PLR0912 PLR0915
     context: bpy.types.Context,
     logger: logging.Logger,
     file_directory: pathlib.Path,
@@ -361,13 +361,13 @@ def import_skill(
     try:
         cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
     except utils.FileReadError as _:
-        logger.info(f"Could not load cfp file {cfp_file_path}")
+        logger.info(f"Could not load cfp file {cfp_file_path}")  # noqa: G004
         return
 
     skeleton_name = get_skill_type_skeleton_name(skill.skill_name)
     armature = find_or_import_skeleton(context, file_list, skeleton_name)
     if armature is None:
-        logger.info(f"Could not find or import {skeleton_name} skeleton used by {skill.skill_name}")
+        logger.info(f"Could not find or import {skeleton_name} skeleton used by {skill.skill_name}")  # noqa: G004
         return
 
     armature_object = bpy.data.objects[armature.name]
@@ -377,7 +377,7 @@ def import_skill(
 
     if not all(x in armature.bones for x in (x.bone_name for x in skill.motions)):
         logger.info(
-            f"Could not apply animation {skill.skill_name} to armature {armature.name}. The bones do not match.",
+            f"Could not apply animation {skill.skill_name} to armature {armature.name}. The bones do not match.",  # noqa: G004
         )
         return
 
@@ -495,7 +495,7 @@ def import_skill(
     armature_object.animation_data.action = original_action
 
 
-def import_files(
+def import_files(  # noqa: C901 PLR0912 PLR0913
     context: bpy.types.Context,
     logger: logging.Logger,
     file_paths: list[pathlib.Path],
