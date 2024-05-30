@@ -1,108 +1,110 @@
 """Read and write The Sims 1 CMX files."""
 
 import pathlib
+import typing
+
 
 from . import bcf
 from . import utils
 
 
-def read_properties(file):
+def read_properties(file: typing.TextIO) -> list[bcf.Property]:
+    """Read BCF properties from a CMX file."""
     count = int(file.readline())
-    properties = []
-    for i in range(count):
-        properties.append(
-            bcf.Property(
-                file.readline().strip(),
-                file.readline().strip(),
-            )
+    return [
+        bcf.Property(
+            file.readline().strip(),
+            file.readline().strip(),
         )
-    return properties
+        for _ in range(count)
+    ]
 
 
-def write_properties(file, properties):
+def write_properties(file: typing.TextIO, properties: list[bcf.Property]) -> None:
+    """Write BCF properties to a CMX file."""
     file.write(str(len(properties)) + "\n")
     for prop in properties:
         file.write(prop.name + "\n")
         file.write(prop.value + "\n")
 
 
-def read_property_lists(file):
+def read_property_lists(file: typing.TextIO) -> list[bcf.PropertyList]:
+    """Read BCF property lists from a CMX file."""
     count = int(file.readline())
-    property_lists = []
-    for i in range(count):
-        property_lists.append(
-            bcf.PropertyList(
-                read_properties(file),
-            )
+    return [
+        bcf.PropertyList(
+            read_properties(file),
         )
-    return property_lists
+        for _ in range(count)
+    ]
 
 
-def write_property_lists(file, property_lists):
+def write_property_lists(file: typing.TextIO, property_lists: list[bcf.PropertyList]) -> None:
+    """Write BCF property lists to a CMX file."""
     file.write(str(len(property_lists)) + "\n")
     for property_list in property_lists:
         write_properties(file, property_list.properties)
 
 
-def read_time_properties(file):
+def read_time_properties(file: typing.TextIO) -> list[bcf.TimeProperty]:
+    """Read BCF time properties from a CMX file."""
     count = int(file.readline())
-    time_properties = []
-    for i in range(count):
-        time_properties.append(
-            bcf.TimeProperty(
-                int(file.readline()),
-                read_properties(file),
-            )
+    return [
+        bcf.TimeProperty(
+            int(file.readline()),
+            read_properties(file),
         )
-    return time_properties
+        for _ in range(count)
+    ]
 
 
-def write_time_properties(file, time_properties):
+def write_time_properties(file: typing.TextIO, time_properties: list[bcf.TimeProperty]) -> None:
+    """Write BCF time properties to a CMX file."""
     file.write(str(len(time_properties)) + "\n")
     for time_property in time_properties:
         file.write(str(time_property.time) + "\n")
         write_properties(file, time_property.events)
 
 
-def read_time_property_lists(file):
+def read_time_property_lists(file: typing.TextIO) -> list[bcf.TimePropertyList]:
+    """Read BCF time property lists from a CMX file."""
     count = int(file.readline())
-    time_property_lists = []
-    for i in range(count):
-        time_property_lists.append(
-            bcf.TimePropertyList(
-                read_time_properties(file),
-            )
+    return [
+        bcf.TimePropertyList(
+            read_time_properties(file),
         )
-    return time_property_lists
+        for _ in range(count)
+    ]
 
 
-def write_time_property_lists(file, time_property_lists):
+def write_time_property_lists(file: typing.TextIO, time_property_lists: list[bcf.TimePropertyList]) -> None:
+    """Write BCF time property lists to a CMX file."""
     file.write(str(len(time_property_lists)) + "\n")
     for time_property_list in time_property_lists:
         write_time_properties(file, time_property_list.time_properties)
 
 
-def read_motions(file):
+def read_motions(file: typing.TextIO) -> list[bcf.Motion]:
+    """Read BCF motions from a CMX file."""
     count = int(file.readline())
-    motions = []
-    for i in range(count):
-        motions.append(
-            bcf.Motion(
-                file.readline().strip(),
-                int(file.readline()),
-                float(file.readline()),
-                int(file.readline()),
-                int(file.readline()),
-                int(file.readline()),
-                int(file.readline()),
-                read_property_lists(file),
-                read_time_property_lists(file),
-            )
+    return [
+        bcf.Motion(
+            file.readline().strip(),
+            int(file.readline()),
+            float(file.readline()),
+            int(file.readline()),
+            int(file.readline()),
+            int(file.readline()),
+            int(file.readline()),
+            read_property_lists(file),
+            read_time_property_lists(file),
         )
-    return motions
+        for _ in range(count)
+    ]
 
 
-def write_motions(file, motions):
+def write_motions(file: typing.TextIO, motions: list[bcf.Motion]) -> None:
+    """Write BCF motions to a CMX file."""
     file.write(str(len(motions)) + "\n")
     for motion in motions:
         file.write(motion.bone_name + "\n")
@@ -116,26 +118,26 @@ def write_motions(file, motions):
         write_time_property_lists(file, motion.time_property_lists)
 
 
-def read_skills(file):
+def read_skills(file: typing.TextIO) -> list[bcf.Skill]:
+    """Read BCF skills from a CMX file."""
     count = int(file.readline())
-    skills = []
-    for i in range(count):
-        skills.append(
-            bcf.Skill(
-                file.readline().strip(),
-                file.readline().strip(),
-                float(file.readline()),
-                float(file.readline()),
-                int(file.readline()),
-                int(file.readline()),
-                int(file.readline()),
-                read_motions(file),
-            )
+    return [
+        bcf.Skill(
+            file.readline().strip(),
+            file.readline().strip(),
+            float(file.readline()),
+            float(file.readline()),
+            int(file.readline()),
+            int(file.readline()),
+            int(file.readline()),
+            read_motions(file),
         )
-    return skills
+        for _ in range(count)
+    ]
 
 
-def write_skills(file, skills):
+def write_skills(file: typing.TextIO, skills: list[bcf.Skill]) -> None:
+    """Write BCF skills to a CMX file."""
     file.write(str(len(skills)) + "\n")
     for skill in skills:
         file.write(skill.skill_name + "\n")
@@ -148,22 +150,22 @@ def write_skills(file, skills):
         write_motions(file, skill.motions)
 
 
-def read_skins(file):
+def read_skins(file: typing.TextIO) -> list[bcf.Skin]:
+    """Read BCF skins from a CMX file."""
     count = int(file.readline())
-    skins = []
-    for i in range(count):
-        skins.append(
-            bcf.Skin(
-                file.readline().strip(),
-                file.readline().strip(),
-                int(file.readline()),
-                int(file.readline()),
-            )
+    return [
+        bcf.Skin(
+            file.readline().strip(),
+            file.readline().strip(),
+            int(file.readline()),
+            int(file.readline()),
         )
-    return skins
+        for _ in range(count)
+    ]
 
 
-def write_skins(file, skins):
+def write_skins(file: typing.TextIO, skins: list[bcf.Skin]) -> None:
+    """Write BCF skins to a CMX file."""
     file.write(str(len(skins)) + "\n")
     for skin in skins:
         file.write(skin.bone_name + "\n")
@@ -172,22 +174,22 @@ def write_skins(file, skins):
         file.write(str(skin.unknown) + "\n")
 
 
-def read_suits(file):
+def read_suits(file: typing.TextIO) -> list[bcf.Suit]:
+    """Read BCF suits from a CMX file."""
     count = int(file.readline())
-    suits = []
-    for i in range(count):
-        suits.append(
-            bcf.Suit(
-                file.readline().strip(),
-                int(file.readline()),
-                int(file.readline()),
-                read_skins(file),
-            )
+    return [
+        bcf.Suit(
+            file.readline().strip(),
+            int(file.readline()),
+            int(file.readline()),
+            read_skins(file),
         )
-    return suits
+        for _ in range(count)
+    ]
 
 
-def write_suits(file, suits):
+def write_suits(file: typing.TextIO, suits: list[bcf.Suit]) -> None:
+    """Write BCF suits to a CMX file."""
     file.write(str(len(suits)) + "\n")
     for suit in suits:
         file.write(suit.name + "\n")
@@ -196,10 +198,11 @@ def write_suits(file, suits):
         write_skins(file, suit.skins)
 
 
-def read_bones(file):
+def read_bones(file: typing.TextIO) -> list[bcf.Bone]:
+    """Read BCF bones from a CMX file."""
     count = int(file.readline())
     bones = []
-    for i in range(count):
+    for _ in range(count):
         name = file.readline().strip()
         parent = file.readline().strip()
         properties = read_property_lists(file)
@@ -227,12 +230,13 @@ def read_bones(file):
                 blend_suits,
                 wiggle_value,
                 wiggle_power,
-            )
+            ),
         )
     return bones
 
 
-def write_bones(file, bones):
+def write_bones(file: typing.TextIO, bones: list[bcf.Bone]) -> None:
+    """Write BCF bones to a CMX file."""
     file.write(str(len(bones)) + "\n")
     for bone in bones:
         file.write(bone.name + "\n")
@@ -247,27 +251,28 @@ def write_bones(file, bones):
         file.write(str(bone.wiggle_power) + "\n")
 
 
-def read_skeletons(file):
+def read_skeletons(file: typing.TextIO) -> list[bcf.Skeleton]:
+    """Read BCF skeletons from a CMX file."""
     count = int(file.readline())
-    skeletons = []
-    for i in range(count):
-        skeletons.append(
-            bcf.Skeleton(
-                file.readline().strip(),
-                read_bones(file),
-            )
+    return [
+        bcf.Skeleton(
+            file.readline().strip(),
+            read_bones(file),
         )
-    return skeletons
+        for _ in range(count)
+    ]
 
 
-def write_skeletons(file, skeletons):
+def write_skeletons(file: typing.TextIO, skeletons: list[bcf.Skeleton]) -> None:
+    """Write BCF skeletons to a CMX file."""
     file.write(str(len(skeletons)) + "\n")
     for skeleton in skeletons:
         file.write(skeleton.name + "\n")
         write_bones(file, skeleton.bones)
 
 
-def read_cmx(file):
+def read_cmx(file: typing.TextIO) -> bcf.Bcf:
+    """Read a BCF from a CMX file."""
     return bcf.Bcf(
         read_skeletons(file),
         read_suits(file),
@@ -275,16 +280,17 @@ def read_cmx(file):
     )
 
 
-def write_cmx(file, cmx):
+def write_cmx(file: typing.TextIO, bcf_desc: bcf.Bcf) -> None:
+    """Write a BCF to a CMX file."""
     file.write("// Exported with TS1 Blender IO\n")
     file.write("version 300\n")
-    write_skeletons(file, cmx.skeletons)
-    write_suits(file, cmx.suits)
-    write_skills(file, cmx.skills)
+    write_skeletons(file, bcf_desc.skeletons)
+    write_suits(file, bcf_desc.suits)
+    write_skills(file, bcf_desc.skills)
 
 
 def read_file(file_path: pathlib.Path) -> bcf.Bcf:
-    """Read a file as a CMX."""
+    """Read a BCF from a CMX file path."""
     try:
         with file_path.open() as file:
             if not file.readline().startswith("//"):
@@ -304,7 +310,7 @@ def read_file(file_path: pathlib.Path) -> bcf.Bcf:
         raise utils.FileReadError from exception
 
 
-def write_file(file_path: pathlib.Path, cmx: bcf.Bcf) -> None:
-    """Write a BCF as a CMX to a file."""
+def write_file(file_path: pathlib.Path, bcf_desc: bcf.Bcf) -> None:
+    """Write a BCF to a CMX file path."""
     with file_path.open('w') as file:
-        write_cmx(file, cmx)
+        write_cmx(file, bcf_desc)

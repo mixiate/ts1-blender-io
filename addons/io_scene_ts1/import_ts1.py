@@ -57,7 +57,7 @@ def import_skeleton(context: bpy.types.Context, skeleton: bcf.Skeleton) -> bpy.t
         armature_bone["ts1_wiggle_value"] = bone.wiggle_value
         armature_bone["ts1_wiggle_power"] = bone.wiggle_power
 
-        for property_list in bone.properties:
+        for property_list in bone.property_lists:
             for prop in property_list.properties:
                 armature_bone["ts1_" + prop.name] = prop.value
 

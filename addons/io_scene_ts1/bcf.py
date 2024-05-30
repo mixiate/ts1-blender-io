@@ -284,7 +284,7 @@ class Bone:
 
     name: str
     parent: str
-    properties: list[PropertyList]
+    property_lists: list[PropertyList]
     position_x: float
     position_y: float
     position_z: float
@@ -330,7 +330,7 @@ def write_bones(file: typing.BinaryIO, bones: list[Bone]) -> None:
     for bone in bones:
         utils.write_string(file, bone.name)
         utils.write_string(file, bone.parent)
-        write_property_lists(file, bone.properties)
+        write_property_lists(file, bone.property_lists)
         file.write(struct.pack('<f', bone.position_x))
         file.write(struct.pack('<f', bone.position_y))
         file.write(struct.pack('<f', bone.position_z))
