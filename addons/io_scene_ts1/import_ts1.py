@@ -402,12 +402,6 @@ def import_skill(  # noqa: C901 PLR0912 PLR0915
     if skill.skill_name in bpy.data.actions:
         return
 
-    if not all(x in armature.bones for x in (x.bone_name for x in skill.motions)):
-        logger.info(
-            f"Could not apply animation {skill.skill_name} to armature {armature.name}. The bones do not match.",  # noqa: G004
-        )
-        return
-
     armature_object.animation_data_create()
 
     original_action = armature_object.animation_data.action
@@ -419,8 +413,13 @@ def import_skill(  # noqa: C901 PLR0912 PLR0915
 
     action["Distance"] = skill.distance
 
+    ignored_bone_count = 0
+
     for motion in skill.motions:
-        bone = armature_object.pose.bones[motion.bone_name]
+        bone = armature_object.pose.bones.get(motion.bone_name)
+        if bone is None:
+            ignored_bone_count += 1
+            continue
 
         parent_bone_matrix = mathutils.Matrix()
         if bone.parent:
@@ -495,6 +494,9 @@ def import_skill(  # noqa: C901 PLR0912 PLR0915
             create_fcurve_data(action, data_path, 1, motion.frame_count, rotations_x)
             create_fcurve_data(action, data_path, 2, motion.frame_count, rotations_y)
             create_fcurve_data(action, data_path, 3, motion.frame_count, rotations_z)
+
+    if ignored_bone_count > 0:
+        logger.info(f"Skipped {ignored_bone_count} unknown bones in {skill.skill_name}.")  # noqa: G004
 
     for motion in skill.motions:
         for time_property_list in motion.time_property_lists:
