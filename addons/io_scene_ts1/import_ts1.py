@@ -385,6 +385,10 @@ def import_skill(  # noqa: C901 PLR0912 PLR0915
 ) -> None:
     """Create the actions and nla track for the described skill."""
     cfp_file_path = file_directory / (skill.animation_name + ".cfp")
+    if not cfp_file_path.is_file():
+        matches = [file_path for file_path in file_list if file_path.stem.lower() == cfp_file_path.stem.lower()]
+        if len(matches) > 0:
+            cfp_file_path = matches[0]
     try:
         cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
     except utils.FileReadError as _:
