@@ -5,6 +5,7 @@ import typing
 
 
 from . import bmf
+from . import utils
 
 
 def read_bones(file: typing.TextIO) -> list[str]:
@@ -159,13 +160,17 @@ def write_skn(file: typing.TextIO, bmf: bmf.Bmf) -> None:
 
 def read_file(file_path: pathlib.Path) -> bmf.Bmf:
     """Read a file as a SKN."""
-    with file_path.open() as file:
-        skn = read_skn(file)
+    try:
+        with file_path.open() as file:
+            bmf = read_skn(file)
 
-        if file.readline() != "":
-            raise Exception("data left unread at end of " + file_path.as_posix())
+            if file.readline() != "":
+                raise utils.FileReadError
 
-        return skn
+            return bmf
+
+    except OSError as exception:
+        raise utils.FileReadError from exception
 
 
 def write_file(file_path: pathlib.Path, bmf: bmf.Bmf) -> None:

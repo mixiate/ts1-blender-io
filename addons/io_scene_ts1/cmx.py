@@ -1,4 +1,9 @@
+"""Read and write The Sims 1 CMX files."""
+
+import pathlib
+
 from . import bcf
+from . import utils
 
 
 def read_properties(file):
@@ -278,21 +283,28 @@ def write_cmx(file, cmx):
     write_skills(file, cmx.skills)
 
 
-def read_file(file_path):
-    with file_path.open() as file:
-        if not file.readline().strip().startswith("//"):
-            raise Exception("Could not read cmx file " + file_path)
-        if file.readline().strip() != "version 300":
-            raise Exception("Could not read cmx file " + file_path)
+def read_file(file_path: pathlib.Path) -> bcf.Bcf:
+    """Read a file as a CMX."""
+    try:
+        with file_path.open() as file:
+            if not file.readline().startswith("//"):
+                raise utils.FileReadError
 
-        cmx = read_cmx(file)
+            if file.readline().strip() != "version 300":
+                raise utils.FileReadError
 
-        if file.readline() != "":
-            raise Exception("data left unread at end of " + file_path)
+            bcf = read_cmx(file)
 
-        return cmx
+            if file.readline() != "":
+                raise utils.FileReadError
+
+            return bcf
+
+    except OSError as exception:
+        raise utils.FileReadError from exception
 
 
-def write_file(file_path, cmx):
+def write_file(file_path: pathlib.Path, cmx: bcf.Bcf) -> None:
+    """Write a BCF as a CMX to a file."""
     with file_path.open('w') as file:
         write_cmx(file, cmx)

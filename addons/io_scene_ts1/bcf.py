@@ -1,4 +1,7 @@
+"""Read and write The Sims 1 BCF files."""
+
 import dataclasses
+import pathlib
 import struct
 
 
@@ -370,17 +373,19 @@ def write_bcf(file, bcf):
     write_skills(file, bcf.skills)
 
 
-def read_file(file_path):
-    with file_path.open(mode='rb') as file:
-        bcf = read_bcf(file)
+def read_file(file_path: pathlib.Path) -> Bcf:
+    """Read a file as a BCF."""
+    try:
+        with file_path.open(mode='rb') as file:
+            bcf = read_bcf(file)
 
-        try:
-            file.read(1)
-            raise Exception("data left unread at end of " + file_path)
-        except Exception as _:
-            pass
+            if len(file.read(1)) != 0:
+                raise utils.FileReadError
 
-        return bcf
+            return bcf
+
+    except (OSError, struct.error) as exception:
+        raise utils.FileReadError from exception
 
 
 def write_file(file_path, bcf):

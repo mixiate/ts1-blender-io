@@ -182,16 +182,17 @@ def write_bmf(file: typing.BinaryIO, bmf: Bmf) -> None:
 
 def read_file(file_path: pathlib.Path) -> Bmf:
     """Read a file as a BMF."""
-    with file_path.open(mode='rb') as file:
-        bmf = read_bmf(file)
+    try:
+        with file_path.open(mode='rb') as file:
+            bmf = read_bmf(file)
 
-        try:
-            file.read(1)
-            raise Exception("data left unread at end of " + file_path.as_posix())
-        except Exception as _:
-            pass
+            if len(file.read(1)) != 0:
+                raise utils.FileReadError
 
-        return bmf
+            return bmf
+
+    except (OSError, struct.error) as exception:
+        raise utils.FileReadError from exception
 
 
 def write_file(file_path: pathlib.Path, bmf: Bmf) -> None:

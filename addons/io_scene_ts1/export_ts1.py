@@ -1,3 +1,5 @@
+"""Export to The Sims 1 files"""
+
 import bpy
 import copy
 import math
@@ -11,11 +13,11 @@ from . import skn
 from . import utils
 
 
-class ExportException(Exception):
-    pass
+class ExportError(Exception):
+    """General purpose export error"""
 
 
-def export_skin(context, directory, mesh_format, obj):
+def export_skin(context, directory, mesh_format, obj) -> None:
     mesh = obj.data
     uv_layer = mesh.uv_layers[0]
 
@@ -29,10 +31,14 @@ def export_skin(context, directory, mesh_format, obj):
             vertex_index = mesh.loops[loop_index].vertex_index
 
             if len(mesh.vertices[vertex_index].groups) == 0:
-                raise ExportException(f"{obj.name} mesh has vertices that are not in a vertex group")
+                error_message = f"{obj.name} mesh has vertices that are not in a vertex group"
+                raise ExportError(error_message)
 
-            if len(mesh.vertices[vertex_index].groups) > 2:
-                raise ExportException(f"{obj.name} mesh has vertices in more than 2 vertex groups")
+            MAX_VERTEX_GROUP_COUNT = 2
+
+            if len(mesh.vertices[vertex_index].groups) > MAX_VERTEX_GROUP_COUNT:
+                error_message = f"{obj.name} mesh has vertices in more than 2 vertex groups"
+                raise ExportError(error_message)
 
             vertex = (
                 mesh.vertices[vertex_index].co,
@@ -68,11 +74,12 @@ def export_skin(context, directory, mesh_format, obj):
 
         armature_bone = armature.bones.get(vertex_group.name)
         if armature_bone is None:
-            raise ExportException(
+            error_message = (
                 f"Vertex group {vertex_group.name} in {obj.name} is not a bone in armature {obj.parent.name}"
             )
+            raise ExportError(error_message)
 
-        bone_matrix = (armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET.inverted()).inverted()
+        bone_matrix = (armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET_INVERTED).inverted()
         normal_bone_matrix = bone_matrix.to_quaternion().to_matrix().to_4x4()
 
         for vertex_index, vertex in enumerate(new_vertices):
@@ -106,7 +113,7 @@ def export_skin(context, directory, mesh_format, obj):
         vertex_group_vertices = []
 
         armature_bone = armature.bones[vertex_group.name]
-        bone_matrix = (armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET.inverted()).inverted()
+        bone_matrix = (armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET_INVERTED).inverted()
         normal_bone_matrix = bone_matrix.to_quaternion().to_matrix().to_4x4()
 
         for vertex_index, vertex in enumerate(new_vertices):
@@ -156,7 +163,8 @@ def export_skin(context, directory, mesh_format, obj):
         case 'skn':
             skn.write_file(directory / (obj.name + ".skn"), bmf_file)
         case _:
-            raise ExportException(f"Unkown mesh format {mesh_format}")
+            error_message = f"Unknown mesh format {mesh_format}"
+            raise ExportError(error_message)
 
 
 def export_suit(context, directory, mesh_format, suit_name, suit_type, objects):
@@ -164,16 +172,19 @@ def export_suit(context, directory, mesh_format, suit_name, suit_type, objects):
     for obj in objects:
         bone_name = obj.get("Bone Name")
         if bone_name is None:
-            raise ExportException(f"{obj.name} object does not have a Bone Name custom property")
+            error_message = f"{obj.name} object does not have a Bone Name custom property"
+            raise ExportError(error_message)
 
         expected_object_name_prefix = f"xskin-{suit_name}-{bone_name}-"
         if not obj.name.startswith(expected_object_name_prefix):
-            raise ExportException(
+            error_message = (
                 f"{obj.name} object name is invalid. It's name should start with {expected_object_name_prefix}"
             )
+            raise ExportError(error_message)
 
         if not obj.parent or obj.parent.type != 'ARMATURE':
-            raise ExportException(f"{obj.name} object is not parented to an armature")
+            error_message = f"{obj.name} object is not parented to an armature"
+            raise ExportError(error_message)
 
         skins.append(
             bcf.Skin(
@@ -287,10 +298,10 @@ def export_files(context, file_path, mesh_format, compress_cfp):
                             positions_y.append(position.z)  # swap y and z
                             positions_z.append(position.y)
                         if motion.rotations_used_flag:
-                            rotation = bone.matrix @ utils.BONE_ROTATION_OFFSET.inverted()
+                            rotation = bone.matrix @ utils.BONE_ROTATION_OFFSET_INVERTED
                             if bone.parent is not None:
                                 rotation = (
-                                    bone.parent.matrix @ utils.BONE_ROTATION_OFFSET.inverted()
+                                    bone.parent.matrix @ utils.BONE_ROTATION_OFFSET_INVERTED
                                 ).inverted() @ rotation
                             rotation = rotation.to_quaternion()
                             rotations_x.append(rotation.x)

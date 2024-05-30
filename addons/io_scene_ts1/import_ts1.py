@@ -30,7 +30,7 @@ def import_skeleton(context, skeleton):
         parent_matrix = mathutils.Matrix()
         if bone.parent != "NULL":
             armature_bone.parent = armature.edit_bones[bone.parent]
-            parent_matrix = armature.edit_bones[bone.parent].matrix @ utils.BONE_ROTATION_OFFSET.inverted()
+            parent_matrix = armature.edit_bones[bone.parent].matrix @ utils.BONE_ROTATION_OFFSET_INVERTED
 
         armature_bone.head = mathutils.Vector((0.0, 0.0, 0.0))
         armature_bone.tail = mathutils.Vector((0.1, 0.0, 0.0))
@@ -77,7 +77,8 @@ def import_skeleton(context, skeleton):
     return armature
 
 
-def get_skin_type_skeleton_names(skin_name):
+def get_skin_type_skeleton_names(skin_name: str) -> list[str]:
+    """Get a list of skeletons that a skin can be applied to"""
     # adult head
     if re.match("^xskin-c\\d{3}(f|m|u)a.*-head", skin_name.lower()):
         return ["adult"]
@@ -141,21 +142,26 @@ def get_skin_type_skeleton_names(skin_name):
     return ["adult", "child"]
 
 
-def get_skill_type_skeleton_name(skill_name):
+class UnknownSkillTypeError(Exception):
+    """Unknown skill type error."""
+
+
+def get_skill_type_skeleton_name(skill_name: str) -> list[str]:
+    """Return the name of the skeleton that the skill type uses"""
     if skill_name.startswith("a2"):
         return ["adult"]
-    elif skill_name.startswith("c2"):
+    if skill_name.startswith("c2"):
         return ["child"]
-    elif skill_name.startswith("k2"):
+    if skill_name.startswith("k2"):
         return ["kat"]
-    elif skill_name.startswith("d2"):
+    if skill_name.startswith("d2"):
         return ["dog"]
-    elif skill_name.startswith("f2"):
+    if skill_name.startswith("f2"):
         return ["kat"]
-    elif skill_name.startswith("effects-"):
+    if skill_name.startswith("effects-"):
         return ["effects1"]
 
-    raise Exception("Invalid skill name")
+    raise UnknownSkillTypeError
 
 
 def find_or_import_skeleton(context, file_list, skeleton_names):
@@ -192,7 +198,6 @@ def import_suit(
     file_list,
     texture_file_list,
     suit,
-    cleanup_meshes,
     fix_textures,
     preferred_skin_color,
     armature_object_map,
@@ -204,16 +209,16 @@ def import_suit(
             logger.info(f"Could not find or import {skeleton_names[0]} skeleton used by {suit.name} .")
             continue
 
-        bmf_file_path = bcf_directory / (skin.skin_name + ".bmf")
         try:
-            bmf_file = bmf.read_file(bmf_file_path)
-        except Exception as _:
-            skn_file_path = bcf_directory / (skin.skin_name + ".skn")
-            try:
+            bmf_file_path = bcf_directory / (skin.skin_name + ".bmf")
+            if bmf_file_path.is_file():
+                bmf_file = bmf.read_file(bmf_file_path)
+            else:
+                skn_file_path = bcf_directory / (skin.skin_name + ".skn")
                 bmf_file = skn.read_file(skn_file_path)
-            except Exception as _:
-                logger.info(f"Could not load mesh {bmf_file_path} used by {suit.name}.")
-                continue
+        except utils.FileReadError as _:
+            logger.info(f"Could not load mesh {skin.skin_name} used by {suit.name}.")
+            continue
 
         if not all(bone in armature.bones for bone in bmf_file.bones):
             logger.info(f"Could not apply mesh {skin.skin_name} to armature {armature.name}. The bones do not match.")
@@ -242,7 +247,7 @@ def import_suit(
             bone_name = bmf_file.bones[bone_binding.bone_index]
 
             armature_bone = armature.bones[bone_name]
-            bone_matrix = armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET.inverted()
+            bone_matrix = armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET_INVERTED
 
             vertex_group = obj.vertex_groups.new(name=bone_name)
 
@@ -283,8 +288,9 @@ def import_suit(
         for face in bmf_file.faces:
             try:
                 b_mesh.faces.new((b_mesh.verts[face[2]], b_mesh.verts[face[1]], b_mesh.verts[face[0]]))
-            except Exception as _:
+            except ValueError as _:
                 invalid_face_count += 1
+
         if invalid_face_count > 0:
             logger.info(f"Skipped {invalid_face_count} invalid faces in mesh {skin.skin_name}")
 
@@ -333,7 +339,7 @@ def import_skill(context, logger, file_directory, file_list, skill):
     cfp_file_path = file_directory / (skill.animation_name + ".cfp")
     try:
         cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
-    except Exception as _:
+    except utils.FileReadError as _:
         logger.info(f"Could not load cfp file {cfp_file_path}")
         return
 
@@ -348,7 +354,7 @@ def import_skill(context, logger, file_directory, file_list, skill):
     if skill.skill_name in bpy.data.actions:
         return
 
-    if not all(x in armature.bones for x in map(lambda x: x.bone_name, skill.motions)):
+    if not all(x in armature.bones for x in (x.bone_name for x in skill.motions)):
         logger.info(
             f"Could not apply animation {skill.skill_name} to armature {armature.name}. The bones do not match."
         )
@@ -370,7 +376,7 @@ def import_skill(context, logger, file_directory, file_list, skill):
 
         parent_bone_matrix = mathutils.Matrix()
         if bone.parent:
-            parent_bone_matrix = bone.parent.bone.matrix_local @ utils.BONE_ROTATION_OFFSET.inverted()
+            parent_bone_matrix = bone.parent.bone.matrix_local @ utils.BONE_ROTATION_OFFSET_INVERTED
 
         positions_x = []
         positions_y = []
@@ -518,7 +524,6 @@ def import_files(
                     file_list,
                     texture_file_list,
                     suit,
-                    cleanup_meshes,
                     fix_textures,
                     preferred_skin_color,
                     armature_object_map,

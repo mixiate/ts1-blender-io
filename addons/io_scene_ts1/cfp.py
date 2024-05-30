@@ -1,6 +1,12 @@
+"""Read and write The Sims 1 BCF files."""
+
 import dataclasses
 import math
+import pathlib
 import struct
+
+
+from . import utils
 
 
 def decode_delta(delta):
@@ -106,15 +112,17 @@ class Cfp:
     rotations_w: list[float]
 
 
-def read_file(file_path, position_count, rotation_count):
-    with file_path.open(mode='rb') as file:
-        decoded_values = decode_values(file, (position_count * 3) + (rotation_count * 4))
+def read_file(file_path: pathlib.Path, position_count: int, rotation_count: int) -> Cfp:
+    """Read a file as a CFP."""
+    try:
+        with file_path.open(mode='rb') as file:
+            decoded_values = decode_values(file, (position_count * 3) + (rotation_count * 4))
 
-        try:
-            file.read(1)
-            raise Exception("data left unread at end of cfp file")
-        except Exception as _:
-            pass
+            if len(file.read(1)) != 0:
+                raise utils.FileReadError
+
+    except (OSError, struct.error) as exception:
+        raise utils.FileReadError from exception
 
     positions_x = decoded_values[:position_count]
     positions_y = decoded_values[position_count : position_count * 2]
