@@ -355,8 +355,8 @@ def export_files(context, file_path, mesh_format, compress_cfp):
                         motion.rotation_offset = rotation_offset
                         rotation_offset += motion.frame_count
 
-                skill.position_count = len(positions_x)
-                skill.rotation_count = len(rotations_x)
+                skill.position_count = len(cfp_values.positions_x)
+                skill.rotation_count = len(cfp_values.rotations_x)
 
                 skills.append(skill)
 

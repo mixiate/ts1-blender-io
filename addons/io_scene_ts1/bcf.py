@@ -3,6 +3,7 @@
 import dataclasses
 import pathlib
 import struct
+import typing
 
 
 from . import utils
@@ -10,24 +11,26 @@ from . import utils
 
 @dataclasses.dataclass
 class Property:
+    """A BCF property."""
+
     name: str
     value: str
 
 
-def read_properties(file):
+def read_properties(file: typing.BinaryIO) -> list[Property]:
+    """Read BCF properties from a file."""
     count = struct.unpack('<I', file.read(4))[0]
-    properties = []
-    for i in range(count):
-        properties.append(
-            Property(
-                utils.read_string(file),
-                utils.read_string(file),
-            )
+    return [
+        Property(
+            utils.read_string(file),
+            utils.read_string(file),
         )
-    return properties
+        for _ in range(count)
+    ]
 
 
-def write_properties(file, properties):
+def write_properties(file: typing.BinaryIO, properties: list[Property]) -> None:
+    """Write BCF properties to a file."""
     file.write(struct.pack('<I', len(properties)))
     for prop in properties:
         utils.write_string(file, prop.name)
@@ -36,22 +39,24 @@ def write_properties(file, properties):
 
 @dataclasses.dataclass
 class PropertyList:
+    """A BCF property list."""
+
     properties: list[Property]
 
 
-def read_property_lists(file):
+def read_property_lists(file: typing.BinaryIO) -> list[PropertyList]:
+    """Read BCF property lists from a file."""
     count = struct.unpack('<I', file.read(4))[0]
-    property_lists = []
-    for i in range(count):
-        property_lists.append(
-            PropertyList(
-                read_properties(file),
-            )
+    return [
+        PropertyList(
+            read_properties(file),
         )
-    return property_lists
+        for _ in range(count)
+    ]
 
 
-def write_property_lists(file, property_lists):
+def write_property_lists(file: typing.BinaryIO, property_lists: list[PropertyList]) -> None:
+    """Write BCF property lists to a file."""
     file.write(struct.pack('<I', len(property_lists)))
     for property_list in property_lists:
         write_properties(file, property_list.properties)
@@ -59,24 +64,26 @@ def write_property_lists(file, property_lists):
 
 @dataclasses.dataclass
 class TimeProperty:
+    """A BCF time property."""
+
     time: int
     events: list[Property]
 
 
-def read_time_properties(file):
+def read_time_properties(file: typing.BinaryIO) -> list[TimeProperty]:
+    """Read BCF time properties from a file."""
     count = struct.unpack('<I', file.read(4))[0]
-    time_properties = []
-    for i in range(count):
-        time_properties.append(
-            TimeProperty(
-                struct.unpack('<I', file.read(4))[0],
-                read_properties(file),
-            )
+    return [
+        TimeProperty(
+            struct.unpack('<I', file.read(4))[0],
+            read_properties(file),
         )
-    return time_properties
+        for _ in range(count)
+    ]
 
 
-def write_time_properties(file, time_properties):
+def write_time_properties(file: typing.BinaryIO, time_properties: list[TimeProperty]) -> None:
+    """Write BCF time properties to a file."""
     file.write(struct.pack('<I', len(time_properties)))
     for time_property in time_properties:
         file.write(struct.pack('<I', time_property.time))
@@ -85,22 +92,24 @@ def write_time_properties(file, time_properties):
 
 @dataclasses.dataclass
 class TimePropertyList:
+    """A BCF time property list."""
+
     time_properties: list[TimeProperty]
 
 
-def read_time_property_lists(file):
+def read_time_property_lists(file: typing.BinaryIO) -> list[TimePropertyList]:
+    """Read BCF time property lists from a file."""
     count = struct.unpack('<I', file.read(4))[0]
-    time_property_lists = []
-    for i in range(count):
-        time_property_lists.append(
-            TimePropertyList(
-                read_time_properties(file),
-            )
+    return [
+        TimePropertyList(
+            read_time_properties(file),
         )
-    return time_property_lists
+        for _ in range(count)
+    ]
 
 
-def write_time_property_lists(file, time_property_lists):
+def write_time_property_lists(file: typing.BinaryIO, time_property_lists: list[TimePropertyList]) -> None:
+    """Write BCF time property lists to a file."""
     file.write(struct.pack('<I', len(time_property_lists)))
     for time_property_list in time_property_lists:
         write_time_properties(file, time_property_list.time_properties)
@@ -108,6 +117,8 @@ def write_time_property_lists(file, time_property_lists):
 
 @dataclasses.dataclass
 class Motion:
+    """A BCF motion."""
+
     bone_name: str
     frame_count: int
     duration: float
@@ -119,27 +130,27 @@ class Motion:
     time_property_lists: list[TimePropertyList]
 
 
-def read_motions(file):
+def read_motions(file: typing.BinaryIO) -> list[Motion]:
+    """Read BCF motions from a file."""
     count = struct.unpack('<I', file.read(4))[0]
-    motions = []
-    for i in range(count):
-        motions.append(
-            Motion(
-                utils.read_string(file),
-                struct.unpack('<I', file.read(4))[0],
-                struct.unpack('<f', file.read(4))[0],
-                struct.unpack('<I', file.read(4))[0],
-                struct.unpack('<I', file.read(4))[0],
-                struct.unpack('<i', file.read(4))[0],
-                struct.unpack('<i', file.read(4))[0],
-                read_property_lists(file),
-                read_time_property_lists(file),
-            )
+    return [
+        Motion(
+            utils.read_string(file),
+            struct.unpack('<I', file.read(4))[0],
+            struct.unpack('<f', file.read(4))[0],
+            struct.unpack('<I', file.read(4))[0],
+            struct.unpack('<I', file.read(4))[0],
+            struct.unpack('<i', file.read(4))[0],
+            struct.unpack('<i', file.read(4))[0],
+            read_property_lists(file),
+            read_time_property_lists(file),
         )
-    return motions
+        for _ in range(count)
+    ]
 
 
-def write_motions(file, motions):
+def write_motions(file: typing.BinaryIO, motions: list[Motion]) -> None:
+    """Write BCF motions to a file."""
     file.write(struct.pack('<I', len(motions)))
     for motion in motions:
         utils.write_string(file, motion.bone_name)
@@ -155,6 +166,8 @@ def write_motions(file, motions):
 
 @dataclasses.dataclass
 class Skill:
+    """A BCF skill."""
+
     skill_name: str
     animation_name: str
     duration: float
@@ -165,26 +178,26 @@ class Skill:
     motions: list[Motion]
 
 
-def read_skills(file):
+def read_skills(file: typing.BinaryIO) -> list[Skill]:
+    """Read BCF skills from a file."""
     count = struct.unpack('<I', file.read(4))[0]
-    skills = []
-    for i in range(count):
-        skills.append(
-            Skill(
-                utils.read_string(file),
-                utils.read_string(file),
-                struct.unpack('<f', file.read(4))[0],
-                struct.unpack('<f', file.read(4))[0],
-                struct.unpack('<I', file.read(4))[0],
-                struct.unpack('<I', file.read(4))[0],
-                struct.unpack('<I', file.read(4))[0],
-                read_motions(file),
-            )
+    return [
+        Skill(
+            utils.read_string(file),
+            utils.read_string(file),
+            struct.unpack('<f', file.read(4))[0],
+            struct.unpack('<f', file.read(4))[0],
+            struct.unpack('<I', file.read(4))[0],
+            struct.unpack('<I', file.read(4))[0],
+            struct.unpack('<I', file.read(4))[0],
+            read_motions(file),
         )
-    return skills
+        for _ in range(count)
+    ]
 
 
-def write_skills(file, skills):
+def write_skills(file: typing.BinaryIO, skills: list[Skill]) -> None:
+    """Write BCF skills to a file."""
     file.write(struct.pack('<I', len(skills)))
     for skill in skills:
         utils.write_string(file, skill.skill_name)
@@ -199,28 +212,30 @@ def write_skills(file, skills):
 
 @dataclasses.dataclass
 class Skin:
+    """A BCF skin."""
+
     bone_name: str
     skin_name: str
     censor_flags: int
     unknown: int
 
 
-def read_skins(file):
+def read_skins(file: typing.BinaryIO) -> list[Skin]:
+    """Read BCF skins from a file."""
     count = struct.unpack('<I', file.read(4))[0]
-    skins = []
-    for i in range(count):
-        skins.append(
-            Skin(
-                utils.read_string(file),
-                utils.read_string(file),
-                struct.unpack('<I', file.read(4))[0],
-                struct.unpack('<I', file.read(4))[0],
-            )
+    return [
+        Skin(
+            utils.read_string(file),
+            utils.read_string(file),
+            struct.unpack('<I', file.read(4))[0],
+            struct.unpack('<I', file.read(4))[0],
         )
-    return skins
+        for _ in range(count)
+    ]
 
 
-def write_skins(file, skins):
+def write_skins(file: typing.BinaryIO, skins: list[Skin]) -> None:
+    """Write BCF skins to a file."""
     file.write(struct.pack('<I', len(skins)))
     for skin in skins:
         utils.write_string(file, skin.bone_name)
@@ -231,28 +246,30 @@ def write_skins(file, skins):
 
 @dataclasses.dataclass
 class Suit:
+    """A BCF suit."""
+
     name: str
     suit_type: int
     unknown: int
     skins: list[Skin]
 
 
-def read_suits(file):
+def read_suits(file: typing.BinaryIO) -> list[Suit]:
+    """Read BCF suits from a file."""
     count = struct.unpack('<I', file.read(4))[0]
-    suits = []
-    for i in range(count):
-        suits.append(
-            Suit(
-                utils.read_string(file),
-                struct.unpack('<I', file.read(4))[0],
-                struct.unpack('<I', file.read(4))[0],
-                read_skins(file),
-            )
+    return [
+        Suit(
+            utils.read_string(file),
+            struct.unpack('<I', file.read(4))[0],
+            struct.unpack('<I', file.read(4))[0],
+            read_skins(file),
         )
-    return suits
+        for _ in range(count)
+    ]
 
 
-def write_suits(file, suits):
+def write_suits(file: typing.BinaryIO, suits: list[Suit]) -> None:
+    """Write BCF suits to a file."""
     file.write(struct.pack('<I', len(suits)))
     for suit in suits:
         utils.write_string(file, suit.name)
@@ -263,6 +280,8 @@ def write_suits(file, suits):
 
 @dataclasses.dataclass
 class Bone:
+    """A BCF bone."""
+
     name: str
     parent: str
     properties: list[PropertyList]
@@ -280,38 +299,38 @@ class Bone:
     wiggle_power: float
 
 
-def read_bones(file):
+def read_bones(file: typing.BinaryIO) -> list[Bone]:
+    """Read BCF bones from a file."""
     count = struct.unpack('<I', file.read(4))[0]
-    bones = []
-    for i in range(count):
-        bones.append(
-            Bone(
-                utils.read_string(file),
-                utils.read_string(file),
-                read_property_lists(file),
-                struct.unpack('<f', file.read(4))[0],
-                struct.unpack('<f', file.read(4))[0],
-                struct.unpack('<f', file.read(4))[0],
-                struct.unpack('<f', file.read(4))[0],
-                struct.unpack('<f', file.read(4))[0],
-                struct.unpack('<f', file.read(4))[0],
-                struct.unpack('<f', file.read(4))[0],
-                struct.unpack('<I', file.read(4))[0],
-                struct.unpack('<I', file.read(4))[0],
-                struct.unpack('<I', file.read(4))[0],
-                struct.unpack('<f', file.read(4))[0],
-                struct.unpack('<f', file.read(4))[0],
-            )
+    return [
+        Bone(
+            utils.read_string(file),
+            utils.read_string(file),
+            read_property_lists(file),
+            struct.unpack('<f', file.read(4))[0],
+            struct.unpack('<f', file.read(4))[0],
+            struct.unpack('<f', file.read(4))[0],
+            struct.unpack('<f', file.read(4))[0],
+            struct.unpack('<f', file.read(4))[0],
+            struct.unpack('<f', file.read(4))[0],
+            struct.unpack('<f', file.read(4))[0],
+            struct.unpack('<I', file.read(4))[0],
+            struct.unpack('<I', file.read(4))[0],
+            struct.unpack('<I', file.read(4))[0],
+            struct.unpack('<f', file.read(4))[0],
+            struct.unpack('<f', file.read(4))[0],
         )
-    return bones
+        for _ in range(count)
+    ]
 
 
-def write_bones(file, bones):
+def write_bones(file: typing.BinaryIO, bones: list[Bone]) -> None:
+    """Write BCF bones to a file."""
     file.write(struct.pack('<I', len(bones)))
     for bone in bones:
         utils.write_string(file, bone.name)
         utils.write_string(file, bone.parent)
-        write_property_lists(file, bone.property_lists)
+        write_property_lists(file, bone.properties)
         file.write(struct.pack('<f', bone.position_x))
         file.write(struct.pack('<f', bone.position_y))
         file.write(struct.pack('<f', bone.position_z))
@@ -328,24 +347,26 @@ def write_bones(file, bones):
 
 @dataclasses.dataclass
 class Skeleton:
+    """A BCF skeleton."""
+
     name: str
     bones: list[Bone]
 
 
-def read_skeletons(file):
+def read_skeletons(file: typing.BinaryIO) -> list[Skeleton]:
+    """Read BCF skeletons from a file."""
     count = struct.unpack('<I', file.read(4))[0]
-    skeletons = []
-    for i in range(count):
-        skeletons.append(
-            Skeleton(
-                utils.read_string(file),
-                read_bones(file),
-            )
+    return [
+        Skeleton(
+            utils.read_string(file),
+            read_bones(file),
         )
-    return skeletons
+        for _ in range(count)
+    ]
 
 
-def write_skeletons(file, skeletons):
+def write_skeletons(file: typing.BinaryIO, skeletons: list[Skeleton]) -> None:
+    """Write BCF skeletons to a file."""
     file.write(struct.pack('<I', len(skeletons)))
     for skeleton in skeletons:
         utils.write_string(file, skeleton.name)
@@ -354,12 +375,15 @@ def write_skeletons(file, skeletons):
 
 @dataclasses.dataclass
 class Bcf:
+    """Description of a BCF file."""
+
     skeletons: list[Skeleton]
-    suits: list[Bone]
+    suits: list[Suit]
     skills: list[Skill]
 
 
-def read_bcf(file):
+def read_bcf(file: typing.BinaryIO) -> Bcf:
+    """Read a BCF from a file."""
     return Bcf(
         read_skeletons(file),
         read_suits(file),
@@ -367,7 +391,8 @@ def read_bcf(file):
     )
 
 
-def write_bcf(file, bcf):
+def write_bcf(file: typing.BinaryIO, bcf: Bcf) -> None:
+    """Write a BCF to a file."""
     write_skeletons(file, bcf.skeletons)
     write_suits(file, bcf.suits)
     write_skills(file, bcf.skills)
@@ -388,6 +413,7 @@ def read_file(file_path: pathlib.Path) -> Bcf:
         raise utils.FileReadError from exception
 
 
-def write_file(file_path, bcf):
+def write_file(file_path: pathlib.Path, bcf: Bcf) -> None:
+    """Write a BCF to a file."""
     with file_path.open('wb') as file:
         write_bcf(file, bcf)
