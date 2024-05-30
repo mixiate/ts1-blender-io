@@ -84,6 +84,10 @@ def import_skeleton(context: bpy.types.Context, skeleton: bcf.Skeleton) -> bpy.t
 
 def get_skin_type_skeleton_names(skin_name: str) -> list[str]:  # noqa: C901 PLR0911 PLR0912
     """Get a list of skeletons that a skin can be applied to."""
+    # gnome
+    if re.match("^xskin-SpellboundMAFat_Gnome-.*-GNOMEBODY.*", skin_name):
+        return ["kat"]
+
     # adult head
     if re.match("^xskin-c\\d{3}(f|m|u)a.*-head", skin_name.lower()):
         return ["adult"]
@@ -100,17 +104,33 @@ def get_skin_type_skeleton_names(skin_name: str) -> list[str]:  # noqa: C901 PLR
     if re.match("^xskin-b\\d{3}(f|m|u)c(skn|fit|fat|chd|).*-body.*", skin_name.lower()):
         return ["child"]
 
+    # adult npc head
+    if re.match("^xskin-c((?!\\d{3}).).*(f|m|u)a(skn|fit|fat|)_.*-head-.*", skin_name.lower()):
+        return ["adult"]
+
     # child npc head
-    if re.match("^xskin-.*chd_.*-head-.*", skin_name.lower()):
+    if re.match("^xskin-c((?!\\d{3}).).*(f|m|u)cchd_.*-head-.*", skin_name.lower()):
         return ["child"]
+
+    # adult npc body
+    if re.match("^xskin-((?!\\d{3}).).*(f|m|u)a(skn|fit|fat)_.*-pelvis-.*", skin_name.lower()):
+        return ["adult"]
 
     # child npc body
     if re.match("^xskin-.*chd_.*-pelvis-.*", skin_name.lower()):
         return ["child"]
 
+    # adult costume
+    if re.match("^xskin-ct-.*(f|m)a-.*", skin_name.lower()):
+        return ["adult"]
+
     # child costume
     if re.match("^xskin-ct-.*(f|m)c-.*", skin_name.lower()):
         return ["child"]
+
+    # unleashed npc
+    if texture_loader.is_unleashed_npc_body_skin_type(skin_name):
+        return ["adult"]
 
     # cat
     if re.match("^xskin-b\\d{3}(c|k)at.*", skin_name.lower()):
@@ -131,10 +151,6 @@ def get_skin_type_skeleton_names(skin_name: str) -> list[str]:  # noqa: C901 PLR
     # effects
     if re.match("^xskin-effects1-.*", skin_name.lower()):
         return ["effects1"]
-
-    # gnome
-    if re.match("^xskin-.*-gnomebody", skin_name.lower()):
-        return ["kat"]
 
     # cat accessories
     if re.match("^xskin-cat.*-cat-", skin_name.lower()):
@@ -209,15 +225,26 @@ def import_suit(  # noqa: C901 PLR0912 PLR0913 PLR0915
     preferred_skin_color: str,
     armature_object_map: dict[str, list[str]],
     *,
+    find_skeleton: bool,
     fix_textures: bool,
 ) -> None:
     """Create the meshes for the described suit."""
     for skin in suit.skins:
-        skeleton_names = get_skin_type_skeleton_names(skin.skin_name)
-        armature = find_or_import_skeleton(context, file_list, skeleton_names)
+        armature = None
+        if find_skeleton:
+            skeleton_names = get_skin_type_skeleton_names(skin.skin_name)
+            armature = find_or_import_skeleton(context, file_list, skeleton_names)
+
+            if armature is None:
+                logger.info(f"Could not find or import {skeleton_names[0]} skeleton used by {suit.name}.")  # noqa: G004
+                continue
+
+        elif context.active_object:
+            armature = bpy.data.armatures.get(context.active_object.name)
+
         if armature is None:
-            logger.info(f"Could not find or import {skeleton_names[0]} skeleton used by {suit.name}.")  # noqa: G004
-            continue
+            logger.info("Please select an armature to apply the imported mesh to.")
+            break
 
         try:
             bmf_file_path = bcf_directory / (skin.skin_name + ".bmf")
@@ -504,6 +531,7 @@ def import_files(  # noqa: C901 PLR0912 PLR0913
     import_skeletons: bool,
     import_meshes: bool,
     import_animations: bool,
+    find_skeleton: bool,
     cleanup_meshes: bool,
     fix_textures: bool,
 ) -> None:
@@ -549,6 +577,7 @@ def import_files(  # noqa: C901 PLR0912 PLR0913
                     suit,
                     preferred_skin_color,
                     armature_object_map,
+                    find_skeleton=find_skeleton,
                     fix_textures=fix_textures,
                 )
 

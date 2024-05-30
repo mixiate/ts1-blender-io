@@ -66,6 +66,12 @@ class TS1IOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         default=True,
     )
 
+    find_skeleton: bpy.props.BoolProperty(  # type: ignore[valid-type]
+        name="Find Skeleton Automatically",
+        description="Find and load the correct skeleton, otherwise attempt to import mesh on selected armature",
+        default=True,
+    )
+
     cleanup_meshes: bpy.props.BoolProperty(  # type: ignore[valid-type]
         name="Cleanup Meshes (Lossy)",
         description="Merge the vertices of the mesh, add sharp edges, remove original normals and shade smooth",
@@ -112,6 +118,7 @@ class TS1IOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             import_skeletons=self.import_skeletons,
             import_meshes=self.import_meshes,
             import_animations=self.import_animations,
+            find_skeleton=self.find_skeleton,
             cleanup_meshes=self.cleanup_meshes,
             fix_textures=self.fix_textures,
         )
@@ -128,6 +135,7 @@ class TS1IOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         col.prop(self, "import_skeletons")
         col.prop(self, "import_meshes")
         col.prop(self, "import_animations")
+        col.prop(self, "find_skeleton")
         col.prop(self, "cleanup_meshes")
         col.prop(self, "fix_textures")
         col.label(text="Skin Color:")
