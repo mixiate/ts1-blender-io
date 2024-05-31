@@ -559,13 +559,16 @@ def import_files(  # noqa: C901 PLR0912 PLR0913
             case ".bcf":
                 bcf_files.append((file_path, bcf.read_file(file_path)))
 
-    file_search_directory = context.preferences.addons["io_scene_ts1"].preferences.file_search_directory
+    file_search_directory = pathlib.Path(context.preferences.addons["io_scene_ts1"].preferences.file_search_directory)
     if file_search_directory == "":
         file_search_directory = file_paths[0].parent
-    file_list = list(pathlib.Path(file_search_directory).rglob("*"))
+    file_list = list(file_search_directory.rglob("*"))
+
+    if not file_paths[0].parent.is_relative_to(file_search_directory):
+        file_list.extend(file_paths[0].parent.glob("*"))
 
     texture_file_list = [
-        file_name for file_name in file_list if file_name.suffix.lower() == ".bmp" or file_name.suffix.lower() == ".tga"
+        path for path in file_list if path.suffix.lower() == ".bmp" or path.suffix.lower() == ".tga"
     ]
 
     if import_skeletons:
