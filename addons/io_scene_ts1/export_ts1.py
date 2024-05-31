@@ -184,15 +184,19 @@ def export_suit(
             error_message = f"{obj.name} object does not have a Bone Name custom property"
             raise ExportError(error_message)
 
+        if not obj.parent or obj.parent.type != 'ARMATURE':
+            error_message = f"{obj.name} object is not parented to an armature"
+            raise ExportError(error_message)
+
+        if bone_name not in obj.parent.data.bones:
+            error_message = f"{obj.name} bone name {bone_name} is not a bone in the parent armature"
+            raise ExportError(error_message)
+
         expected_object_name_prefix = f"xskin-{suit_name}-{bone_name}-"
         if not obj.name.startswith(expected_object_name_prefix):
             error_message = (
                 f"{obj.name} object name is invalid. It's name should start with {expected_object_name_prefix}"
             )
-            raise ExportError(error_message)
-
-        if not obj.parent or obj.parent.type != 'ARMATURE':
-            error_message = f"{obj.name} object is not parented to an armature"
             raise ExportError(error_message)
 
         skins.append(
