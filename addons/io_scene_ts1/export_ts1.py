@@ -1,8 +1,8 @@
 """Export to The Sims 1 files."""
 
 import bpy
-import copy
 import math
+import mathutils
 import pathlib
 
 
@@ -225,10 +225,9 @@ def export_skills(  # noqa: C901 PLR0912 PLR0915
 
     if armature_object.animation_data is None:
         return []
+
     for nla_track in armature_object.animation_data.nla_tracks:
         for strip in nla_track.strips:
-            armature_object.animation_data.action = strip.action
-
             cfp_values = cfp.Cfp([], [], [], [], [], [], [])
 
             distance = strip.action.get("Distance", 0.0)
@@ -257,45 +256,67 @@ def export_skills(  # noqa: C901 PLR0912 PLR0915
                     [],
                 )
 
-                for frame in range(int(strip.action.frame_start), int(strip.action.frame_end) + 1):
-                    for fcu in strip.action.fcurves:
-                        if fcu.data_path == bone.path_from_id("location") and frame in (
-                            p.co.x for p in fcu.keyframe_points
-                        ):
-                            motion.positions_used_flag = 1
-                        if fcu.data_path == bone.path_from_id("rotation_quaternion") and frame in (
-                            p.co.x for p in fcu.keyframe_points
-                        ):
-                            motion.rotations_used_flag = 1
+                location_data_path = bone.path_from_id("location")
+                rotation_data_path = bone.path_from_id("rotation_quaternion")
+
+                if strip.action.fcurves.find(location_data_path):
+                    motion.positions_used_flag = 1
+                if strip.action.fcurves.find(rotation_data_path):
+                    motion.rotations_used_flag = 1
 
                 if not motion.positions_used_flag and not motion.rotations_used_flag:
                     continue
 
-                original_current_frame = bpy.context.scene.frame_current
+                parent_bone_matrix = mathutils.Matrix()
+                if bone.parent:
+                    parent_bone_matrix = bone.parent.bone.matrix_local @ utils.BONE_ROTATION_OFFSET_INVERTED
 
                 for frame in range(int(strip.action.frame_start), int(strip.action.frame_end) + 1):
-                    bpy.context.scene.frame_set(frame)
+                    translation = mathutils.Matrix()
+                    if motion.positions_used_flag:
+                        translation = mathutils.Matrix.Translation(
+                            mathutils.Vector(
+                                (
+                                    strip.action.fcurves.find(location_data_path, index=0).evaluate(frame),
+                                    strip.action.fcurves.find(location_data_path, index=1).evaluate(frame),
+                                    strip.action.fcurves.find(location_data_path, index=2).evaluate(frame),
+                                ),
+                            ),
+                        )
+
+                    rotation = mathutils.Matrix()
+                    if motion.rotations_used_flag:
+                        rotation = (
+                            mathutils.Quaternion(
+                                (
+                                    strip.action.fcurves.find(rotation_data_path, index=0).evaluate(frame),
+                                    strip.action.fcurves.find(rotation_data_path, index=1).evaluate(frame),
+                                    strip.action.fcurves.find(rotation_data_path, index=2).evaluate(frame),
+                                    strip.action.fcurves.find(rotation_data_path, index=3).evaluate(frame),
+                                ),
+                            )
+                            .to_matrix()
+                            .to_4x4()
+                        )
+
+                    bone_matrix = bone.bone.convert_local_to_pose(
+                        translation @ rotation,
+                        bone.bone.matrix_local,
+                    )
+                    bone_matrix = parent_bone_matrix.inverted() @ bone_matrix
+                    bone_matrix @= utils.BONE_ROTATION_OFFSET_INVERTED
 
                     if motion.positions_used_flag:
-                        position = copy.copy(bone.head)
-                        if bone.parent is not None:
-                            position = bone.parent.matrix.inverted() @ bone.head
-                            position = utils.BONE_ROTATION_OFFSET @ position
-                        position *= utils.BONE_SCALE
-                        cfp_values.positions_x.append(position.x)
-                        cfp_values.positions_y.append(position.z)  # swap y and z
-                        cfp_values.positions_z.append(position.y)
+                        translation = bone_matrix.to_translation() * utils.BONE_SCALE
+                        cfp_values.positions_x.append(translation.x)
+                        cfp_values.positions_y.append(translation.z)  # swap y and z
+                        cfp_values.positions_z.append(translation.y)
                     if motion.rotations_used_flag:
-                        rotation = bone.matrix @ utils.BONE_ROTATION_OFFSET_INVERTED
-                        if bone.parent is not None:
-                            rotation = (bone.parent.matrix @ utils.BONE_ROTATION_OFFSET_INVERTED).inverted() @ rotation
-                        rotation = rotation.to_quaternion()
+                        rotation = bone_matrix.to_quaternion()
                         cfp_values.rotations_x.append(rotation.x)
                         cfp_values.rotations_y.append(rotation.z)  # swap y and z
                         cfp_values.rotations_z.append(rotation.y)
                         cfp_values.rotations_w.append(rotation.w)
-
-                bpy.context.scene.frame_set(original_current_frame)
 
                 # there's never more than one time property list in official animations
                 time_property_list = bcf.TimePropertyList([])
