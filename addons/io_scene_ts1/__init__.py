@@ -8,8 +8,8 @@ bl_info = {
     "blender": (4, 1, 0),
     "location": "File > Import-Export",
     "warning": "",
-    "doc_url": "",
-    "tracker_url": "",
+    "doc_url": "https://github.com/mixsims/ts1-blender-io/wiki",
+    "tracker_url": "https://github.com/mixsims/ts1-blender-io/issues",
     "support": "COMMUNITY",
     "category": "Import-Export",
 }
