@@ -157,6 +157,16 @@ class TS1IOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
         options={'HIDDEN'},
     )
 
+    export_meshes: bpy.props.BoolProperty(  # type: ignore[valid-type]
+        name="Export Meshes",
+        default=True,
+    )
+
+    export_animations: bpy.props.BoolProperty(  # type: ignore[valid-type]
+        name="Export Animations",
+        default=True,
+    )
+
     mesh_format: bpy.props.EnumProperty(  # type: ignore[valid-type]
         name="Mesh Format",
         description="Which format to use when exporting meshes",
@@ -183,6 +193,8 @@ class TS1IOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
                 context,
                 pathlib.Path(self.properties.filepath),
                 self.mesh_format,
+                export_meshes=self.export_meshes,
+                export_animations=self.export_animations,
                 compress_cfp=self.compress_cfp,
             )
         except export_ts1.ExportError as exception:
@@ -193,6 +205,8 @@ class TS1IOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
     def draw(self, _: bpy.context) -> None:
         """Draw the export options ui."""
         col = self.layout.column()
+        col.prop(self, "export_meshes")
+        col.prop(self, "export_animations")
         col.label(text="Mesh Format:")
         col.prop(self, "mesh_format", text="")
         col.prop(self, "compress_cfp")
