@@ -19,13 +19,13 @@ from . import texture_loader
 from . import utils
 
 
-def import_skeleton(context: bpy.types.Context, skeleton: bcf.Skeleton) -> bpy.types.Armature:
-    """Create an armature for the described skeleton."""
+def import_skeleton(context: bpy.types.Context, skeleton: bcf.Skeleton) -> bpy.types.Object:
+    """Create an armature object for the described skeleton."""
     armature = bpy.data.armatures.new(name=skeleton.name)
-    armature_obj = bpy.data.objects.new(name=skeleton.name, object_data=armature)
-    context.collection.objects.link(armature_obj)
+    armature_object = bpy.data.objects.new(name=skeleton.name, object_data=armature)
+    context.collection.objects.link(armature_object)
 
-    context.view_layer.objects.active = armature_obj
+    context.view_layer.objects.active = armature_object
     bpy.ops.object.mode_set(mode='EDIT')
 
     for bone in skeleton.bones:
@@ -78,8 +78,8 @@ def import_skeleton(context: bpy.types.Context, skeleton: bcf.Skeleton) -> bpy.t
     bpy.ops.object.mode_set(mode='OBJECT')
 
     bpy.ops.object.select_all(action='DESELECT')
-    armature_obj.select_set(state=True)
-    return armature
+    armature_object.select_set(state=True)
+    return armature_object
 
 
 def get_skin_type_skeleton_names(skin_name: str) -> list[str]:  # noqa: C901 PLR0911 PLR0912
@@ -189,12 +189,12 @@ def find_or_import_skeleton(
     context: bpy.types.Context,
     file_list: list[pathlib.Path],
     skeleton_names: list[str],
-) -> bpy.types.Armature | None:
+) -> bpy.types.Object | None:
     """Find a skeleton from the list of names, or import it if it doesn't exist."""
     if context.active_object is not None:
         for skeleton_name in skeleton_names:
-            if context.active_object.name.startswith(skeleton_name):
-                return bpy.data.armatures[context.active_object.name]
+            if context.active_object.type == 'ARMATURE' and context.active_object.name.startswith(skeleton_name):
+                return context.active_object
 
     skeleton_file_name_map = {
         "adult": "adult-skeleton.cmx.bcf",
@@ -205,14 +205,14 @@ def find_or_import_skeleton(
     }
     skeleton_file_name = skeleton_file_name_map.get(skeleton_names[0])
 
-    armature = bpy.data.armatures.get(skeleton_names[0])
-    if armature is None:
+    armature_object = context.scene.objects.get(skeleton_names[0])
+    if armature_object is None or armature_object.type != 'ARMATURE':
         for file_path in file_list:
             if file_path.name == skeleton_file_name:
                 bcf_file = bcf.read_file(file_path)
                 return import_skeleton(context, bcf_file.skeletons[0])
 
-    return armature
+    return armature_object
 
 
 def import_suit(  # noqa: C901 PLR0912 PLR0913 PLR0915
@@ -230,19 +230,19 @@ def import_suit(  # noqa: C901 PLR0912 PLR0913 PLR0915
 ) -> None:
     """Create the meshes for the described suit."""
     for skin in suit.skins:
-        armature = None
+        armature_object = None
         if find_skeleton:
             skeleton_names = get_skin_type_skeleton_names(skin.skin_name)
-            armature = find_or_import_skeleton(context, file_list, skeleton_names)
+            armature_object = find_or_import_skeleton(context, file_list, skeleton_names)
 
-            if armature is None:
+            if armature_object is None:
                 logger.info(f"Could not find or import {skeleton_names[0]} skeleton used by {suit.name}.")  # noqa: G004
                 continue
 
         elif context.active_object:
-            armature = bpy.data.armatures.get(context.active_object.name)
+            armature_object = context.active_object
 
-        if armature is None:
+        if armature_object is None or armature_object.type != 'ARMATURE':
             logger.info("Please select an armature to apply the imported mesh to.")
             break
 
@@ -257,8 +257,12 @@ def import_suit(  # noqa: C901 PLR0912 PLR0913 PLR0915
             logger.info(f"Could not load mesh {skin.skin_name} used by {suit.name}.")  # noqa: G004
             continue
 
+        armature = armature_object.data
+
         if not all(bone in armature.bones for bone in bmf_file.bones):
-            logger.info(f"Could not apply mesh {skin.skin_name} to armature {armature.name}. The bones do not match.")  # noqa: G004
+            logger.info(
+                f"Could not apply mesh {skin.skin_name} to armature {armature_object.name}. The bones do not match.",  # noqa: G004
+            )
             continue
 
         mesh = bpy.data.meshes.new(skin.skin_name)
@@ -354,15 +358,14 @@ def import_suit(  # noqa: C901 PLR0912 PLR0913 PLR0915
         if not obj.data.materials:
             logger.info(f"Could not find a texture for mesh {skin.skin_name}")  # noqa: G004
 
-        if armature_object_map.get(armature.name) is None:
-            armature_object_map[armature.name] = []
+        if armature_object_map.get(armature_object.name) is None:
+            armature_object_map[armature_object.name] = []
 
-        armature_object_map[armature.name] += [obj.name]
+        armature_object_map[armature_object.name] += [obj.name]
 
-        armature_obj = bpy.data.objects[armature.name]
-        obj.location = armature_obj.location
-        obj.rotation_euler = armature_obj.rotation_euler
-        obj.scale = armature_obj.scale
+        obj.location = armature_object.location
+        obj.rotation_euler = armature_object.rotation_euler
+        obj.scale = armature_object.scale
 
 
 def create_fcurve_data(action: bpy.types.Action, data_path: str, index: int, count: int, data: list[float]) -> None:
@@ -589,15 +592,17 @@ def import_files(  # noqa: C901 PLR0912 PLR0913
 
         previous_active_object = context.view_layer.objects.active
 
-        for armature_name in armature_object_map:
+        for armature_object_name in armature_object_map:
             bpy.ops.object.select_all(action='DESELECT')
 
-            for object_name in armature_object_map[armature_name]:
+            for object_name in armature_object_map[armature_object_name]:
                 obj = bpy.data.objects[object_name]
                 obj.select_set(state=True)
 
             if cleanup_meshes:
-                context.view_layer.objects.active = bpy.data.objects[armature_object_map[armature_name][0]]
+                context.view_layer.objects.active = context.scene.objects.get(
+                    armature_object_map[armature_object_name][0],
+                )
                 bpy.ops.object.mode_set(mode='EDIT')
 
                 bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
@@ -612,7 +617,7 @@ def import_files(  # noqa: C901 PLR0912 PLR0913
 
                 bpy.ops.object.mode_set(mode='OBJECT')
 
-            armature_object = bpy.data.objects[armature_name]
+            armature_object = context.scene.objects.get(armature_object_name)
             armature_object.select_set(state=True)
             context.view_layer.objects.active = armature_object
             bpy.ops.object.parent_set(type='ARMATURE')
