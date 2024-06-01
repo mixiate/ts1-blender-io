@@ -567,9 +567,7 @@ def import_files(  # noqa: C901 PLR0912 PLR0913
     if not file_paths[0].parent.is_relative_to(file_search_directory):
         file_list.extend(file_paths[0].parent.glob("*"))
 
-    texture_file_list = [
-        path for path in file_list if path.suffix.lower() == ".bmp" or path.suffix.lower() == ".tga"
-    ]
+    texture_file_list = [path for path in file_list if path.suffix.lower() == ".bmp" or path.suffix.lower() == ".tga"]
 
     if import_skeletons:
         for _, bcf_file in bcf_files:

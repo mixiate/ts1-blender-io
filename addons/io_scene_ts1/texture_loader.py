@@ -257,10 +257,16 @@ def create_material(obj: bpy.types.Object, texture_name: str, texture_file_path:
     if texture_name.lower() in ["white", "grey"]:
         texture_name = texture_name.lower()
 
-    material = bpy.data.materials.get(texture_name)
+    material_list = [material.name.casefold() for material in bpy.data.materials]
+    try:
+        material_index = material_list.index(texture_name.casefold())
+        material = bpy.data.materials[material_index]
+    except ValueError as _:
+        material = None
+
     if material is None:
         if texture_name == "grey":
-            material = bpy.data.materials.new(name=texture_name)
+            material = bpy.data.materials.new(name=texture_name.lower())
             material.use_nodes = True
 
             principled_bsdf = material.node_tree.nodes.get('Principled BSDF')
