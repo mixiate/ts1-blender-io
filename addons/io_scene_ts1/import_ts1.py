@@ -93,7 +93,7 @@ def get_skin_type_skeleton_names(skin_name: str) -> list[str]:  # noqa: C901 PLR
         return ["adult"]
 
     # adult body
-    if re.match("^xskin-b\\d{3}(f|m|u)a(skn|fit|fat|chd).*-body.*", skin_name.lower()):
+    if re.match("^xskin-(b|f|h|l|s|w)\\d{3}(f|m|u)a(skn|fit|fat|chd).*-body.*", skin_name.lower()):
         return ["adult"]
 
     # child head
@@ -101,7 +101,7 @@ def get_skin_type_skeleton_names(skin_name: str) -> list[str]:  # noqa: C901 PLR
         return ["child"]
 
     # child body
-    if re.match("^xskin-b\\d{3}(f|m|u)c(skn|fit|fat|chd|).*-body.*", skin_name.lower()):
+    if re.match("^xskin-(b|f|h|l|s|w)\\d{3}(f|m|u)c(skn|fit|fat|chd|).*-body.*", skin_name.lower()):
         return ["child"]
 
     # adult npc head
