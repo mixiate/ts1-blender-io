@@ -567,7 +567,7 @@ def import_files(  # noqa: C901 PLR0912 PLR0913
     if not file_paths[0].parent.is_relative_to(file_search_directory):
         file_list.extend(file_paths[0].parent.glob("*"))
 
-    texture_file_list = [path for path in file_list if path.suffix.lower() == ".bmp" or path.suffix.lower() == ".tga"]
+    bcf_file_list = [path for path in file_list if path.suffix.lower() == ".bcf" or path.suffix.lower() == ".cmx"]
 
     if import_skeletons:
         for _, bcf_file in bcf_files:
@@ -575,6 +575,13 @@ def import_files(  # noqa: C901 PLR0912 PLR0913
                 import_skeleton(context, skeleton)
 
     if import_meshes:
+        mesh_file_list = bcf_file_list + [
+            path for path in file_list if path.suffix.lower() == ".bmf" or path.suffix.lower() == ".skn"
+        ]
+        texture_file_list = [
+            path for path in file_list if path.suffix.lower() == ".bmp" or path.suffix.lower() == ".tga"
+        ]
+
         armature_object_map: dict[str, list[str]] = {}
         for bcf_file_path, bcf_file in bcf_files:
             for suit in bcf_file.suits:
@@ -582,7 +589,7 @@ def import_files(  # noqa: C901 PLR0912 PLR0913
                     context,
                     logger,
                     bcf_file_path.parent,
-                    file_list,
+                    mesh_file_list,
                     texture_file_list,
                     suit,
                     preferred_skin_color,
@@ -628,6 +635,8 @@ def import_files(  # noqa: C901 PLR0912 PLR0913
         context.view_layer.objects.active = previous_active_object
 
     if import_animations:
+        animation_file_list = bcf_file_list + [path for path in file_list if path.suffix.lower() == ".cfp"]
+
         for bcf_file_path, bcf_file in bcf_files:
             for skill in bcf_file.skills:
-                import_skill(context, logger, bcf_file_path.parent, file_list, skill)
+                import_skill(context, logger, bcf_file_path.parent, animation_file_list, skill)
