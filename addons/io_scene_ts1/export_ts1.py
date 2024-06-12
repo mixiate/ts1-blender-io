@@ -193,7 +193,7 @@ def export_suit(
             raise ExportError(error_message)
 
         expected_object_name_prefix = f"xskin-{suit_name}-{bone_name}-"
-        if not obj.name.startswith(expected_object_name_prefix):
+        if not obj.name.lower().startswith(expected_object_name_prefix.lower()):
             error_message = (
                 f"{obj.name} object name is invalid. It's name should start with {expected_object_name_prefix}"
             )
