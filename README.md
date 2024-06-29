@@ -15,5 +15,6 @@ Blender 4.1.1 is supported.
 - CFP file compression
 - Mesh cleanup option
 - File search directory option
+- Import console version meshes (Xbox only)
 
 You can find out how to use the add-on in the [wiki](https://github.com/mixsims/ts1-blender-io/wiki).

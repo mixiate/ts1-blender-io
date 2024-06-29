@@ -4,7 +4,7 @@ bl_info = {
     "name": "The Sims 1 3D Formats",
     "description": "Imports and exports The Sims 1 meshes and animations.",
     "author": "mix",
-    "version": (1, 0, 3),
+    "version": (1, 1, 0),
     "blender": (4, 1, 0),
     "location": "File > Import-Export",
     "warning": "",
@@ -34,13 +34,13 @@ class TS1IOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
     bl_idname: str = "import.bcf"
     bl_label: str = "Import The Sims 1 meshes and animations"
-    bl_description: str = "Import a cmx or bcf file from The Sims 1"
+    bl_description: str = "Import a cmx/bcf or xbm file from The Sims 1"
     bl_options: typing.ClassVar[set[str]] = {'UNDO'}
 
     filename_ext = ".cmx.bcf"
 
     filter_glob: bpy.props.StringProperty(  # type: ignore[valid-type]
-        default="*.cmx;*.cmx.bcf",
+        default="*.xbm;*.cmx;*.cmx.bcf",
         options={'HIDDEN'},
     )
     files: bpy.props.CollectionProperty(  # type: ignore[valid-type]
@@ -214,7 +214,7 @@ class TS1IOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
 
 def menu_import(self: bpy.types.TOPBAR_MT_file_import, _: bpy.context) -> None:
     """Add an entry to the import menu."""
-    self.layout.operator(TS1IOImport.bl_idname, text="The Sims 1 (.cmx/.bcf)")
+    self.layout.operator(TS1IOImport.bl_idname, text="The Sims 1 (.cmx/.bcf/.xbm)")
 
 
 def menu_export(self: bpy.types.TOPBAR_MT_file_export, _: bpy.context) -> None:
@@ -234,9 +234,17 @@ class TS1IOAddonPreferences(bpy.types.AddonPreferences):
         default="",
     )
 
+    file_search_directory_xbox: bpy.props.StringProperty(  # type: ignore[valid-type]
+        name="Xbox Textures",
+        description="Directory that will be searched to find textures for xbox meshes",
+        subtype='DIR_PATH',
+        default="",
+    )
+
     def draw(self, _: bpy.context) -> None:
         """Draw the addon preferences ui."""
         self.layout.prop(self, "file_search_directory")
+        self.layout.prop(self, "file_search_directory_xbox")
 
 
 classes = (
