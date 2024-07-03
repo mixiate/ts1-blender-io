@@ -10,10 +10,9 @@ Blender 4.1.1 is supported.
 - Import and export animations
 - BCF and CMX support
 - BMF and SKN support
-- Automatically load textures
+- Automatically load textures from directory in addon preferences
 - Animation events
 - CFP file compression
 - Mesh cleanup option
-- File search directory option
 
 You can find out how to use the add-on in the [wiki](https://github.com/mixsims/ts1-blender-io/wiki).
