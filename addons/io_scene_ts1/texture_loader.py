@@ -299,9 +299,9 @@ def create_material(obj: bpy.types.Object, texture_name: str, texture_file_path:
             principled_bsdf.inputs[2].default_value = 1.0
             principled_bsdf.inputs[12].default_value = 0.0
 
-            if texture_file_path.suffix.lower() == ".tga" or texture_file_path.suffix.lower() == ".png":
+            if texture_file_path.suffix.lower() == ".tga":
                 material.node_tree.links.new(image_node.outputs[1], principled_bsdf.inputs[4])
-                material.blend_method = 'HASHED'
+                material.blend_method = 'BLEND'
 
     if material.name not in obj.data.materials:
         obj.data.materials.append(material)
