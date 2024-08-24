@@ -2,7 +2,21 @@ line-length = 120
 
 [lint]
 select = ["ALL"]
-ignore = ["ANN101", "D203", "D213", "FA102", "I001", "Q000"]
+ignore = [
+    "ANN101",
+    "C901",
+    "COM812",
+    "D203",
+    "D213",
+    "FA102",
+    "I001",
+    "ISC001",
+    "PLR0912",
+    "PLR0913",
+    "PLR0915",
+    "PLR2004",
+    "Q000",
+]
 
 [format]
 quote-style = "preserve"

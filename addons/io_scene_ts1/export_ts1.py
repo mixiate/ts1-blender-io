@@ -21,7 +21,7 @@ class ExportError(Exception):
 MAX_VERTEX_GROUP_COUNT = 2
 
 
-def export_skin(directory: pathlib.Path, mesh_format: str, obj: bpy.types.Object) -> None:  # noqa: C901 PLR0912 PLR0915
+def export_skin(directory: pathlib.Path, mesh_format: str, obj: bpy.types.Object) -> None:
     """Export the object's mesh to a BMF or SKN file."""
     mesh = obj.data
     uv_layer = mesh.uv_layers[0]
@@ -218,7 +218,7 @@ def export_suit(
     )
 
 
-def export_skills(  # noqa: C901 PLR0912 PLR0915
+def export_skills(
     armature_object: bpy.types.Object,
     output_directory: pathlib.Path,
     *,
@@ -388,7 +388,7 @@ def export_skills(  # noqa: C901 PLR0912 PLR0915
     return skills
 
 
-def export_files(  # noqa: PLR0913
+def export_files(
     context: bpy.types.Context,
     file_path: pathlib.Path,
     mesh_format: str,

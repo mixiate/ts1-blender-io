@@ -353,7 +353,7 @@ def reduce_texture_file_list(
     return list(next(zip(*reduced_texture_file_list)))
 
 
-def fixup_skin_name_and_default_texture(skin_name: str, default_texture: str) -> tuple[str, str]:  # noqa: C901 PLR0912 PLR0915
+def fixup_skin_name_and_default_texture(skin_name: str, default_texture: str) -> tuple[str, str]:
     """Fix mistakes in the skin name and default texture in files from The Sims 1."""
     # base game
     if skin_name == "xskin-b001fcchd_01-PELVIS-BODYCHD":
@@ -504,7 +504,7 @@ def fixup_skin_name_and_default_texture(skin_name: str, default_texture: str) ->
     return skin_name, default_texture
 
 
-def add_job_and_npc_textures(texture_names: list[str], skin_name: str, preferred_skin_color: str) -> None:  # noqa: C901 PLR0912 PLR0915
+def add_job_and_npc_textures(texture_names: list[str], skin_name: str, preferred_skin_color: str) -> None:
     """Add any job and npc textures for the given skin to the list of texture names."""
     # base game
     if skin_name.startswith("xskin-b001ma"):
@@ -597,7 +597,7 @@ def add_job_and_npc_textures(texture_names: list[str], skin_name: str, preferred
         texture_names += list_npc_body_texture_variants("xskin-Petjudge_Mafit_02-pelvis-body", preferred_skin_color)
 
 
-def load_textures(  # noqa: C901 PLR0912 PLR0913 PLR0915
+def load_textures(
     obj: bpy.types.Object,
     texture_file_list: list[pathlib.Path],
     skin_name: str,

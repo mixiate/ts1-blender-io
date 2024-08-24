@@ -82,7 +82,7 @@ def import_skeleton(context: bpy.types.Context, skeleton: bcf.Skeleton) -> bpy.t
     return armature_object
 
 
-def get_skin_type_skeleton_names(skin_name: str) -> list[str]:  # noqa: C901 PLR0911 PLR0912
+def get_skin_type_skeleton_names(skin_name: str) -> list[str]:  # noqa: PLR0911
     """Get a list of skeletons that a skin can be applied to."""
     # gnome
     if re.match("^xskin-SpellboundMAFat_Gnome-.*-GNOMEBODY.*", skin_name):
@@ -215,7 +215,7 @@ def find_or_import_skeleton(
     return armature_object
 
 
-def import_suit(  # noqa: C901 PLR0912 PLR0913 PLR0915
+def import_suit(
     context: bpy.types.Context,
     logger: logging.Logger,
     bcf_directory: pathlib.Path,
@@ -379,7 +379,7 @@ def create_fcurve_data(action: bpy.types.Action, data_path: str, index: int, cou
 MAX_TIMELINE_MARKER_NAME_LENGTH = 63  # 64 - null
 
 
-def import_skill(  # noqa: C901 PLR0912 PLR0915
+def import_skill(
     context: bpy.types.Context,
     logger: logging.Logger,
     file_directory: pathlib.Path,
@@ -532,7 +532,7 @@ def import_skill(  # noqa: C901 PLR0912 PLR0915
     context.scene.frame_end = max(context.scene.frame_end, skill.motions[0].frame_count)
 
 
-def import_files(  # noqa: C901 PLR0912 PLR0913
+def import_files(
     context: bpy.types.Context,
     logger: logging.Logger,
     file_paths: list[pathlib.Path],
