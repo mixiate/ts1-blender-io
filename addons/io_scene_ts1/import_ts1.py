@@ -528,6 +528,8 @@ def import_skill(  # noqa: C901 PLR0912 PLR0915
     track = armature_object.animation_data.nla_tracks.new(prev=None)
     track.name = skill.animation_name
     track.strips.new(skill.skill_name, 1, action)
+    track.mute = True
+
     armature_object.animation_data.action = original_action
 
 
