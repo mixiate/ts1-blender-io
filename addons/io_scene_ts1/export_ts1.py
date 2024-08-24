@@ -239,7 +239,7 @@ def export_skills(
             skill = bcf.Skill(
                 strip.action.name,
                 nla_track.name,
-                math.floor((strip.action.frame_end) * 33.3333333),
+                round((strip.action.frame_end) * 33.3333333),
                 distance,
                 1 if distance != 0.0 else 0,
                 0,
