@@ -411,8 +411,6 @@ def import_skill(  # noqa: C901 PLR0912 PLR0915
 
     armature_object.animation_data_create()
 
-    original_action = armature_object.animation_data.action
-
     armature_object.animation_data.action = bpy.data.actions.new(name=skill.skill_name)
     action = armature_object.animation_data.action
 
@@ -529,8 +527,6 @@ def import_skill(  # noqa: C901 PLR0912 PLR0915
     track.name = skill.animation_name
     track.strips.new(skill.skill_name, 1, action)
     track.mute = True
-
-    armature_object.animation_data.action = original_action
 
     context.scene.render.fps = 33
     context.scene.frame_end = max(context.scene.frame_end, skill.motions[0].frame_count)
