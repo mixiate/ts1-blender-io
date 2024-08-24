@@ -532,6 +532,9 @@ def import_skill(  # noqa: C901 PLR0912 PLR0915
 
     armature_object.animation_data.action = original_action
 
+    context.scene.render.fps = 33
+    context.scene.frame_end = max(context.scene.frame_end, skill.motions[0].frame_count)
+
 
 def import_files(  # noqa: C901 PLR0912 PLR0913
     context: bpy.types.Context,
