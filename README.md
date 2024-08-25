@@ -14,5 +14,6 @@ Blender 4.1.1 is supported.
 - Animation events
 - CFP file compression
 - Mesh cleanup option
+- Cross compatible with The Sims Online skeletons, meshes and animations imported with [TSO Blender IO](https://github.com/mixsims/tso-blender-io)
 
 You can find out how to use the add-on in the [wiki](https://github.com/mixsims/ts1-blender-io/wiki).
