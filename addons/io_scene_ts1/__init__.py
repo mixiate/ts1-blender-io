@@ -2,7 +2,7 @@
 
 bl_info = {
     "name": "The Sims 1 3D Formats",
-    "description": "Imports and exports The Sims 1 meshes and animations.",
+    "description": "Import and export The Sims 1 meshes and animations",
     "author": "mix",
     "version": (1, 2, 1),
     "blender": (4, 1, 0),
