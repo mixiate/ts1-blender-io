@@ -1,6 +1,7 @@
 """Export to The Sims 1 files."""
 
 import bpy
+import itertools
 import math
 import mathutils
 import pathlib
@@ -271,26 +272,23 @@ def export_skills(
                 if not motion.positions_used_flag and not motion.rotations_used_flag:
                     continue
 
-                parent_bone_matrix = mathutils.Matrix()
-                if bone.parent:
-                    parent_bone_matrix = bone.parent.bone.matrix_local @ utils.BONE_ROTATION_OFFSET_INVERTED
+                locations = []
+                rotations = []
 
                 for frame in range(int(strip.action.frame_start), int(strip.action.frame_end) + 1):
-                    translation = mathutils.Matrix()
                     if motion.positions_used_flag:
-                        translation = mathutils.Matrix.Translation(
+                        locations.append(
                             mathutils.Vector(
                                 (
                                     strip.action.fcurves.find(location_data_path, index=0).evaluate(frame),
                                     strip.action.fcurves.find(location_data_path, index=1).evaluate(frame),
                                     strip.action.fcurves.find(location_data_path, index=2).evaluate(frame),
                                 ),
-                            ),
+                            )
                         )
 
-                    rotation = mathutils.Matrix()
                     if motion.rotations_used_flag:
-                        rotation = (
+                        rotations.append(
                             mathutils.Quaternion(
                                 (
                                     strip.action.fcurves.find(rotation_data_path, index=0).evaluate(frame),
@@ -299,28 +297,48 @@ def export_skills(
                                     strip.action.fcurves.find(rotation_data_path, index=3).evaluate(frame),
                                 ),
                             )
-                            .to_matrix()
-                            .to_4x4()
                         )
 
+                if all(location == mathutils.Vector() for location in locations):
+                    motion.positions_used_flag = False
+
+                if all(rotation == mathutils.Quaternion() for rotation in rotations):
+                    motion.rotations_used_flag = False
+
+                if not motion.positions_used_flag and not motion.rotations_used_flag:
+                    continue
+
+                parent_bone_matrix = mathutils.Matrix()
+                if bone.parent:
+                    parent_bone_matrix = bone.parent.bone.matrix_local @ utils.BONE_ROTATION_OFFSET_INVERTED
+
+                for translation, rotation in itertools.zip_longest(locations, rotations):
+                    translation_matrix = mathutils.Matrix()
+                    if translation:
+                        translation_matrix = mathutils.Matrix.Translation(translation)
+
+                    rotation_matrix = mathutils.Matrix()
+                    if rotation:
+                        rotation_matrix = rotation.to_matrix().to_4x4()
+
                     bone_matrix = bone.bone.convert_local_to_pose(
-                        translation @ rotation,
+                        translation_matrix @ rotation_matrix,
                         bone.bone.matrix_local,
                     )
                     bone_matrix = parent_bone_matrix.inverted() @ bone_matrix
                     bone_matrix @= utils.BONE_ROTATION_OFFSET_INVERTED
 
                     if motion.positions_used_flag:
-                        translation = bone_matrix.to_translation() * utils.BONE_SCALE
-                        cfp_values.positions_x.append(translation.x)
-                        cfp_values.positions_y.append(translation.z)  # swap y and z
-                        cfp_values.positions_z.append(translation.y)
+                        final_translation = bone_matrix.to_translation() * utils.BONE_SCALE
+                        cfp_values.positions_x.append(final_translation.x)
+                        cfp_values.positions_y.append(final_translation.z)  # swap y and z
+                        cfp_values.positions_z.append(final_translation.y)
                     if motion.rotations_used_flag:
-                        rotation = bone_matrix.to_quaternion()
-                        cfp_values.rotations_x.append(rotation.x)
-                        cfp_values.rotations_y.append(rotation.z)  # swap y and z
-                        cfp_values.rotations_z.append(rotation.y)
-                        cfp_values.rotations_w.append(rotation.w)
+                        final_rotation = bone_matrix.to_quaternion()
+                        cfp_values.rotations_x.append(final_rotation.x)
+                        cfp_values.rotations_y.append(final_rotation.z)  # swap y and z
+                        cfp_values.rotations_z.append(final_rotation.y)
+                        cfp_values.rotations_w.append(final_rotation.w)
 
                 # there's never more than one time property list in official animations
                 time_property_list = bcf.TimePropertyList([])
