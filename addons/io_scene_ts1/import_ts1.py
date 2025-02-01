@@ -23,7 +23,7 @@ def import_skeleton(context: bpy.types.Context, skeleton: bcf.Skeleton) -> bpy.t
     """Create an armature object for the described skeleton."""
     armature = bpy.data.armatures.new(name=skeleton.name)
     armature_object = bpy.data.objects.new(name=skeleton.name, object_data=armature)
-    context.collection.objects.link(armature_object)
+    context.scene.collection.objects.link(armature_object)
 
     context.view_layer.objects.active = armature_object
     bpy.ops.object.mode_set(mode='EDIT')
@@ -273,8 +273,8 @@ def import_suit(
             mesh_collection = bpy.data.collections.new(suit.name)
             mesh_collection["Suit Type"] = suit.suit_type
         mesh_collection.objects.link(obj)
-        if mesh_collection.name not in context.collection.children:
-            context.collection.children.link(mesh_collection)
+        if mesh_collection.name not in context.scene.collection.children:
+            context.scene.collection.children.link(mesh_collection)
 
         obj["Bone Name"] = skin.bone_name
         obj["Censor Flags"] = skin.censor_flags
