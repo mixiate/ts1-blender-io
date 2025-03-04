@@ -416,6 +416,9 @@ def export_files(
     compress_cfp: bool,
 ) -> None:
     """Export all the meshes and animations in the scene to the selected file."""
+    if context.active_object is not None and context.active_object.mode != "OBJECT":
+        bpy.ops.object.mode_set(mode='OBJECT')
+
     skeletons: list[bcf.Skeleton] = []
     suits: list[bcf.Suit] = []
     skills: list[bcf.Skill] = []
