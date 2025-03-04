@@ -2,7 +2,7 @@
 
 TS1 Blender IO is an add-on for [Blender](https://www.blender.org/) which allows you to import and export the 3D file formats from The Sims 1.
 
-Blender 4.1.1, 4.2 and 4.2.1 are supported.
+Blender 4.1.1, 4.2, 4.2.1 and 4.3.2 are supported.
 
 ### Features
 - Import Skeletons
