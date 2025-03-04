@@ -299,12 +299,7 @@ def read_file(file_path: pathlib.Path) -> bcf.Bcf:
             if file.readline().strip() != "version 300":
                 raise utils.FileReadError
 
-            bcf = read_cmx(file)
-
-            if file.readline() != "":
-                raise utils.FileReadError
-
-            return bcf
+            return read_cmx(file)
 
     except OSError as exception:
         raise utils.FileReadError from exception
