@@ -7,12 +7,12 @@ import re
 
 def is_head_skin_type(skin_name: str) -> re.Match | None:
     """Return a regex match if the skin type is a head."""
-    return re.match("^xskin-c\\d{3}(f|m|u)(a|c)_.*-head-head$", skin_name.lower())
+    return re.match("^xskin-c[a-zA-Z0-9]{3}(f|m|u)(a|c)_.*-head-head$", skin_name.lower())
 
 
 def is_body_skin_type(skin_name: str) -> re.Match | None:
     """Return a regex match if the skin type is a body."""
-    return re.match("^xskin-(b|f|h|l|s|w)\\d{3}(f|m|u)(a|c)(skn|fit|fat|chd).*-pelvis-body$", skin_name.lower())
+    return re.match("^xskin-(b|f|h|l|s|w)[a-zA-Z0-9]{3}(f|m|u)(a|c)(skn|fit|fat|chd).*-pelvis-body$", skin_name.lower())
 
 
 def is_hand_skin_type(skin_name: str) -> re.Match | None:
@@ -27,32 +27,32 @@ def is_nude_body_skin_type(skin_name: str) -> re.Match | None:
 
 def is_npc_head_skin_type(skin_name: str) -> re.Match | None:
     """Return a regex match if the skin type is an npc head."""
-    return re.match("^xskin-c((?!\\d{3}).).*(f|m|u)(a|c)_.*-head-head$", skin_name.lower())
+    return re.match("^xskin-c((?![a-zA-Z0-9]{3}).).*(f|m|u)(a|c)_.*-head-head$", skin_name.lower())
 
 
 def is_sex_npc_head_skin_type(skin_name: str) -> re.Match | None:
     """Return a regex match if the skin type is an npc head with sex indicator."""
-    return re.match("^xskin-c((?!\\d{3}).).*(f|m|u)_.*-head-head$", skin_name.lower())
+    return re.match("^xskin-c((?![a-zA-Z0-9]{3}).).*(f|m|u)_.*-head-head$", skin_name.lower())
 
 
 def is_weight_npc_head_skin_type(skin_name: str) -> re.Match | None:
     """Return a regex match if the skin type is an npc head with weight indicator."""
-    return re.match("^xskin-c((?!\\d{3}).).*(f|m|u)(skn|fit|fat)_.*-head-head$", skin_name.lower())
+    return re.match("^xskin-c((?![a-zA-Z0-9]{3}).).*(f|m|u)(skn|fit|fat)_.*-head-head$", skin_name.lower())
 
 
 def is_age_weight_npc_head_skin_type(skin_name: str) -> re.Match | None:
     """Return a regex match if the skin type is an npc head with age and weight indicators."""
-    return re.match("^xskin-c((?!\\d{3}).).*(f|m|u)(a|c)(skn|fit|fat)_.*-head-head$", skin_name.lower())
+    return re.match("^xskin-c((?![a-zA-Z0-9]{3}).).*(f|m|u)(a|c)(skn|fit|fat)_.*-head-head$", skin_name.lower())
 
 
 def is_npc_body_skin_type(skin_name: str) -> re.Match | None:
     """Return a regex match if the skin type is an npc body."""
-    return re.match("^xskin-((?!\\d{3}).).*(f|m|u)(a|c|)(skn|fit|fat|chd)_.*-pelvis-body$", skin_name.lower())
+    return re.match("^xskin-((?![a-zA-Z0-9]{3}).).*(f|m|u)(a|c|)(skn|fit|fat|chd)_.*-pelvis-body$", skin_name.lower())
 
 
 def is_unleashed_npc_body_skin_type(skin_name: str) -> re.Match | None:
     """Return a regex match if the skin type is an unleashed npc body."""
-    return re.match("xskin-b((?!\\d{3}).).*_01-pelvis-body$", skin_name.lower())
+    return re.match("xskin-b((?![a-zA-Z0-9]{3}).).*_01-pelvis-body$", skin_name.lower())
 
 
 def is_costume_body_skin_type(skin_name: str) -> re.Match | None:
