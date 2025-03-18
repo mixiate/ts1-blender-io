@@ -17,3 +17,6 @@ Blender 4.1.1, 4.2, 4.2.1 and 4.3.2 are supported.
 - Cross compatible with The Sims Online skeletons, meshes and animations imported with [TSO Blender IO](https://github.com/mixiate/tso-blender-io)
 
 You can find out how to use the add-on in the [wiki](https://github.com/mixiate/ts1-blender-io/wiki).
+
+### You may be interested in
+- [TS1 Renderer](https://github.com/mixiate/ts1-renderer) - Render sprites for The Sims 1 objects with Blender.
