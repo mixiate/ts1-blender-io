@@ -22,9 +22,21 @@ class ExportError(Exception):
 MAX_VERTEX_GROUP_COUNT = 2
 
 
-def export_skin(directory: pathlib.Path, mesh_format: str, obj: bpy.types.Object) -> None:
+def export_skin(directory: pathlib.Path, mesh_format: str, obj: bpy.types.Object, *, apply_modifiers: bool) -> None:
     """Export the object's mesh to a BMF or SKN file."""
-    mesh = obj.data
+    if apply_modifiers:
+        armature_modifiers = {}
+        for i, modifier in enumerate(obj.modifiers):
+            if modifier.type == 'ARMATURE':
+                armature_modifiers[i] = modifier.show_viewport
+                modifier.show_viewport = False
+
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        mesh_owner = obj.evaluated_get(depsgraph)
+        mesh = mesh_owner.to_mesh(preserve_all_data_layers=True, depsgraph=depsgraph)
+    else:
+        mesh = obj.data
+
     uv_layer = mesh.uv_layers[0]
 
     new_vertices = []
@@ -160,6 +172,12 @@ def export_skin(directory: pathlib.Path, mesh_format: str, obj: bpy.types.Object
         vertices,
     )
 
+    if apply_modifiers:
+        for i, show_viewport in armature_modifiers.items():
+            obj.modifiers[i].show_viewport = show_viewport
+
+        mesh_owner.to_mesh_clear()
+
     match mesh_format:
         case 'bmf':
             bmf.write_file(directory / (obj.name + ".bmf"), bmf_file)
@@ -176,6 +194,8 @@ def export_suit(
     suit_name: str,
     suit_type: int,
     objects: list[bpy.types.Object],
+    *,
+    apply_modifiers: bool,
 ) -> bcf.Suit:
     """Create a BCF suit from the list of objects, and export the meshes of the objects."""
     skins = []
@@ -209,7 +229,7 @@ def export_suit(
             ),
         )
 
-        export_skin(directory, mesh_format, obj)
+        export_skin(directory, mesh_format, obj, apply_modifiers=apply_modifiers)
 
     return bcf.Suit(
         suit_name,
@@ -414,6 +434,7 @@ def export_files(
     export_meshes: bool,
     export_animations: bool,
     compress_cfp: bool,
+    apply_modifiers: bool,
 ) -> None:
     """Export all the meshes and animations in the scene to the selected file."""
     if context.active_object is not None and context.active_object.mode != "OBJECT":
@@ -436,6 +457,7 @@ def export_files(
                     collection.name,
                     collection.get("Suit Type", 0),
                     objects,
+                    apply_modifiers=apply_modifiers,
                 ),
             )
 

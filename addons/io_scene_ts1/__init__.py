@@ -177,6 +177,12 @@ class TS1IOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
         default='bmf',
     )
 
+    apply_modifiers: bpy.props.BoolProperty(  # type: ignore[valid-type]
+        name="Apply Modifiers",
+        description="Apply modifiers to meshes before exporting",
+        default=True,
+    )
+
     compress_cfp: bpy.props.BoolProperty(  # type: ignore[valid-type]
         name="Compress CFP file (Lossy)",
         description="Compress the values in the CFP file",
@@ -196,6 +202,7 @@ class TS1IOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
                 export_meshes=self.export_meshes,
                 export_animations=self.export_animations,
                 compress_cfp=self.compress_cfp,
+                apply_modifiers=self.apply_modifiers,
             )
         except export_ts1.ExportError as exception:
             self.report({"ERROR"}, exception.args[0])
@@ -209,6 +216,7 @@ class TS1IOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
         col.prop(self, "export_animations")
         col.label(text="Mesh Format:")
         col.prop(self, "mesh_format", text="")
+        col.prop(self, "apply_modifiers")
         col.prop(self, "compress_cfp")
 
 
