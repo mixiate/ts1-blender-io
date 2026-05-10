@@ -4,6 +4,8 @@ TS1 Blender IO is an add-on for [Blender](https://www.blender.org/) which allows
 
 Blender 4.1, 4.2, 4.3, 4.4, 4.5, 5.0 and 5.1 are supported.
 
+[**Download**](https://github.com/mixiate/ts1-blender-io/releases/latest)
+
 ### Features
 - Import Skeletons
 - Import and export meshes
