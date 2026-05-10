@@ -1,6 +1,7 @@
 """Export to The Sims 1 files."""
 
 import bpy
+from bpy_extras import anim_utils
 import itertools
 import math
 import mathutils
@@ -284,9 +285,14 @@ def export_skills(
                 location_data_path = bone.path_from_id("location")
                 rotation_data_path = bone.path_from_id("rotation_quaternion")
 
-                if strip.action.fcurves.find(location_data_path):
+                if bpy.app.version[0] >= 5:
+                    fcurves = anim_utils.action_get_channelbag_for_slot(strip.action, strip.action_slot).fcurves
+                else:
+                    fcurves = strip.action.fcurves
+
+                if fcurves.find(location_data_path):
                     motion.positions_used_flag = 1
-                if strip.action.fcurves.find(rotation_data_path):
+                if fcurves.find(rotation_data_path):
                     motion.rotations_used_flag = 1
 
                 if not motion.positions_used_flag and not motion.rotations_used_flag:
@@ -300,9 +306,9 @@ def export_skills(
                         locations.append(
                             mathutils.Vector(
                                 (
-                                    strip.action.fcurves.find(location_data_path, index=0).evaluate(frame),
-                                    strip.action.fcurves.find(location_data_path, index=1).evaluate(frame),
-                                    strip.action.fcurves.find(location_data_path, index=2).evaluate(frame),
+                                    fcurves.find(location_data_path, index=0).evaluate(frame),
+                                    fcurves.find(location_data_path, index=1).evaluate(frame),
+                                    fcurves.find(location_data_path, index=2).evaluate(frame),
                                 ),
                             )
                         )
@@ -311,10 +317,10 @@ def export_skills(
                         rotations.append(
                             mathutils.Quaternion(
                                 (
-                                    strip.action.fcurves.find(rotation_data_path, index=0).evaluate(frame),
-                                    strip.action.fcurves.find(rotation_data_path, index=1).evaluate(frame),
-                                    strip.action.fcurves.find(rotation_data_path, index=2).evaluate(frame),
-                                    strip.action.fcurves.find(rotation_data_path, index=3).evaluate(frame),
+                                    fcurves.find(rotation_data_path, index=0).evaluate(frame),
+                                    fcurves.find(rotation_data_path, index=1).evaluate(frame),
+                                    fcurves.find(rotation_data_path, index=2).evaluate(frame),
+                                    fcurves.find(rotation_data_path, index=3).evaluate(frame),
                                 ),
                             )
                         )
