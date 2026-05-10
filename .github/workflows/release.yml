@@ -5,16 +5,14 @@ on:
     tags:
        - "v*.*.*"
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
-  build:
-
-    runs-on: windows-latest
+  release:
+    runs-on: ubuntu-slim
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
+    - name: Copy Packages
+      run: cp -R ts1_formats addons/io_scene_ts1/ts1_formats
     - name: Archive Release
       uses: thedoctor0/zip-release@0.7.6
       with:
