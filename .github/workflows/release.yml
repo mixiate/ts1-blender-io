@@ -12,12 +12,11 @@ jobs:
     steps:
     - uses: actions/checkout@v6
     - name: Copy Packages
-      run: cp -R ts1_formats addons/io_scene_ts1/ts1_formats
+      run: cp -R ts1_formats io_scene_ts1/ts1_formats
     - name: Archive Release
       uses: thedoctor0/zip-release@0.7.6
       with:
         type: "zip"
-        directory: "addons"
         path: "io_scene_ts1"
         filename: "${{github.event.repository.name}}-${{github.ref_name}}.zip"
     - name: Release
