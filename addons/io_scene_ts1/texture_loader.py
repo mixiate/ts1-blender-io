@@ -252,6 +252,9 @@ def list_costume_body_texture_variants(skin_name: str, preferred_skin_color: str
     return texture_names
 
 
+SPECULAR_IOR_INDEX = 13 if bpy.app.version[0] >= 5 else 12
+
+
 def create_material(obj: bpy.types.Object, texture_name: str, texture_file_path: pathlib.Path) -> None:
     """Load the texture file, create a Blender material using it and add it to a material slot in the object."""
     if texture_name.lower() in ["white", "grey"]:
@@ -272,7 +275,7 @@ def create_material(obj: bpy.types.Object, texture_name: str, texture_file_path:
             principled_bsdf = material.node_tree.nodes.get('Principled BSDF')
             principled_bsdf.inputs[0].default_value = (0.2, 0.2, 0.2, 1.0)
             principled_bsdf.inputs[2].default_value = 1.0
-            principled_bsdf.inputs[12].default_value = 0.0
+            principled_bsdf.inputs[SPECULAR_IOR_INDEX].default_value = 0.0
 
         elif texture_name == "white":
             material = bpy.data.materials.new(name=texture_name)
@@ -281,7 +284,7 @@ def create_material(obj: bpy.types.Object, texture_name: str, texture_file_path:
             principled_bsdf = material.node_tree.nodes.get('Principled BSDF')
             principled_bsdf.inputs[0].default_value = (1.0, 1.0, 1.0, 1.0)
             principled_bsdf.inputs[2].default_value = 1.0
-            principled_bsdf.inputs[12].default_value = 0.0
+            principled_bsdf.inputs[SPECULAR_IOR_INDEX].default_value = 0.0
 
         else:
             material = bpy.data.materials.new(name=texture_name)
@@ -297,7 +300,7 @@ def create_material(obj: bpy.types.Object, texture_name: str, texture_file_path:
             principled_bsdf = material.node_tree.nodes.get('Principled BSDF')
             material.node_tree.links.new(image_node.outputs[0], principled_bsdf.inputs[0])
             principled_bsdf.inputs[2].default_value = 1.0
-            principled_bsdf.inputs[12].default_value = 0.0
+            principled_bsdf.inputs[SPECULAR_IOR_INDEX].default_value = 0.0
 
             if texture_file_path.suffix.lower() == ".tga":
                 material.node_tree.links.new(image_node.outputs[1], principled_bsdf.inputs[4])
