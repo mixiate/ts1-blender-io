@@ -18,5 +18,8 @@ ignore = [
     "Q000",
 ]
 
+[lint.per-file-ignores]
+"tests/*.py" = ["S101"]
+
 [format]
 quote-style = "preserve"
