@@ -1,5 +1,7 @@
 """CFP format tests."""
 
+import itertools
+import multiprocessing
 from pathlib import Path
 
 from ts1_formats import bcf
@@ -40,18 +42,26 @@ def read_cfps(cfp_file_list: list[Path], directory: Path, skills: list[bcf.Skill
         cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
 
 
+def read_bcf(file_path: Path, cfp_file_list: list[Path]) -> None:
+    """Read a bcf file and all the cfp files in the specified skills."""
+    bcf_file = bcf.read_file(file_path)
+    read_cfps(cfp_file_list, file_path.parents[0], bcf_file.skills)
+
+
+def read_cmx(file_path: Path, cfp_file_list: list[Path]) -> None:
+    """Read a cmx file and all the cfp files in the specified skills."""
+    bcf_file = cmx.read_file(file_path)
+    read_cfps(cfp_file_list, file_path.parents[0], bcf_file.skills)
+
+
 def test_cfp(files_directory: str) -> None:
     """Test reading all cfp files in the specified directory."""
     cfp_file_list = list(Path(files_directory).rglob("*.cfp"))
 
-    bcf_file_list = Path(files_directory).rglob("*.bcf")
-    for bcf_file_path in bcf_file_list:
-        bcf_file = bcf.read_file(bcf_file_path)
+    pool = multiprocessing.Pool(None)
 
-        read_cfps(cfp_file_list, bcf_file_path.parents[0], bcf_file.skills)
+    bcf_file_list = Path(files_directory).rglob("*.bcf")
+    pool.starmap(read_bcf, zip(bcf_file_list, itertools.repeat(cfp_file_list)))
 
     cmx_file_list = Path(files_directory).rglob("*.cmx")
-    for cmx_file_path in cmx_file_list:
-        bcf_file = cmx.read_file(cmx_file_path)
-
-        read_cfps(cfp_file_list, cmx_file_path.parents[0], bcf_file.skills)
+    pool.starmap(read_cmx, zip(cmx_file_list, itertools.repeat(cfp_file_list)))
