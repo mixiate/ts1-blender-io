@@ -5,7 +5,7 @@ import typing
 
 
 from . import bcf
-from . import utils
+from . import error
 
 
 def read_properties(file: typing.TextIO) -> list[bcf.Property]:
@@ -294,15 +294,15 @@ def read_file(file_path: pathlib.Path) -> bcf.Bcf:
     try:
         with file_path.open() as file:
             if not file.readline().startswith("//"):
-                raise utils.FileReadError
+                raise error.FileReadError
 
             if file.readline().strip() != "version 300":
-                raise utils.FileReadError
+                raise error.FileReadError
 
             return read_cmx(file)
 
     except OSError as exception:
-        raise utils.FileReadError from exception
+        raise error.FileReadError from exception
 
 
 def write_file(file_path: pathlib.Path, bcf_desc: bcf.Bcf) -> None:

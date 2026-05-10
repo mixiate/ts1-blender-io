@@ -5,20 +5,22 @@ import pathlib
 import struct
 import typing
 
-from . import utils
+
+from . import error
+from . import pascal_string
 
 
 def read_bones(file: typing.BinaryIO) -> list[str]:
     """Read BMF bones."""
     count = struct.unpack('<I', file.read(4))[0]
-    return [utils.read_string(file) for _ in range(count)]
+    return [pascal_string.read_string(file) for _ in range(count)]
 
 
 def write_bones(file: typing.BinaryIO, bones: list[str]) -> None:
     """Write BMF bones."""
     file.write(struct.pack('<I', len(bones)))
     for bone in bones:
-        utils.write_string(file, bone)
+        pascal_string.write_string(file, bone)
 
 
 def read_faces(file: typing.BinaryIO) -> list[tuple[int, int, int]]:
@@ -157,8 +159,8 @@ class Bmf:
 def read_bmf(file: typing.BinaryIO) -> Bmf:
     """Read BMF."""
     return Bmf(
-        utils.read_string(file),
-        utils.read_string(file),
+        pascal_string.read_string(file),
+        pascal_string.read_string(file),
         read_bones(file),
         read_faces(file),
         read_bone_bindings(file),
@@ -170,8 +172,8 @@ def read_bmf(file: typing.BinaryIO) -> Bmf:
 
 def write_bmf(file: typing.BinaryIO, bmf: Bmf) -> None:
     """Write BMF."""
-    utils.write_string(file, bmf.skin_name)
-    utils.write_string(file, bmf.default_texture_name)
+    pascal_string.write_string(file, bmf.skin_name)
+    pascal_string.write_string(file, bmf.default_texture_name)
     write_bones(file, bmf.bones)
     write_faces(file, bmf.faces)
     write_bone_bindings(file, bmf.bone_bindings)
@@ -187,12 +189,12 @@ def read_file(file_path: pathlib.Path) -> Bmf:
             bmf = read_bmf(file)
 
             if len(file.read(1)) != 0:
-                raise utils.FileReadError
+                raise error.FileReadError
 
             return bmf
 
     except (OSError, struct.error) as exception:
-        raise utils.FileReadError from exception
+        raise error.FileReadError from exception
 
 
 def write_file(file_path: pathlib.Path, bmf: Bmf) -> None:

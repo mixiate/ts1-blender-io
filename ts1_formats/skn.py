@@ -5,7 +5,7 @@ import typing
 
 
 from . import bmf
-from . import utils
+from . import error
 
 
 def read_bones(file: typing.TextIO) -> list[str]:
@@ -165,12 +165,12 @@ def read_file(file_path: pathlib.Path) -> bmf.Bmf:
             bmf = read_skn(file)
 
             if file.readline() != "":
-                raise utils.FileReadError
+                raise error.FileReadError
 
             return bmf
 
     except OSError as exception:
-        raise utils.FileReadError from exception
+        raise error.FileReadError from exception
 
 
 def write_file(file_path: pathlib.Path, bmf: bmf.Bmf) -> None:

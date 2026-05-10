@@ -6,7 +6,8 @@ import struct
 import typing
 
 
-from . import utils
+from . import error
+from . import pascal_string
 
 
 @dataclasses.dataclass
@@ -22,8 +23,8 @@ def read_properties(file: typing.BinaryIO) -> list[Property]:
     count = struct.unpack('<I', file.read(4))[0]
     return [
         Property(
-            utils.read_string(file),
-            utils.read_string(file),
+            pascal_string.read_string(file),
+            pascal_string.read_string(file),
         )
         for _ in range(count)
     ]
@@ -33,8 +34,8 @@ def write_properties(file: typing.BinaryIO, properties: list[Property]) -> None:
     """Write BCF properties to a file."""
     file.write(struct.pack('<I', len(properties)))
     for prop in properties:
-        utils.write_string(file, prop.name)
-        utils.write_string(file, prop.value)
+        pascal_string.write_string(file, prop.name)
+        pascal_string.write_string(file, prop.value)
 
 
 @dataclasses.dataclass
@@ -135,7 +136,7 @@ def read_motions(file: typing.BinaryIO) -> list[Motion]:
     count = struct.unpack('<I', file.read(4))[0]
     return [
         Motion(
-            utils.read_string(file),
+            pascal_string.read_string(file),
             struct.unpack('<I', file.read(4))[0],
             struct.unpack('<f', file.read(4))[0],
             struct.unpack('<I', file.read(4))[0],
@@ -153,7 +154,7 @@ def write_motions(file: typing.BinaryIO, motions: list[Motion]) -> None:
     """Write BCF motions to a file."""
     file.write(struct.pack('<I', len(motions)))
     for motion in motions:
-        utils.write_string(file, motion.bone_name)
+        pascal_string.write_string(file, motion.bone_name)
         file.write(struct.pack('<I', motion.frame_count))
         file.write(struct.pack('<f', motion.duration))
         file.write(struct.pack('<I', motion.positions_used_flag))
@@ -183,8 +184,8 @@ def read_skills(file: typing.BinaryIO) -> list[Skill]:
     count = struct.unpack('<I', file.read(4))[0]
     return [
         Skill(
-            utils.read_string(file),
-            utils.read_string(file),
+            pascal_string.read_string(file),
+            pascal_string.read_string(file),
             struct.unpack('<f', file.read(4))[0],
             struct.unpack('<f', file.read(4))[0],
             struct.unpack('<I', file.read(4))[0],
@@ -200,8 +201,8 @@ def write_skills(file: typing.BinaryIO, skills: list[Skill]) -> None:
     """Write BCF skills to a file."""
     file.write(struct.pack('<I', len(skills)))
     for skill in skills:
-        utils.write_string(file, skill.skill_name)
-        utils.write_string(file, skill.animation_name)
+        pascal_string.write_string(file, skill.skill_name)
+        pascal_string.write_string(file, skill.animation_name)
         file.write(struct.pack('<f', skill.duration))
         file.write(struct.pack('<f', skill.distance))
         file.write(struct.pack('<I', skill.moving_flag))
@@ -225,8 +226,8 @@ def read_skins(file: typing.BinaryIO) -> list[Skin]:
     count = struct.unpack('<I', file.read(4))[0]
     return [
         Skin(
-            utils.read_string(file),
-            utils.read_string(file),
+            pascal_string.read_string(file),
+            pascal_string.read_string(file),
             struct.unpack('<I', file.read(4))[0],
             struct.unpack('<I', file.read(4))[0],
         )
@@ -238,8 +239,8 @@ def write_skins(file: typing.BinaryIO, skins: list[Skin]) -> None:
     """Write BCF skins to a file."""
     file.write(struct.pack('<I', len(skins)))
     for skin in skins:
-        utils.write_string(file, skin.bone_name)
-        utils.write_string(file, skin.skin_name)
+        pascal_string.write_string(file, skin.bone_name)
+        pascal_string.write_string(file, skin.skin_name)
         file.write(struct.pack('<I', skin.censor_flags))
         file.write(struct.pack('<I', skin.unknown))
 
@@ -259,7 +260,7 @@ def read_suits(file: typing.BinaryIO) -> list[Suit]:
     count = struct.unpack('<I', file.read(4))[0]
     return [
         Suit(
-            utils.read_string(file),
+            pascal_string.read_string(file),
             struct.unpack('<I', file.read(4))[0],
             struct.unpack('<I', file.read(4))[0],
             read_skins(file),
@@ -272,7 +273,7 @@ def write_suits(file: typing.BinaryIO, suits: list[Suit]) -> None:
     """Write BCF suits to a file."""
     file.write(struct.pack('<I', len(suits)))
     for suit in suits:
-        utils.write_string(file, suit.name)
+        pascal_string.write_string(file, suit.name)
         file.write(struct.pack('<I', suit.suit_type))
         file.write(struct.pack('<I', suit.unknown))
         write_skins(file, suit.skins)
@@ -304,8 +305,8 @@ def read_bones(file: typing.BinaryIO) -> list[Bone]:
     count = struct.unpack('<I', file.read(4))[0]
     return [
         Bone(
-            utils.read_string(file),
-            utils.read_string(file),
+            pascal_string.read_string(file),
+            pascal_string.read_string(file),
             read_property_lists(file),
             struct.unpack('<f', file.read(4))[0],
             struct.unpack('<f', file.read(4))[0],
@@ -328,8 +329,8 @@ def write_bones(file: typing.BinaryIO, bones: list[Bone]) -> None:
     """Write BCF bones to a file."""
     file.write(struct.pack('<I', len(bones)))
     for bone in bones:
-        utils.write_string(file, bone.name)
-        utils.write_string(file, bone.parent)
+        pascal_string.write_string(file, bone.name)
+        pascal_string.write_string(file, bone.parent)
         write_property_lists(file, bone.property_lists)
         file.write(struct.pack('<f', bone.position_x))
         file.write(struct.pack('<f', bone.position_y))
@@ -358,7 +359,7 @@ def read_skeletons(file: typing.BinaryIO) -> list[Skeleton]:
     count = struct.unpack('<I', file.read(4))[0]
     return [
         Skeleton(
-            utils.read_string(file),
+            pascal_string.read_string(file),
             read_bones(file),
         )
         for _ in range(count)
@@ -369,7 +370,7 @@ def write_skeletons(file: typing.BinaryIO, skeletons: list[Skeleton]) -> None:
     """Write BCF skeletons to a file."""
     file.write(struct.pack('<I', len(skeletons)))
     for skeleton in skeletons:
-        utils.write_string(file, skeleton.name)
+        pascal_string.write_string(file, skeleton.name)
         write_bones(file, skeleton.bones)
 
 
@@ -405,12 +406,12 @@ def read_file(file_path: pathlib.Path) -> Bcf:
             bcf = read_bcf(file)
 
             if len(file.read(1)) != 0:
-                raise utils.FileReadError
+                raise error.FileReadError
 
             return bcf
 
     except (OSError, struct.error) as exception:
-        raise utils.FileReadError from exception
+        raise error.FileReadError from exception
 
 
 def write_file(file_path: pathlib.Path, bcf: Bcf) -> None:

@@ -7,7 +7,7 @@ import struct
 import typing
 
 
-from . import utils
+from . import error
 
 
 def decode_delta(delta: int) -> float:
@@ -134,10 +134,10 @@ def read_file(file_path: pathlib.Path, position_count: int, rotation_count: int)
             decoded_values = decode_values(file, (position_count * 3) + (rotation_count * 4))
 
             if len(file.read(1)) != 0:
-                raise utils.FileReadError
+                raise error.FileReadError
 
     except (OSError, struct.error) as exception:
-        raise utils.FileReadError from exception
+        raise error.FileReadError from exception
 
     positions_x = decoded_values[:position_count]
     positions_y = decoded_values[position_count : position_count * 2]

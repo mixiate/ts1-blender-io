@@ -10,11 +10,12 @@ import pathlib
 import re
 
 
-from . import bcf
-from . import bmf
-from . import cfp
-from . import cmx
-from . import skn
+from .ts1_formats import bcf
+from .ts1_formats import bmf
+from .ts1_formats import cfp
+from .ts1_formats import cmx
+from .ts1_formats import skn
+from .ts1_formats.error import FileReadError as TS1FileReadError
 from . import texture_loader
 from . import utils
 
@@ -253,7 +254,7 @@ def import_suit(
             else:
                 skn_file_path = bcf_directory / (skin.skin_name + ".skn")
                 bmf_file = skn.read_file(skn_file_path)
-        except utils.FileReadError as _:
+        except TS1FileReadError as _:
             logger.info(f"Could not load mesh {skin.skin_name} used by {suit.name}.")  # noqa: G004
             continue
 
@@ -394,7 +395,7 @@ def import_skill(
             cfp_file_path = matches[0]
     try:
         cfp_file = cfp.read_file(cfp_file_path, skill.position_count, skill.rotation_count)
-    except utils.FileReadError as _:
+    except TS1FileReadError as _:
         logger.info(f"Could not load cfp file {cfp_file_path}")  # noqa: G004
         return
 

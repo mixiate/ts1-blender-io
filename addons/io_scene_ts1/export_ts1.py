@@ -7,11 +7,11 @@ import mathutils
 import pathlib
 
 
-from . import bcf
-from . import bmf
-from . import cfp
-from . import cmx
-from . import skn
+from .ts1_formats import bcf
+from .ts1_formats import bmf
+from .ts1_formats import cfp
+from .ts1_formats import cmx
+from .ts1_formats import skn
 from . import utils
 
 
