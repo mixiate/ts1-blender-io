@@ -240,7 +240,7 @@ class Bcf:
 def read_bcf(file: typing.BinaryIO) -> Bcf:
     """Read a BCF from a file."""
     return Bcf(
-        skeleton.read_skeletons(file),
+        skeleton.read_skeletons(file, '<'),
         read_suits(file),
         read_skills(file),
     )
@@ -248,7 +248,7 @@ def read_bcf(file: typing.BinaryIO) -> Bcf:
 
 def write_bcf(file: typing.BinaryIO, bcf: Bcf) -> None:
     """Write a BCF to a file."""
-    skeleton.write_skeletons(file, bcf.skeletons)
+    skeleton.write_skeletons(file, bcf.skeletons, '<')
     write_suits(file, bcf.suits)
     write_skills(file, bcf.skills)
 
