@@ -335,7 +335,7 @@ def reduce_texture_file_list(
     fix_textures: bool,
 ) -> list[pathlib.Path]:
     """Reduce the list of texture files to only those that match the given list."""
-    zipped_texture_file_names = list(zip(texture_file_names, range(len(texture_file_names))))
+    zipped_texture_file_names = list(zip(texture_file_names, range(len(texture_file_names)), strict=True))
     reduced_texture_file_list: list[tuple[pathlib.Path, int]] = []
 
     for file_path in texture_file_list:
@@ -353,7 +353,7 @@ def reduce_texture_file_list(
         return []
 
     reduced_texture_file_list.sort(key=lambda x: x[1])
-    return list(next(zip(*reduced_texture_file_list)))
+    return list(next(zip(*reduced_texture_file_list, strict=True)))
 
 
 def fixup_skin_name_and_default_texture(skin_name: str, default_texture: str) -> tuple[str, str]:
