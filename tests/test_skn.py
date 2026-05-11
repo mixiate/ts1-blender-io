@@ -1,5 +1,7 @@
 """SKN format tests."""
 
+import itertools
+import multiprocessing
 from pathlib import Path
 import pytest
 
@@ -20,6 +22,18 @@ def compare_skns(a: bmf.Bmf, b: bmf.Bmf) -> None:
     assert a.blends == b.blends
 
 
+def roundtrip_skn(file_path: Path, tmp_path: Path) -> None:
+    """Test reading, writing and rereading a skn file."""
+    skn_file = skn.read_file(file_path)
+
+    output_file_path = tmp_path / file_path.name
+
+    skn.write_file(output_file_path, skn_file)
+    output_skn_file = skn.read_file(output_file_path)
+
+    compare_skns(skn_file, output_skn_file)
+
+
 def test_skn(tmp_path: Path, files_directory: str | None) -> None:
     """Test reading, writing and rereading all skn files in the specified directory."""
     if files_directory is None:
@@ -27,12 +41,5 @@ def test_skn(tmp_path: Path, files_directory: str | None) -> None:
 
     file_list = Path(files_directory).rglob("*.skn")
 
-    for file_path in file_list:
-        skn_file = skn.read_file(file_path)
-
-        output_file_path = tmp_path / file_path.name
-
-        skn.write_file(output_file_path, skn_file)
-        output_skn_file = skn.read_file(output_file_path)
-
-        compare_skns(skn_file, output_skn_file)
+    pool = multiprocessing.Pool(None)
+    pool.starmap(roundtrip_skn, zip(file_list, itertools.repeat(tmp_path)))
