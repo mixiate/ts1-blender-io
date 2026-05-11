@@ -547,7 +547,7 @@ def import_skill(
             for time_property in time_property_list.time_properties:
                 for event in time_property.events:
                     event_string = f"{motion.bone_name} {event.name} {event.value}"
-                    frame = int(round(time_property.time / 33.3333333)) + 1
+                    frame = round(time_property.time / 33.3333333) + 1
 
                     markers = [x for x in action.pose_markers if x.frame == frame]
 

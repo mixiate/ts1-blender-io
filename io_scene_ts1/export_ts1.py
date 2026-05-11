@@ -378,7 +378,7 @@ def export_skills(
                     if len(markers) == 0:
                         continue
 
-                    time = int(round((frame - int(strip.action.frame_start)) * 33.33333))
+                    time = round((frame - int(strip.action.frame_start)) * 33.33333)
                     events = []
 
                     for marker in markers:
