@@ -25,7 +25,7 @@ def read_time_properties(file: typing.BinaryIO) -> list[TimeProperty]:
     return [
         TimeProperty(
             struct.unpack('<I', file.read(4))[0],
-            property_list.read_properties(file),
+            property_list.read_properties(file, '<'),
         )
         for _ in range(count)
     ]
@@ -36,7 +36,7 @@ def write_time_properties(file: typing.BinaryIO, time_properties: list[TimePrope
     file.write(struct.pack('<I', len(time_properties)))
     for time_property in time_properties:
         file.write(struct.pack('<I', time_property.time))
-        property_list.write_properties(file, time_property.events)
+        property_list.write_properties(file, time_property.events, '<')
 
 
 @dataclasses.dataclass
@@ -91,7 +91,7 @@ def read_motions(file: typing.BinaryIO) -> list[Motion]:
             struct.unpack('<I', file.read(4))[0],
             struct.unpack('<i', file.read(4))[0],
             struct.unpack('<i', file.read(4))[0],
-            property_list.read_property_lists(file),
+            property_list.read_property_lists(file, '<'),
             read_time_property_lists(file),
         )
         for _ in range(count)
@@ -109,7 +109,7 @@ def write_motions(file: typing.BinaryIO, motions: list[Motion]) -> None:
         file.write(struct.pack('<I', motion.rotations_used_flag))
         file.write(struct.pack('<i', motion.position_offset))
         file.write(struct.pack('<i', motion.rotation_offset))
-        property_list.write_property_lists(file, motion.property_lists)
+        property_list.write_property_lists(file, motion.property_lists, '<')
         write_time_property_lists(file, motion.time_property_lists)
 
 
@@ -255,7 +255,7 @@ def read_bones(file: typing.BinaryIO) -> list[Bone]:
         Bone(
             pascal_string.read_string(file),
             pascal_string.read_string(file),
-            property_list.read_property_lists(file),
+            property_list.read_property_lists(file, '<'),
             struct.unpack('<f', file.read(4))[0],
             struct.unpack('<f', file.read(4))[0],
             struct.unpack('<f', file.read(4))[0],
@@ -279,7 +279,7 @@ def write_bones(file: typing.BinaryIO, bones: list[Bone]) -> None:
     for bone in bones:
         pascal_string.write_string(file, bone.name)
         pascal_string.write_string(file, bone.parent)
-        property_list.write_property_lists(file, bone.property_lists)
+        property_list.write_property_lists(file, bone.property_lists, '<')
         file.write(struct.pack('<f', bone.position_x))
         file.write(struct.pack('<f', bone.position_y))
         file.write(struct.pack('<f', bone.position_z))
