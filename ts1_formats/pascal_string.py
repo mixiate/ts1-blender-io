@@ -7,7 +7,7 @@ import typing
 def read_string(file: typing.BinaryIO) -> str:
     """Read a pascal string from a file."""
     length = struct.unpack('B', file.read(1))[0]
-    return struct.unpack("%ds" % length, file.read(length))[0].decode("windows-1252")
+    return struct.unpack(f"{length}s", file.read(length))[0].decode("windows-1252")
 
 
 def write_string(file: typing.BinaryIO, string: str) -> None:
