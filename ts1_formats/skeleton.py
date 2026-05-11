@@ -21,9 +21,9 @@ class Bone:
     rotation_y: float
     rotation_z: float
     rotation_w: float
-    translate: int
-    rotate: int
-    blend_suits: int
+    translate: bool
+    rotate: bool
+    blend: bool
     wiggle_value: float
     wiggle_power: float
 
@@ -43,9 +43,9 @@ def read_bones(stream: typing.BinaryIO, endianness: str) -> list[Bone]:
             struct.unpack(endianness + 'f', stream.read(4))[0],
             struct.unpack(endianness + 'f', stream.read(4))[0],
             struct.unpack(endianness + 'f', stream.read(4))[0],
-            struct.unpack(endianness + 'I', stream.read(4))[0],
-            struct.unpack(endianness + 'I', stream.read(4))[0],
-            struct.unpack(endianness + 'I', stream.read(4))[0],
+            bool(struct.unpack(endianness + 'I', stream.read(4))[0]),
+            bool(struct.unpack(endianness + 'I', stream.read(4))[0]),
+            bool(struct.unpack(endianness + 'I', stream.read(4))[0]),
             struct.unpack(endianness + 'f', stream.read(4))[0],
             struct.unpack(endianness + 'f', stream.read(4))[0],
         )
@@ -69,7 +69,7 @@ def write_bones(stream: typing.BinaryIO, bones: list[Bone], endianness: str) -> 
         stream.write(struct.pack(endianness + 'f', bone.rotation_w))
         stream.write(struct.pack(endianness + 'I', bone.translate))
         stream.write(struct.pack(endianness + 'I', bone.rotate))
-        stream.write(struct.pack(endianness + 'I', bone.blend_suits))
+        stream.write(struct.pack(endianness + 'I', bone.blend))
         stream.write(struct.pack(endianness + 'f', bone.wiggle_value))
         stream.write(struct.pack(endianness + 'f', bone.wiggle_power))
 

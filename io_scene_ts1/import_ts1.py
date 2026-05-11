@@ -51,7 +51,7 @@ def import_skeleton(context: bpy.types.Context, skeleton: Skeleton) -> bpy.types
 
         armature_bone["ts1_translate"] = bone.translate
         armature_bone["ts1_rotate"] = bone.rotate
-        armature_bone["ts1_blend"] = bone.blend_suits
+        armature_bone["ts1_blend"] = bone.blend
         armature_bone["ts1_wiggle_value"] = bone.wiggle_value
         armature_bone["ts1_wiggle_power"] = bone.wiggle_power
 
