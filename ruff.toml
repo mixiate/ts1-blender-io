@@ -3,7 +3,6 @@ line-length = 120
 [lint]
 select = ["ALL"]
 ignore = [
-    "ANN101",
     "C901",
     "COM812",
     "D203",
