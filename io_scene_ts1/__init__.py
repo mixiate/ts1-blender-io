@@ -97,10 +97,10 @@ class TS1IOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
 
     def execute(self, context: bpy.context) -> set[str]:
         """Execute the importing function."""
-        import io
-        import logging
-        import pathlib
-        from . import import_ts1
+        import io  # noqa: PLC0415
+        import logging  # noqa: PLC0415
+        import pathlib  # noqa: PLC0415
+        from . import import_ts1  # noqa: PLC0415
 
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.DEBUG)
@@ -191,8 +191,8 @@ class TS1IOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
 
     def execute(self, context: bpy.context) -> set[str]:
         """Execute the exporting function."""
-        import pathlib
-        from . import export_ts1
+        import pathlib  # noqa: PLC0415
+        from . import export_ts1  # noqa: PLC0415
 
         try:
             export_ts1.export_files(
