@@ -3,6 +3,7 @@
 import itertools
 import multiprocessing
 from pathlib import Path
+import pytest
 
 from ts1_formats import bcf
 from ts1_formats import cfp
@@ -54,8 +55,11 @@ def read_cmx(file_path: Path, cfp_file_list: list[Path]) -> None:
     read_cfps(cfp_file_list, file_path.parents[0], bcf_file.skills)
 
 
-def test_cfp(files_directory: str) -> None:
+def test_cfp(files_directory: str | None) -> None:
     """Test reading all cfp files in the specified directory."""
+    if files_directory is None:
+        pytest.skip("No file directory specified")
+
     cfp_file_list = list(Path(files_directory).rglob("*.cfp"))
 
     pool = multiprocessing.Pool(None)
