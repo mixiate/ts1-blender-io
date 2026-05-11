@@ -640,16 +640,16 @@ def import_files(
 
         previous_active_object = context.view_layer.objects.active
 
-        for armature_object_name in armature_object_map:
+        for armature_object_name, objects in armature_object_map.items():
             bpy.ops.object.select_all(action='DESELECT')
 
-            for object_name in armature_object_map[armature_object_name]:
+            for object_name in objects:
                 obj = bpy.data.objects[object_name]
                 obj.select_set(state=True)
 
             if cleanup_meshes:
                 context.view_layer.objects.active = context.scene.objects.get(
-                    armature_object_map[armature_object_name][0],
+                    objects[0],
                 )
                 bpy.ops.object.mode_set(mode='EDIT')
 
