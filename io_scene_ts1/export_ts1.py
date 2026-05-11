@@ -6,6 +6,7 @@ import itertools
 import math
 import mathutils
 import pathlib
+from typing import TYPE_CHECKING
 
 
 from .ts1_formats import bcf
@@ -14,6 +15,9 @@ from .ts1_formats import cfp
 from .ts1_formats import cmx
 from .ts1_formats import skn
 from . import utils
+
+if TYPE_CHECKING:
+    from .ts1_formats.skeleton import Skeleton
 
 
 class ExportError(Exception):
@@ -446,7 +450,7 @@ def export_files(
     if context.active_object is not None and context.active_object.mode != "OBJECT":
         bpy.ops.object.mode_set(mode='OBJECT')
 
-    skeletons: list[bcf.Skeleton] = []
+    skeletons: list[Skeleton] = []
     suits: list[bcf.Suit] = []
     skills: list[bcf.Skill] = []
 

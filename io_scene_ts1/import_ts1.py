@@ -17,11 +17,12 @@ from .ts1_formats import cfp
 from .ts1_formats import cmx
 from .ts1_formats import skn
 from .ts1_formats.error import FileReadError as TS1FileReadError
+from .ts1_formats.skeleton import Skeleton
 from . import texture_loader
 from . import utils
 
 
-def import_skeleton(context: bpy.types.Context, skeleton: bcf.Skeleton) -> bpy.types.Object:
+def import_skeleton(context: bpy.types.Context, skeleton: Skeleton) -> bpy.types.Object:
     """Create an armature object for the described skeleton."""
     armature = bpy.data.armatures.new(name=skeleton.name)
     armature_object = bpy.data.objects.new(name=skeleton.name, object_data=armature)

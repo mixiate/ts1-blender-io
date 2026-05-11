@@ -9,6 +9,7 @@ import typing
 from . import error
 from . import pascal_string
 from . import property_list
+from . import skeleton
 
 
 @dataclasses.dataclass
@@ -228,105 +229,10 @@ def write_suits(file: typing.BinaryIO, suits: list[Suit]) -> None:
 
 
 @dataclasses.dataclass
-class Bone:
-    """A BCF bone."""
-
-    name: str
-    parent: str
-    property_lists: list[property_list.PropertyList]
-    position_x: float
-    position_y: float
-    position_z: float
-    rotation_x: float
-    rotation_y: float
-    rotation_z: float
-    rotation_w: float
-    translate: int
-    rotate: int
-    blend_suits: int
-    wiggle_value: float
-    wiggle_power: float
-
-
-def read_bones(file: typing.BinaryIO) -> list[Bone]:
-    """Read BCF bones from a file."""
-    count = struct.unpack('<I', file.read(4))[0]
-    return [
-        Bone(
-            pascal_string.read_string(file),
-            pascal_string.read_string(file),
-            property_list.read_property_lists(file, '<'),
-            struct.unpack('<f', file.read(4))[0],
-            struct.unpack('<f', file.read(4))[0],
-            struct.unpack('<f', file.read(4))[0],
-            struct.unpack('<f', file.read(4))[0],
-            struct.unpack('<f', file.read(4))[0],
-            struct.unpack('<f', file.read(4))[0],
-            struct.unpack('<f', file.read(4))[0],
-            struct.unpack('<I', file.read(4))[0],
-            struct.unpack('<I', file.read(4))[0],
-            struct.unpack('<I', file.read(4))[0],
-            struct.unpack('<f', file.read(4))[0],
-            struct.unpack('<f', file.read(4))[0],
-        )
-        for _ in range(count)
-    ]
-
-
-def write_bones(file: typing.BinaryIO, bones: list[Bone]) -> None:
-    """Write BCF bones to a file."""
-    file.write(struct.pack('<I', len(bones)))
-    for bone in bones:
-        pascal_string.write_string(file, bone.name)
-        pascal_string.write_string(file, bone.parent)
-        property_list.write_property_lists(file, bone.property_lists, '<')
-        file.write(struct.pack('<f', bone.position_x))
-        file.write(struct.pack('<f', bone.position_y))
-        file.write(struct.pack('<f', bone.position_z))
-        file.write(struct.pack('<f', bone.rotation_x))
-        file.write(struct.pack('<f', bone.rotation_y))
-        file.write(struct.pack('<f', bone.rotation_z))
-        file.write(struct.pack('<f', bone.rotation_w))
-        file.write(struct.pack('<I', bone.translate))
-        file.write(struct.pack('<I', bone.rotate))
-        file.write(struct.pack('<I', bone.blend_suits))
-        file.write(struct.pack('<f', bone.wiggle_value))
-        file.write(struct.pack('<f', bone.wiggle_power))
-
-
-@dataclasses.dataclass
-class Skeleton:
-    """A BCF skeleton."""
-
-    name: str
-    bones: list[Bone]
-
-
-def read_skeletons(file: typing.BinaryIO) -> list[Skeleton]:
-    """Read BCF skeletons from a file."""
-    count = struct.unpack('<I', file.read(4))[0]
-    return [
-        Skeleton(
-            pascal_string.read_string(file),
-            read_bones(file),
-        )
-        for _ in range(count)
-    ]
-
-
-def write_skeletons(file: typing.BinaryIO, skeletons: list[Skeleton]) -> None:
-    """Write BCF skeletons to a file."""
-    file.write(struct.pack('<I', len(skeletons)))
-    for skeleton in skeletons:
-        pascal_string.write_string(file, skeleton.name)
-        write_bones(file, skeleton.bones)
-
-
-@dataclasses.dataclass
 class Bcf:
     """Description of a BCF file."""
 
-    skeletons: list[Skeleton]
+    skeletons: list[skeleton.Skeleton]
     suits: list[Suit]
     skills: list[Skill]
 
@@ -334,7 +240,7 @@ class Bcf:
 def read_bcf(file: typing.BinaryIO) -> Bcf:
     """Read a BCF from a file."""
     return Bcf(
-        read_skeletons(file),
+        skeleton.read_skeletons(file),
         read_suits(file),
         read_skills(file),
     )
@@ -342,7 +248,7 @@ def read_bcf(file: typing.BinaryIO) -> Bcf:
 
 def write_bcf(file: typing.BinaryIO, bcf: Bcf) -> None:
     """Write a BCF to a file."""
-    write_skeletons(file, bcf.skeletons)
+    skeleton.write_skeletons(file, bcf.skeletons)
     write_suits(file, bcf.suits)
     write_skills(file, bcf.skills)
 

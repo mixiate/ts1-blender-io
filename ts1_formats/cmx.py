@@ -7,6 +7,7 @@ import typing
 from . import bcf
 from . import error
 from . import property_list
+from . import skeleton
 
 
 def read_properties(file: typing.TextIO) -> list[property_list.Property]:
@@ -199,7 +200,7 @@ def write_suits(file: typing.TextIO, suits: list[bcf.Suit]) -> None:
         write_skins(file, suit.skins)
 
 
-def read_bones(file: typing.TextIO) -> list[bcf.Bone]:
+def read_bones(file: typing.TextIO) -> list[skeleton.Bone]:
     """Read BCF bones from a CMX file."""
     count = int(file.readline())
     bones = []
@@ -215,7 +216,7 @@ def read_bones(file: typing.TextIO) -> list[bcf.Bone]:
         wiggle_value = float(file.readline())
         wiggle_power = float(file.readline())
         bones.append(
-            bcf.Bone(
+            skeleton.Bone(
                 name,
                 parent,
                 properties,
@@ -236,7 +237,7 @@ def read_bones(file: typing.TextIO) -> list[bcf.Bone]:
     return bones
 
 
-def write_bones(file: typing.TextIO, bones: list[bcf.Bone]) -> None:
+def write_bones(file: typing.TextIO, bones: list[skeleton.Bone]) -> None:
     """Write BCF bones to a CMX file."""
     file.write(str(len(bones)) + "\n")
     for bone in bones:
@@ -252,11 +253,11 @@ def write_bones(file: typing.TextIO, bones: list[bcf.Bone]) -> None:
         file.write(str(bone.wiggle_power) + "\n")
 
 
-def read_skeletons(file: typing.TextIO) -> list[bcf.Skeleton]:
-    """Read BCF skeletons from a CMX file."""
+def read_skeletons(file: typing.TextIO) -> list[skeleton.Skeleton]:
+    """Read skeletons from a CMX file."""
     count = int(file.readline())
     return [
-        bcf.Skeleton(
+        skeleton.Skeleton(
             file.readline().strip(),
             read_bones(file),
         )
@@ -264,12 +265,12 @@ def read_skeletons(file: typing.TextIO) -> list[bcf.Skeleton]:
     ]
 
 
-def write_skeletons(file: typing.TextIO, skeletons: list[bcf.Skeleton]) -> None:
-    """Write BCF skeletons to a CMX file."""
+def write_skeletons(file: typing.TextIO, skeletons: list[skeleton.Skeleton]) -> None:
+    """Write skeletons to a CMX file."""
     file.write(str(len(skeletons)) + "\n")
-    for skeleton in skeletons:
-        file.write(skeleton.name + "\n")
-        write_bones(file, skeleton.bones)
+    for skele in skeletons:
+        file.write(skele.name + "\n")
+        write_bones(file, skele.bones)
 
 
 def read_cmx(file: typing.TextIO) -> bcf.Bcf:
