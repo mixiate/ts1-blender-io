@@ -8,7 +8,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addoption("--files-directory", action="store")
 
 
-@pytest.fixture()
+@pytest.fixture
 def files_directory(request: pytest.FixtureRequest) -> str:
     """Pytest fixture files-directory command line option."""
     return request.config.getoption("--files-directory")
