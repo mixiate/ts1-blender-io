@@ -6,13 +6,14 @@ import typing
 
 from . import bcf
 from . import error
+from . import property_list
 
 
-def read_properties(file: typing.TextIO) -> list[bcf.Property]:
+def read_properties(file: typing.TextIO) -> list[property_list.Property]:
     """Read BCF properties from a CMX file."""
     count = int(file.readline())
     return [
-        bcf.Property(
+        property_list.Property(
             file.readline().strip(),
             file.readline().strip(),
         )
@@ -20,7 +21,7 @@ def read_properties(file: typing.TextIO) -> list[bcf.Property]:
     ]
 
 
-def write_properties(file: typing.TextIO, properties: list[bcf.Property]) -> None:
+def write_properties(file: typing.TextIO, properties: list[property_list.Property]) -> None:
     """Write BCF properties to a CMX file."""
     file.write(str(len(properties)) + "\n")
     for prop in properties:
@@ -28,22 +29,22 @@ def write_properties(file: typing.TextIO, properties: list[bcf.Property]) -> Non
         file.write(prop.value + "\n")
 
 
-def read_property_lists(file: typing.TextIO) -> list[bcf.PropertyList]:
+def read_property_lists(file: typing.TextIO) -> list[property_list.PropertyList]:
     """Read BCF property lists from a CMX file."""
     count = int(file.readline())
     return [
-        bcf.PropertyList(
+        property_list.PropertyList(
             read_properties(file),
         )
         for _ in range(count)
     ]
 
 
-def write_property_lists(file: typing.TextIO, property_lists: list[bcf.PropertyList]) -> None:
+def write_property_lists(file: typing.TextIO, property_lists: list[property_list.PropertyList]) -> None:
     """Write BCF property lists to a CMX file."""
     file.write(str(len(property_lists)) + "\n")
-    for property_list in property_lists:
-        write_properties(file, property_list.properties)
+    for prop_list in property_lists:
+        write_properties(file, prop_list.properties)
 
 
 def read_time_properties(file: typing.TextIO) -> list[bcf.TimeProperty]:

@@ -8,59 +8,7 @@ import typing
 
 from . import error
 from . import pascal_string
-
-
-@dataclasses.dataclass
-class Property:
-    """A BCF property."""
-
-    name: str
-    value: str
-
-
-def read_properties(file: typing.BinaryIO) -> list[Property]:
-    """Read BCF properties from a file."""
-    count = struct.unpack('<I', file.read(4))[0]
-    return [
-        Property(
-            pascal_string.read_string(file),
-            pascal_string.read_string(file),
-        )
-        for _ in range(count)
-    ]
-
-
-def write_properties(file: typing.BinaryIO, properties: list[Property]) -> None:
-    """Write BCF properties to a file."""
-    file.write(struct.pack('<I', len(properties)))
-    for prop in properties:
-        pascal_string.write_string(file, prop.name)
-        pascal_string.write_string(file, prop.value)
-
-
-@dataclasses.dataclass
-class PropertyList:
-    """A BCF property list."""
-
-    properties: list[Property]
-
-
-def read_property_lists(file: typing.BinaryIO) -> list[PropertyList]:
-    """Read BCF property lists from a file."""
-    count = struct.unpack('<I', file.read(4))[0]
-    return [
-        PropertyList(
-            read_properties(file),
-        )
-        for _ in range(count)
-    ]
-
-
-def write_property_lists(file: typing.BinaryIO, property_lists: list[PropertyList]) -> None:
-    """Write BCF property lists to a file."""
-    file.write(struct.pack('<I', len(property_lists)))
-    for property_list in property_lists:
-        write_properties(file, property_list.properties)
+from . import property_list
 
 
 @dataclasses.dataclass
@@ -68,7 +16,7 @@ class TimeProperty:
     """A BCF time property."""
 
     time: int
-    events: list[Property]
+    events: list[property_list.Property]
 
 
 def read_time_properties(file: typing.BinaryIO) -> list[TimeProperty]:
@@ -77,7 +25,7 @@ def read_time_properties(file: typing.BinaryIO) -> list[TimeProperty]:
     return [
         TimeProperty(
             struct.unpack('<I', file.read(4))[0],
-            read_properties(file),
+            property_list.read_properties(file),
         )
         for _ in range(count)
     ]
@@ -88,7 +36,7 @@ def write_time_properties(file: typing.BinaryIO, time_properties: list[TimePrope
     file.write(struct.pack('<I', len(time_properties)))
     for time_property in time_properties:
         file.write(struct.pack('<I', time_property.time))
-        write_properties(file, time_property.events)
+        property_list.write_properties(file, time_property.events)
 
 
 @dataclasses.dataclass
@@ -127,7 +75,7 @@ class Motion:
     rotations_used_flag: int
     position_offset: int
     rotation_offset: int
-    property_lists: list[PropertyList]
+    property_lists: list[property_list.PropertyList]
     time_property_lists: list[TimePropertyList]
 
 
@@ -143,7 +91,7 @@ def read_motions(file: typing.BinaryIO) -> list[Motion]:
             struct.unpack('<I', file.read(4))[0],
             struct.unpack('<i', file.read(4))[0],
             struct.unpack('<i', file.read(4))[0],
-            read_property_lists(file),
+            property_list.read_property_lists(file),
             read_time_property_lists(file),
         )
         for _ in range(count)
@@ -161,7 +109,7 @@ def write_motions(file: typing.BinaryIO, motions: list[Motion]) -> None:
         file.write(struct.pack('<I', motion.rotations_used_flag))
         file.write(struct.pack('<i', motion.position_offset))
         file.write(struct.pack('<i', motion.rotation_offset))
-        write_property_lists(file, motion.property_lists)
+        property_list.write_property_lists(file, motion.property_lists)
         write_time_property_lists(file, motion.time_property_lists)
 
 
@@ -285,7 +233,7 @@ class Bone:
 
     name: str
     parent: str
-    property_lists: list[PropertyList]
+    property_lists: list[property_list.PropertyList]
     position_x: float
     position_y: float
     position_z: float
@@ -307,7 +255,7 @@ def read_bones(file: typing.BinaryIO) -> list[Bone]:
         Bone(
             pascal_string.read_string(file),
             pascal_string.read_string(file),
-            read_property_lists(file),
+            property_list.read_property_lists(file),
             struct.unpack('<f', file.read(4))[0],
             struct.unpack('<f', file.read(4))[0],
             struct.unpack('<f', file.read(4))[0],
@@ -331,7 +279,7 @@ def write_bones(file: typing.BinaryIO, bones: list[Bone]) -> None:
     for bone in bones:
         pascal_string.write_string(file, bone.name)
         pascal_string.write_string(file, bone.parent)
-        write_property_lists(file, bone.property_lists)
+        property_list.write_property_lists(file, bone.property_lists)
         file.write(struct.pack('<f', bone.position_x))
         file.write(struct.pack('<f', bone.position_y))
         file.write(struct.pack('<f', bone.position_z))
