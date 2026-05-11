@@ -82,7 +82,7 @@ def read_uvs(file: typing.TextIO) -> list[tuple[float, float]]:
 def write_uvs(file: typing.TextIO, uvs: list[tuple[float, float]]) -> None:
     """Write SKN uvs."""
     file.write(str(len(uvs)) + "\n")
-    file.writelines("{:.7f} {:.7f}\n".format(*uv) for uv in uvs)
+    file.writelines("{:.7g} {:.7g}\n".format(*uv) for uv in uvs)
 
 
 def read_blends(file: typing.TextIO) -> list[bmf.Blend]:
@@ -125,7 +125,7 @@ def write_vertices(file: typing.TextIO, vertices: list[bmf.Vertex]) -> None:
     """Write SKN vertices."""
     file.write(str(len(vertices)) + "\n")
     file.writelines(
-        "{:.7f} {:.7f} {:.7f} {:.7f} {:.7f} {:.7f}\n".format(*vertex.position, *vertex.normal) for vertex in vertices
+        "{:.7g} {:.7g} {:.7g} {:.7g} {:.7g} {:.7g}\n".format(*vertex.position, *vertex.normal) for vertex in vertices
     )
 
 
