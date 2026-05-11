@@ -1,20 +1,16 @@
 """Export to The Sims 1 files."""
 
-import bpy
-from bpy_extras import anim_utils
 import itertools
 import math
-import mathutils
 import pathlib
 from typing import TYPE_CHECKING
 
+import bpy
+import mathutils
+from bpy_extras import anim_utils
 
-from .ts1_formats import bcf
-from .ts1_formats import bmf
-from .ts1_formats import cfp
-from .ts1_formats import cmx
-from .ts1_formats import skn
 from . import utils
+from .ts1_formats import bcf, bmf, cfp, cmx, skn
 
 if TYPE_CHECKING:
     from .ts1_formats.skeleton import Skeleton

@@ -1,25 +1,20 @@
 """Import The Sims 1 3D formats in to Blender."""
 
-import bmesh
-import bpy
-import bpy_extras.anim_utils
 import copy
 import logging
 import math
-import mathutils
 import pathlib
 import re
 
+import bmesh
+import bpy
+import bpy_extras.anim_utils
+import mathutils
 
-from .ts1_formats import bcf
-from .ts1_formats import bmf
-from .ts1_formats import cfp
-from .ts1_formats import cmx
-from .ts1_formats import skn
+from . import texture_loader, utils
+from .ts1_formats import bcf, bmf, cfp, cmx, skn
 from .ts1_formats.error import FileReadError as TS1FileReadError
 from .ts1_formats.skeleton import Skeleton
-from . import texture_loader
-from . import utils
 
 
 def import_skeleton(context: bpy.types.Context, skeleton: Skeleton) -> bpy.types.Object:

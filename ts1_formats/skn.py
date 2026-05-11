@@ -3,9 +3,7 @@
 import pathlib
 import typing
 
-
-from . import bmf
-from . import error
+from . import bmf, error
 
 
 def read_bones(file: typing.TextIO) -> list[str]:

@@ -5,9 +5,7 @@ import pathlib
 import struct
 import typing
 
-
-from . import error
-from . import pascal_string
+from . import error, pascal_string
 
 
 def read_bones(file: typing.BinaryIO) -> list[str]:

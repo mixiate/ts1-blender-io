@@ -3,11 +3,7 @@
 import pathlib
 import typing
 
-
-from . import bcf
-from . import error
-from . import property_list
-from . import skeleton
+from . import bcf, error, property_list, skeleton
 
 
 def read_properties(file: typing.TextIO) -> list[property_list.Property]:

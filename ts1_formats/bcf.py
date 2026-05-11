@@ -5,11 +5,7 @@ import pathlib
 import struct
 import typing
 
-
-from . import error
-from . import pascal_string
-from . import property_list
-from . import skeleton
+from . import error, pascal_string, property_list, skeleton
 
 
 @dataclasses.dataclass

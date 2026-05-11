@@ -3,12 +3,10 @@
 import itertools
 import multiprocessing
 from pathlib import Path
+
 import pytest
 
-from ts1_formats import bcf
-from ts1_formats import cfp
-from ts1_formats import cmx
-
+from ts1_formats import bcf, cfp, cmx
 
 KNOWN_MISSING_CFP_FILES = [
     "xskill-k2a-praise-get-toss",

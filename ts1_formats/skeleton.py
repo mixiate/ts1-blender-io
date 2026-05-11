@@ -4,8 +4,7 @@ import dataclasses
 import struct
 import typing
 
-from . import pascal_string
-from . import property_list
+from . import pascal_string, property_list
 
 
 @dataclasses.dataclass

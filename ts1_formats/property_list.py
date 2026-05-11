@@ -4,7 +4,6 @@ import dataclasses
 import struct
 import typing
 
-
 from . import pascal_string
 
 

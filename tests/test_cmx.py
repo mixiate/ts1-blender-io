@@ -1,6 +1,7 @@
 """CMX format tests."""
 
 from pathlib import Path
+
 import pytest
 
 from ts1_formats import cmx

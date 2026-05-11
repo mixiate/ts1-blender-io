@@ -3,6 +3,7 @@
 import io
 import multiprocessing
 from pathlib import Path
+
 import pytest
 
 from ts1_formats import skn

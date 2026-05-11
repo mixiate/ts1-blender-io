@@ -7,7 +7,6 @@ import pathlib
 import struct
 import typing
 
-
 from . import error
 
 

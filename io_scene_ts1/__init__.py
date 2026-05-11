@@ -16,17 +16,18 @@ bl_info = {
 
 
 if "bpy" in locals():
-    import sys
     import importlib
+    import sys
 
     for name in tuple(sys.modules):
         if name.startswith(__name__ + "."):
             importlib.reload(sys.modules[name])
 
 
+import typing  # noqa: E402
+
 import bpy  # noqa: E402
 import bpy_extras  # noqa: E402
-import typing  # noqa: E402
 
 
 class TS1IOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
@@ -100,6 +101,7 @@ class TS1IOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         import io  # noqa: PLC0415
         import logging  # noqa: PLC0415
         import pathlib  # noqa: PLC0415
+
         from . import import_ts1  # noqa: PLC0415
 
         logger = logging.getLogger(__name__)
@@ -192,6 +194,7 @@ class TS1IOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
     def execute(self, context: bpy.context) -> set[str]:
         """Execute the exporting function."""
         import pathlib  # noqa: PLC0415
+
         from . import export_ts1  # noqa: PLC0415
 
         try:

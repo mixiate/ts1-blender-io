@@ -1,8 +1,9 @@
 """Find and load textures for imported meshes."""
 
-import bpy
 import pathlib
 import re
+
+import bpy
 
 
 def is_head_skin_type(skin_name: str) -> re.Match | None:
