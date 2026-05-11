@@ -1,6 +1,7 @@
 """Read and write The Sims 1 BCF files."""
 
 import dataclasses
+import itertools
 import math
 import pathlib
 import struct
@@ -167,8 +168,6 @@ def write_file(
     compress: bool,
 ) -> None:
     """Write a CFP to a file."""
-    import itertools
-
     values = itertools.chain(cfp.positions_x, cfp.positions_y)
     values = itertools.chain(values, cfp.positions_z)
     values = itertools.chain(values, cfp.rotations_x)
