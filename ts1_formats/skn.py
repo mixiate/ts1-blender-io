@@ -17,8 +17,7 @@ def read_bones(file: typing.TextIO) -> list[str]:
 def write_bones(file: typing.TextIO, bones: list[str]) -> None:
     """Write SKN bones."""
     file.write(str(len(bones)) + "\n")
-    for bone in bones:
-        file.write(bone + "\n")
+    file.writelines(bone + "\n" for bone in bones)
 
 
 def read_faces(file: typing.TextIO) -> list[tuple[int, int, int]]:
@@ -34,8 +33,7 @@ def read_faces(file: typing.TextIO) -> list[tuple[int, int, int]]:
 def write_faces(file: typing.TextIO, faces: list[tuple[int, int, int]]) -> None:
     """Write SKN faces."""
     file.write(str(len(faces)) + "\n")
-    for face in faces:
-        file.write("{} {} {}\n".format(*face))
+    file.writelines("{} {} {}\n".format(*face) for face in faces)
 
 
 def read_bone_bindings(file: typing.TextIO) -> list[bmf.BoneBinding]:
@@ -59,16 +57,16 @@ def read_bone_bindings(file: typing.TextIO) -> list[bmf.BoneBinding]:
 def write_bone_bindings(file: typing.TextIO, bone_bindings: list[bmf.BoneBinding]) -> None:
     """Write SKN bone bindings."""
     file.write(str(len(bone_bindings)) + "\n")
-    for bone_binding in bone_bindings:
-        file.write(
-            "{} {} {} {} {}\n".format(  # noqa: UP032
-                bone_binding.bone_index,
-                bone_binding.vertex_index,
-                bone_binding.vertex_count,
-                bone_binding.blended_vertex_index,
-                bone_binding.blended_vertex_count,
-            ),
+    file.writelines(
+        "{} {} {} {} {}\n".format(  # noqa: UP032
+            bone_binding.bone_index,
+            bone_binding.vertex_index,
+            bone_binding.vertex_count,
+            bone_binding.blended_vertex_index,
+            bone_binding.blended_vertex_count,
         )
+        for bone_binding in bone_bindings
+    )
 
 
 def read_uvs(file: typing.TextIO) -> list[tuple[float, float]]:
@@ -84,8 +82,7 @@ def read_uvs(file: typing.TextIO) -> list[tuple[float, float]]:
 def write_uvs(file: typing.TextIO, uvs: list[tuple[float, float]]) -> None:
     """Write SKN uvs."""
     file.write(str(len(uvs)) + "\n")
-    for uv in uvs:
-        file.write("{:.7f} {:.7f}\n".format(*uv))
+    file.writelines("{:.7f} {:.7f}\n".format(*uv) for uv in uvs)
 
 
 def read_blends(file: typing.TextIO) -> list[bmf.Blend]:
@@ -106,8 +103,7 @@ def read_blends(file: typing.TextIO) -> list[bmf.Blend]:
 def write_blends(file: typing.TextIO, blends: list[bmf.Blend]) -> None:
     """Write SKN blends."""
     file.write(str(len(blends)) + "\n")
-    for blend in blends:
-        file.write(f"{blend.vertex_index} {blend.weight}\n")
+    file.writelines(f"{blend.vertex_index} {blend.weight}\n" for blend in blends)
 
 
 def read_vertices(file: typing.TextIO) -> list[bmf.Vertex]:
@@ -128,8 +124,9 @@ def read_vertices(file: typing.TextIO) -> list[bmf.Vertex]:
 def write_vertices(file: typing.TextIO, vertices: list[bmf.Vertex]) -> None:
     """Write SKN vertices."""
     file.write(str(len(vertices)) + "\n")
-    for vertex in vertices:
-        file.write("{:.7f} {:.7f} {:.7f} {:.7f} {:.7f} {:.7f}\n".format(*vertex.position, *vertex.normal))
+    file.writelines(
+        "{:.7f} {:.7f} {:.7f} {:.7f} {:.7f} {:.7f}\n".format(*vertex.position, *vertex.normal) for vertex in vertices
+    )
 
 
 def read_skn(file: typing.TextIO) -> bmf.Bmf:

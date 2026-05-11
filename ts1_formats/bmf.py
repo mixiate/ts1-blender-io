@@ -32,8 +32,7 @@ def read_faces(file: typing.BinaryIO) -> list[tuple[int, int, int]]:
 def write_faces(file: typing.BinaryIO, faces: list[tuple[int, int, int]]) -> None:
     """Write BMF faces."""
     file.write(struct.pack('<I', len(faces)))
-    for face in faces:
-        file.write(struct.pack('<3I', *face))
+    file.writelines(struct.pack('<3I', *face) for face in faces)
 
 
 @dataclasses.dataclass
@@ -82,8 +81,7 @@ def read_uvs(file: typing.BinaryIO) -> list[tuple[float, float]]:
 def write_uvs(file: typing.BinaryIO, uvs: list[tuple[float, float]]) -> None:
     """Write BMF uvs."""
     file.write(struct.pack('<I', len(uvs)))
-    for uv in uvs:
-        file.write(struct.pack('<2f', *uv))
+    file.writelines(struct.pack('<2f', *uv) for uv in uvs)
 
 
 @dataclasses.dataclass
