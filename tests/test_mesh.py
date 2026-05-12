@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tso_formats import mesh
+from ts1_formats import mesh
 
 
 def roundtrip_mesh(file_path: Path) -> None:

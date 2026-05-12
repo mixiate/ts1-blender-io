@@ -4,8 +4,8 @@ import pathlib
 import struct
 import typing
 
-from ts1_formats import bmf
-from ts1_formats.error import FileReadError
+from . import bmf
+from .error import FileReadError
 
 
 def read_mesh(stream: typing.BinaryIO) -> bmf.Mesh:

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tso_formats import anim
+from ts1_formats import anim
 
 
 def roundtrip_anim(file_path: Path) -> None:

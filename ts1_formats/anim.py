@@ -5,8 +5,8 @@ import pathlib
 import struct
 import typing
 
-from ts1_formats import pascal_string, property_list
-from ts1_formats.error import FileReadError
+from . import pascal_string, property_list
+from .error import FileReadError
 
 
 @dataclasses.dataclass

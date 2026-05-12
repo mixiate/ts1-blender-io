@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tso_formats import skel
+from ts1_formats import skel
 
 
 def test_skel(files_directory: str | None) -> None:

@@ -4,8 +4,8 @@ import pathlib
 import struct
 import typing
 
-from ts1_formats import pascal_string, skeleton
-from ts1_formats.error import FileReadError
+from . import pascal_string, skeleton
+from .error import FileReadError
 
 
 def read_skel(stream: typing.BinaryIO) -> skeleton.Skeleton:
