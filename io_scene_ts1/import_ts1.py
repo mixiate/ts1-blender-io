@@ -38,13 +38,13 @@ def import_skeleton(context: bpy.types.Context, skeleton: Skeleton) -> bpy.types
         armature_bone.tail = mathutils.Vector((0.1, 0.0, 0.0))
 
         rotation = (
-            mathutils.Quaternion((bone.rotation_w, bone.rotation_x, bone.rotation_z, bone.rotation_y))
+            mathutils.Quaternion((bone.rotation[3], bone.rotation[0], bone.rotation[2], bone.rotation[1]))
             .to_matrix()
             .to_4x4()
         )
 
         translation = mathutils.Matrix.Translation(
-            mathutils.Vector((bone.position_x, bone.position_z, bone.position_y)) / utils.BONE_SCALE,
+            mathutils.Vector((bone.position[0], bone.position[2], bone.position[1])) / utils.BONE_SCALE,
         )
 
         armature_bone.matrix = (parent_matrix @ (translation @ rotation)) @ utils.BONE_ROTATION_OFFSET

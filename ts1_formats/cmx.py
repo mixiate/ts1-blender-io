@@ -205,7 +205,7 @@ def read_bones(file: typing.TextIO) -> list[skeleton.Bone]:
         parent = file.readline().strip()
         properties = read_property_lists(file)
         position = file.readline().strip().split("|")[1].strip().split(" ")
-        quaternion = file.readline().strip().split("|")[1].strip().split(" ")
+        rotation = file.readline().strip().split("|")[1].strip().split(" ")
         translate = bool(file.readline())
         rotate = bool(file.readline())
         blend = bool(file.readline())
@@ -216,13 +216,8 @@ def read_bones(file: typing.TextIO) -> list[skeleton.Bone]:
                 name,
                 parent,
                 properties,
-                float(position[0]),
-                float(position[1]),
-                float(position[2]),
-                float(quaternion[0]),
-                float(quaternion[1]),
-                float(quaternion[2]),
-                float(quaternion[3]),
+                (float(position[0]), float(position[1]), float(position[2])),
+                (float(rotation[0]), float(rotation[1]), float(rotation[2]), float(rotation[3])),
                 translate,
                 rotate,
                 blend,
@@ -240,8 +235,8 @@ def write_bones(file: typing.TextIO, bones: list[skeleton.Bone]) -> None:
         file.write(bone.name + "\n")
         file.write(bone.parent + "\n")
         write_property_lists(file, bone.property_lists)
-        file.write(f"| {bone.position_x} {bone.position_y} {bone.position_z} |\n")
-        file.write(f"| {bone.rotation_x} {bone.rotation_y} {bone.rotation_z} {bone.rotation_w} |\n")
+        file.write(f"| {bone.position[0]} {bone.position[1]} {bone.position[2]} |\n")
+        file.write(f"| {bone.rotation[0]} {bone.rotation[1]} {bone.rotation[2]} {bone.rotation[3]} |\n")
         file.write(str(int(bone.translate)) + "\n")
         file.write(str(int(bone.rotate)) + "\n")
         file.write(str(int(bone.blend)) + "\n")
