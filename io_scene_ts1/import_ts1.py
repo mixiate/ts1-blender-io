@@ -1,16 +1,14 @@
 """Import The Sims 1 3D formats in to Blender."""
 
 import logging
-import math
 import pathlib
 import re
 
-import bmesh
 import bpy
 import bpy_extras.anim_utils
 import mathutils
 
-from . import import_skeleton, texture_loader, utils
+from . import import_mesh, import_skeleton, texture_loader, utils
 from .ts1_formats import bcf, bmf, cfp, cmx, skn
 from .ts1_formats.error import FileReadError as TS1FileReadError
 
@@ -190,16 +188,9 @@ def import_suit(
             logger.info(f"Could not load mesh {skin.skin_name} used by {suit.name}.")  # noqa: G004
             continue
 
-        armature = armature_object.data
-
-        if not all(bone in armature.bones for bone in bmf_file.mesh.bones):
-            logger.info(
-                f"Could not apply mesh {skin.skin_name} to armature {armature_object.name}. The bones do not match.",  # noqa: G004
-            )
+        obj = import_mesh.import_mesh(logger, skin.skin_name, armature_object, bmf_file.mesh)
+        if obj is None:
             continue
-
-        mesh = bpy.data.meshes.new(skin.skin_name)
-        obj = bpy.data.objects.new(skin.skin_name, mesh)
 
         mesh_collection = bpy.data.collections.get(suit.name)
         if mesh_collection is None:
@@ -211,73 +202,6 @@ def import_suit(
 
         obj["Bone Name"] = skin.bone_name
         obj["Censor Flags"] = skin.censor_flags
-
-        b_mesh = bmesh.new()
-
-        normals = []
-        deform_layer = b_mesh.verts.layers.deform.verify()
-
-        for bone_binding in bmf_file.mesh.bone_bindings:
-            bone_name = bmf_file.mesh.bones[bone_binding.bone_index]
-
-            armature_bone = armature.bones[bone_name]
-            bone_matrix = armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET_INVERTED
-
-            vertex_group = obj.vertex_groups.new(name=bone_name)
-
-            vertex_index_start = bone_binding.vertex_index
-            vertex_index_end = vertex_index_start + bone_binding.vertex_count
-            for vertex in bmf_file.mesh.vertices[vertex_index_start:vertex_index_end]:
-                position = mathutils.Vector(vertex.position).xzy / utils.BONE_SCALE
-                b_mesh_vertex = b_mesh.verts.new(bone_matrix @ position)
-
-                bone_matrix_normal = bone_matrix.to_quaternion().to_matrix().to_4x4()
-                normal = bone_matrix_normal @ mathutils.Vector(vertex.normal).xzy
-                normals.append(normal)
-
-                b_mesh_vertex[deform_layer][vertex_group.index] = 1.0
-
-        b_mesh.verts.ensure_lookup_table()
-        b_mesh.verts.index_update()
-
-        for bone_binding in bmf_file.mesh.bone_bindings:
-            bone_name = bmf_file.mesh.bones[bone_binding.bone_index]
-            vertex_group = obj.vertex_groups[bone_name]
-
-            blend_index_start = bone_binding.blended_vertex_index
-            blend_index_end = blend_index_start + bone_binding.blended_vertex_count
-            for blend in bmf_file.mesh.blends[blend_index_start:blend_index_end]:
-                for inner_bone_binding in bmf_file.mesh.bone_bindings:
-                    vertex_index_start = inner_bone_binding.vertex_index
-                    vertex_index_end = vertex_index_start + inner_bone_binding.vertex_count
-                    if blend.vertex_index >= vertex_index_start and blend.vertex_index < vertex_index_end:
-                        original_bone_name = bmf_file.mesh.bones[inner_bone_binding.bone_index]
-
-                original_vertex_group = obj.vertex_groups[original_bone_name]
-                weight = float(blend.weight) * math.pow(2, -15)
-                b_mesh.verts[blend.vertex_index][deform_layer][original_vertex_group.index] = 1 - weight
-                b_mesh.verts[blend.vertex_index][deform_layer][vertex_group.index] = weight
-
-        invalid_face_count = 0
-        for face in bmf_file.mesh.faces:
-            try:
-                b_mesh.faces.new((b_mesh.verts[face[2]], b_mesh.verts[face[1]], b_mesh.verts[face[0]]))
-            except ValueError as _:  # noqa: PERF203
-                invalid_face_count += 1
-
-        if invalid_face_count > 0:
-            logger.info(f"Skipped {invalid_face_count} invalid faces in mesh {skin.skin_name}")  # noqa: G004
-
-        uv_layer = b_mesh.loops.layers.uv.verify()
-        for face in b_mesh.faces:
-            for loop in face.loops:
-                uv = bmf_file.mesh.uvs[loop.vert.index]
-                loop[uv_layer].uv = (uv[0], 1 - uv[1])
-
-        b_mesh.to_mesh(mesh)
-        b_mesh.free()
-
-        mesh.normals_split_custom_set_from_vertices(normals)
 
         texture_loader.load_textures(
             obj,
@@ -295,10 +219,6 @@ def import_suit(
             armature_object_map[armature_object.name] = []
 
         armature_object_map[armature_object.name] += [obj.name]
-
-        obj.location = armature_object.location
-        obj.rotation_euler = armature_object.rotation_euler
-        obj.scale = armature_object.scale
 
 
 def create_fcurve_data(
