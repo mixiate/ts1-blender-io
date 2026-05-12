@@ -160,9 +160,7 @@ def export_skin(directory: pathlib.Path, mesh_format: str, obj: bpy.types.Object
     if len(obj.data.materials) > 0:
         default_texture = obj.data.materials[0].name
 
-    bmf_file = bmf.Bmf(
-        obj.name,
-        default_texture,
+    bmf_mesh = bmf.Mesh(
         bones,
         faces,
         bone_bindings,
@@ -170,6 +168,12 @@ def export_skin(directory: pathlib.Path, mesh_format: str, obj: bpy.types.Object
         blends,
         vertices,
         blended_vertices,
+    )
+
+    bmf_file = bmf.Bmf(
+        obj.name,
+        default_texture,
+        bmf_mesh,
     )
 
     if apply_modifiers:

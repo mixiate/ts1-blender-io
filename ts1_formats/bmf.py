@@ -135,11 +135,9 @@ def write_vertices(file: typing.BinaryIO, vertices: list[Vertex]) -> None:
 
 
 @dataclasses.dataclass
-class Bmf:
-    """BMF File."""
+class Mesh:
+    """Mesh description."""
 
-    skin_name: str
-    default_texture_name: str
     bones: list[str]
     faces: list[tuple[int, int, int]]
     bone_bindings: list[BoneBinding]
@@ -149,22 +147,18 @@ class Bmf:
     blend_vertices: list[Vertex]
 
 
-def read_bmf(file: typing.BinaryIO) -> Bmf:
-    """Read BMF."""
-    skin_name = pascal_string.read_string(file)
-    default_texture_name = pascal_string.read_string(file)
-    bones = read_bones(file)
-    faces = read_faces(file)
-    bone_bindings = read_bone_bindings(file)
-    uvs = read_uvs(file)
-    blends = read_blends(file)
-    struct.unpack('<I', file.read(4))  # total vertex count
-    vertices = [read_vertex(file) for _ in range(len(uvs))]
-    blend_vertices = [read_vertex(file) for _ in range(len(blends))]
+def read_mesh(stream: typing.BinaryIO) -> Mesh:
+    """Read mesh from a stream."""
+    bones = read_bones(stream)
+    faces = read_faces(stream)
+    bone_bindings = read_bone_bindings(stream)
+    uvs = read_uvs(stream)
+    blends = read_blends(stream)
+    struct.unpack('<I', stream.read(4))  # total vertex count
+    vertices = [read_vertex(stream) for _ in range(len(uvs))]
+    blend_vertices = [read_vertex(stream) for _ in range(len(blends))]
 
-    return Bmf(
-        skin_name,
-        default_texture_name,
+    return Mesh(
         bones,
         faces,
         bone_bindings,
@@ -175,16 +169,39 @@ def read_bmf(file: typing.BinaryIO) -> Bmf:
     )
 
 
+def write_mesh(stream: typing.BinaryIO, mesh: Mesh) -> None:
+    """Write a mesh to a stream."""
+    write_bones(stream, mesh.bones)
+    write_faces(stream, mesh.faces)
+    write_bone_bindings(stream, mesh.bone_bindings)
+    write_uvs(stream, mesh.uvs)
+    write_blends(stream, mesh.blends)
+    write_vertices(stream, mesh.vertices + mesh.blend_vertices)
+
+
+@dataclasses.dataclass
+class Bmf:
+    """BMF File."""
+
+    skin_name: str
+    default_texture_name: str
+    mesh: Mesh
+
+
+def read_bmf(file: typing.BinaryIO) -> Bmf:
+    """Read BMF."""
+    return Bmf(
+        pascal_string.read_string(file),
+        pascal_string.read_string(file),
+        read_mesh(file),
+    )
+
+
 def write_bmf(file: typing.BinaryIO, bmf: Bmf) -> None:
     """Write BMF."""
     pascal_string.write_string(file, bmf.skin_name)
     pascal_string.write_string(file, bmf.default_texture_name)
-    write_bones(file, bmf.bones)
-    write_faces(file, bmf.faces)
-    write_bone_bindings(file, bmf.bone_bindings)
-    write_uvs(file, bmf.uvs)
-    write_blends(file, bmf.blends)
-    write_vertices(file, bmf.vertices + bmf.blend_vertices)
+    write_mesh(file, bmf.mesh)
 
 
 def read_file(file_path: pathlib.Path) -> Bmf:

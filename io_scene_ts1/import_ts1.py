@@ -257,7 +257,7 @@ def import_suit(
 
         armature = armature_object.data
 
-        if not all(bone in armature.bones for bone in bmf_file.bones):
+        if not all(bone in armature.bones for bone in bmf_file.mesh.bones):
             logger.info(
                 f"Could not apply mesh {skin.skin_name} to armature {armature_object.name}. The bones do not match.",  # noqa: G004
             )
@@ -282,8 +282,8 @@ def import_suit(
         normals = []
         deform_layer = b_mesh.verts.layers.deform.verify()
 
-        for bone_binding in bmf_file.bone_bindings:
-            bone_name = bmf_file.bones[bone_binding.bone_index]
+        for bone_binding in bmf_file.mesh.bone_bindings:
+            bone_name = bmf_file.mesh.bones[bone_binding.bone_index]
 
             armature_bone = armature.bones[bone_name]
             bone_matrix = armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET_INVERTED
@@ -292,7 +292,7 @@ def import_suit(
 
             vertex_index_start = bone_binding.vertex_index
             vertex_index_end = vertex_index_start + bone_binding.vertex_count
-            for vertex in bmf_file.vertices[vertex_index_start:vertex_index_end]:
+            for vertex in bmf_file.mesh.vertices[vertex_index_start:vertex_index_end]:
                 position = mathutils.Vector(vertex.position).xzy / utils.BONE_SCALE
                 b_mesh_vertex = b_mesh.verts.new(bone_matrix @ position)
 
@@ -305,18 +305,18 @@ def import_suit(
         b_mesh.verts.ensure_lookup_table()
         b_mesh.verts.index_update()
 
-        for bone_binding in bmf_file.bone_bindings:
-            bone_name = bmf_file.bones[bone_binding.bone_index]
+        for bone_binding in bmf_file.mesh.bone_bindings:
+            bone_name = bmf_file.mesh.bones[bone_binding.bone_index]
             vertex_group = obj.vertex_groups[bone_name]
 
             blend_index_start = bone_binding.blended_vertex_index
             blend_index_end = blend_index_start + bone_binding.blended_vertex_count
-            for blend in bmf_file.blends[blend_index_start:blend_index_end]:
-                for inner_bone_binding in bmf_file.bone_bindings:
+            for blend in bmf_file.mesh.blends[blend_index_start:blend_index_end]:
+                for inner_bone_binding in bmf_file.mesh.bone_bindings:
                     vertex_index_start = inner_bone_binding.vertex_index
                     vertex_index_end = vertex_index_start + inner_bone_binding.vertex_count
                     if blend.vertex_index >= vertex_index_start and blend.vertex_index < vertex_index_end:
-                        original_bone_name = bmf_file.bones[inner_bone_binding.bone_index]
+                        original_bone_name = bmf_file.mesh.bones[inner_bone_binding.bone_index]
 
                 original_vertex_group = obj.vertex_groups[original_bone_name]
                 weight = float(blend.weight) * math.pow(2, -15)
@@ -324,7 +324,7 @@ def import_suit(
                 b_mesh.verts[blend.vertex_index][deform_layer][vertex_group.index] = weight
 
         invalid_face_count = 0
-        for face in bmf_file.faces:
+        for face in bmf_file.mesh.faces:
             try:
                 b_mesh.faces.new((b_mesh.verts[face[2]], b_mesh.verts[face[1]], b_mesh.verts[face[0]]))
             except ValueError as _:  # noqa: PERF203
@@ -336,7 +336,7 @@ def import_suit(
         uv_layer = b_mesh.loops.layers.uv.verify()
         for face in b_mesh.faces:
             for loop in face.loops:
-                uv = bmf_file.uvs[loop.vert.index]
+                uv = bmf_file.mesh.uvs[loop.vert.index]
                 loop[uv_layer].uv = (uv[0], 1 - uv[1])
 
         b_mesh.to_mesh(mesh)

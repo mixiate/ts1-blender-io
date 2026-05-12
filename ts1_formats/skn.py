@@ -121,22 +121,18 @@ def write_vertices(file: typing.TextIO, vertices: list[bmf.Vertex]) -> None:
     )
 
 
-def read_skn(file: typing.TextIO) -> bmf.Bmf:
-    """Read SKN."""
-    skin_name = file.readline().strip()
-    default_texture_name = file.readline().strip()
-    bones = read_bones(file)
-    faces = read_faces(file)
-    bone_bindings = read_bone_bindings(file)
-    uvs = read_uvs(file)
-    blends = read_blends(file)
-    file.readline()  # total vertex count
-    vertices = [read_vertex(file) for _ in range(len(uvs))]
-    blend_vertices = [read_vertex(file) for _ in range(len(blends))]
+def read_mesh(stream: typing.TextIO) -> bmf.Mesh:
+    """Read mesh from a stream."""
+    bones = read_bones(stream)
+    faces = read_faces(stream)
+    bone_bindings = read_bone_bindings(stream)
+    uvs = read_uvs(stream)
+    blends = read_blends(stream)
+    stream.readline()  # total vertex count
+    vertices = [read_vertex(stream) for _ in range(len(uvs))]
+    blend_vertices = [read_vertex(stream) for _ in range(len(blends))]
 
-    return bmf.Bmf(
-        skin_name,
-        default_texture_name,
+    return bmf.Mesh(
         bones,
         faces,
         bone_bindings,
@@ -147,16 +143,30 @@ def read_skn(file: typing.TextIO) -> bmf.Bmf:
     )
 
 
+def write_mesh(stream: typing.TextIO, mesh: bmf.Mesh) -> None:
+    """Write a mesh to a stream."""
+    write_bones(stream, mesh.bones)
+    write_faces(stream, mesh.faces)
+    write_bone_bindings(stream, mesh.bone_bindings)
+    write_uvs(stream, mesh.uvs)
+    write_blends(stream, mesh.blends)
+    write_vertices(stream, mesh.vertices + mesh.blend_vertices)
+
+
+def read_skn(file: typing.TextIO) -> bmf.Bmf:
+    """Read SKN."""
+    return bmf.Bmf(
+        file.readline().strip(),
+        file.readline().strip(),
+        read_mesh(file),
+    )
+
+
 def write_skn(file: typing.TextIO, bmf: bmf.Bmf) -> None:
     """Write SKN."""
     file.write(bmf.skin_name + "\n")
     file.write(bmf.default_texture_name + "\n")
-    write_bones(file, bmf.bones)
-    write_faces(file, bmf.faces)
-    write_bone_bindings(file, bmf.bone_bindings)
-    write_uvs(file, bmf.uvs)
-    write_blends(file, bmf.blends)
-    write_vertices(file, bmf.vertices + bmf.blend_vertices)
+    write_mesh(file, bmf.mesh)
 
 
 def read_file(file_path: pathlib.Path) -> bmf.Bmf:
