@@ -121,12 +121,16 @@ def parent_and_clean_up_meshes(
 
         bpy.ops.mesh.merge_normals()
         bpy.ops.mesh.remove_doubles(use_sharp_edge_from_normals=True)
-        bpy.ops.mesh.customdata_custom_splitnormals_clear()
         bpy.ops.mesh.faces_shade_smooth()
+        bpy.ops.mesh.normals_make_consistent()
 
         bpy.ops.mesh.select_all(action='DESELECT')
 
         bpy.ops.object.mode_set(mode='OBJECT')
+
+        for obj in objects:
+            context.view_layer.objects.active = obj
+            bpy.ops.mesh.customdata_custom_splitnormals_clear()
 
     armature.select_set(state=True)
     context.view_layer.objects.active = armature
