@@ -215,10 +215,10 @@ def import_suit(
         if not obj.data.materials:
             logger.info(f"Could not find a texture for mesh {skin.skin_name}")  # noqa: G004
 
-        if armature_object_map.get(armature_object.name) is None:
-            armature_object_map[armature_object.name] = []
+        if armature_object_map.get(armature_object) is None:
+            armature_object_map[armature_object] = []
 
-        armature_object_map[armature_object.name] += [obj.name]
+        armature_object_map[armature_object] += [obj]
 
 
 def create_fcurve_data(
@@ -490,35 +490,8 @@ def import_files(
 
         previous_active_object = context.view_layer.objects.active
 
-        for armature_object_name, objects in armature_object_map.items():
-            bpy.ops.object.select_all(action='DESELECT')
-
-            for object_name in objects:
-                obj = bpy.data.objects[object_name]
-                obj.select_set(state=True)
-
-            if cleanup_meshes:
-                context.view_layer.objects.active = context.scene.objects.get(
-                    objects[0],
-                )
-                bpy.ops.object.mode_set(mode='EDIT')
-
-                bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
-                bpy.ops.mesh.select_all(action='SELECT')
-
-                bpy.ops.mesh.merge_normals()
-                bpy.ops.mesh.remove_doubles(use_sharp_edge_from_normals=True)
-                bpy.ops.mesh.customdata_custom_splitnormals_clear()
-                bpy.ops.mesh.faces_shade_smooth()
-
-                bpy.ops.mesh.select_all(action='DESELECT')
-
-                bpy.ops.object.mode_set(mode='OBJECT')
-
-            armature_object = context.scene.objects.get(armature_object_name)
-            armature_object.select_set(state=True)
-            context.view_layer.objects.active = armature_object
-            bpy.ops.object.parent_set(type='ARMATURE')
+        for armature_object, objects in armature_object_map.items():
+            import_mesh.parent_and_clean_up_meshes(context, armature_object, objects, cleanup_meshes=cleanup_meshes)
 
         bpy.ops.object.select_all(action='DESELECT')
 

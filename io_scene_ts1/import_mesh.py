@@ -98,3 +98,36 @@ def import_mesh(
     obj.scale = armature_object.scale
 
     return obj
+
+
+def parent_and_clean_up_meshes(
+    context: bpy.types.Context, armature: bpy.types.Object, objects: list[bpy.types.Object], *, cleanup_meshes: bool
+) -> None:
+    """Parents all objects in the list to an armature at once and optionally cleans up the meshes.
+
+    It's a lot faster to do this in bulk when importing many meshes at the same time.
+    """
+    bpy.ops.object.select_all(action='DESELECT')
+
+    for obj in objects:
+        obj.select_set(state=True)
+
+    if cleanup_meshes:
+        context.view_layer.objects.active = objects[0]
+        bpy.ops.object.mode_set(mode='EDIT')
+
+        bpy.ops.mesh.select_mode(use_extend=False, use_expand=False, type='VERT')
+        bpy.ops.mesh.select_all(action='SELECT')
+
+        bpy.ops.mesh.merge_normals()
+        bpy.ops.mesh.remove_doubles(use_sharp_edge_from_normals=True)
+        bpy.ops.mesh.customdata_custom_splitnormals_clear()
+        bpy.ops.mesh.faces_shade_smooth()
+
+        bpy.ops.mesh.select_all(action='DESELECT')
+
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+    armature.select_set(state=True)
+    context.view_layer.objects.active = armature
+    bpy.ops.object.parent_set(type='ARMATURE')
