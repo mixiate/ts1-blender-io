@@ -8,29 +8,29 @@ import typing
 from . import error, pascal_string
 
 
-def read_bones(file: typing.BinaryIO) -> list[str]:
+def read_bones(file: typing.BinaryIO, endianness: str) -> list[str]:
     """Read BMF bones."""
-    count = struct.unpack('<I', file.read(4))[0]
+    count = struct.unpack(endianness + 'I', file.read(4))[0]
     return [pascal_string.read_string(file) for _ in range(count)]
 
 
-def write_bones(file: typing.BinaryIO, bones: list[str]) -> None:
+def write_bones(file: typing.BinaryIO, bones: list[str], endianness: str) -> None:
     """Write BMF bones."""
-    file.write(struct.pack('<I', len(bones)))
+    file.write(struct.pack(endianness + 'I', len(bones)))
     for bone in bones:
         pascal_string.write_string(file, bone)
 
 
-def read_faces(file: typing.BinaryIO) -> list[tuple[int, int, int]]:
+def read_faces(file: typing.BinaryIO, endianness: str) -> list[tuple[int, int, int]]:
     """Read BMF faces."""
-    count = struct.unpack('<I', file.read(4))[0]
-    return [struct.unpack('<3I', file.read(4 * 3)) for _ in range(count)]
+    count = struct.unpack(endianness + 'I', file.read(4))[0]
+    return [struct.unpack(endianness + '3I', file.read(4 * 3)) for _ in range(count)]
 
 
-def write_faces(file: typing.BinaryIO, faces: list[tuple[int, int, int]]) -> None:
+def write_faces(file: typing.BinaryIO, faces: list[tuple[int, int, int]], endianness: str) -> None:
     """Write BMF faces."""
-    file.write(struct.pack('<I', len(faces)))
-    file.writelines(struct.pack('<3I', *face) for face in faces)
+    file.write(struct.pack(endianness + 'I', len(faces)))
+    file.writelines(struct.pack(endianness + '3I', *face) for face in faces)
 
 
 @dataclasses.dataclass
@@ -44,41 +44,41 @@ class BoneBinding:
     blended_vertex_count: int
 
 
-def read_bone_bindings(file: typing.BinaryIO) -> list[BoneBinding]:
+def read_bone_bindings(file: typing.BinaryIO, endianness: str) -> list[BoneBinding]:
     """Read BMF bone bindings."""
-    count = struct.unpack('<I', file.read(4))[0]
+    count = struct.unpack(endianness + 'I', file.read(4))[0]
     return [
         BoneBinding(
-            struct.unpack('<I', file.read(4))[0],
-            struct.unpack('<I', file.read(4))[0],
-            struct.unpack('<I', file.read(4))[0],
-            struct.unpack('<i', file.read(4))[0],
-            struct.unpack('<I', file.read(4))[0],
+            struct.unpack(endianness + 'I', file.read(4))[0],
+            struct.unpack(endianness + 'I', file.read(4))[0],
+            struct.unpack(endianness + 'I', file.read(4))[0],
+            struct.unpack(endianness + 'i', file.read(4))[0],
+            struct.unpack(endianness + 'I', file.read(4))[0],
         )
         for _ in range(count)
     ]
 
 
-def write_bone_bindings(file: typing.BinaryIO, bone_bindings: list[BoneBinding]) -> None:
+def write_bone_bindings(file: typing.BinaryIO, bone_bindings: list[BoneBinding], endianness: str) -> None:
     """Write BMF bone bindings."""
-    file.write(struct.pack('<I', len(bone_bindings)))
+    file.write(struct.pack(endianness + 'I', len(bone_bindings)))
     for bone_binding in bone_bindings:
-        file.write(struct.pack('<I', bone_binding.bone_index))
-        file.write(struct.pack('<I', bone_binding.vertex_index))
-        file.write(struct.pack('<I', bone_binding.vertex_count))
-        file.write(struct.pack('<i', bone_binding.blended_vertex_index))
-        file.write(struct.pack('<I', bone_binding.blended_vertex_count))
+        file.write(struct.pack(endianness + 'I', bone_binding.bone_index))
+        file.write(struct.pack(endianness + 'I', bone_binding.vertex_index))
+        file.write(struct.pack(endianness + 'I', bone_binding.vertex_count))
+        file.write(struct.pack(endianness + 'i', bone_binding.blended_vertex_index))
+        file.write(struct.pack(endianness + 'I', bone_binding.blended_vertex_count))
 
 
-def read_uvs(file: typing.BinaryIO) -> list[tuple[float, float]]:
+def read_uvs(file: typing.BinaryIO, endianness: str) -> list[tuple[float, float]]:
     """Read BMF uvs."""
-    count = struct.unpack('<I', file.read(4))[0]
+    count = struct.unpack(endianness + 'I', file.read(4))[0]
     return [struct.unpack('<2f', file.read(4 * 2)) for _ in range(count)]
 
 
-def write_uvs(file: typing.BinaryIO, uvs: list[tuple[float, float]]) -> None:
+def write_uvs(file: typing.BinaryIO, uvs: list[tuple[float, float]], endianness: str) -> None:
     """Write BMF uvs."""
-    file.write(struct.pack('<I', len(uvs)))
+    file.write(struct.pack(endianness + 'I', len(uvs)))
     file.writelines(struct.pack('<2f', *uv) for uv in uvs)
 
 
@@ -90,24 +90,24 @@ class Blend:
     vertex_index: int
 
 
-def read_blends(file: typing.BinaryIO) -> list[Blend]:
+def read_blends(file: typing.BinaryIO, endianness: str) -> list[Blend]:
     """Read BMF blends."""
-    count = struct.unpack('<I', file.read(4))[0]
+    count = struct.unpack(endianness + 'I', file.read(4))[0]
     return [
         Blend(
-            struct.unpack('<I', file.read(4))[0],
-            struct.unpack('<I', file.read(4))[0],
+            struct.unpack(endianness + 'I', file.read(4))[0],
+            struct.unpack(endianness + 'I', file.read(4))[0],
         )
         for _ in range(count)
     ]
 
 
-def write_blends(file: typing.BinaryIO, blends: list[Blend]) -> None:
+def write_blends(file: typing.BinaryIO, blends: list[Blend], endianness: str) -> None:
     """Write BMF blends."""
-    file.write(struct.pack('<I', len(blends)))
+    file.write(struct.pack(endianness + 'I', len(blends)))
     for blend in blends:
-        file.write(struct.pack('<I', blend.weight))
-        file.write(struct.pack('<I', blend.vertex_index))
+        file.write(struct.pack(endianness + 'I', blend.weight))
+        file.write(struct.pack(endianness + 'I', blend.vertex_index))
 
 
 @dataclasses.dataclass
@@ -126,9 +126,9 @@ def read_vertex(stream: typing.BinaryIO) -> Vertex:
     )
 
 
-def write_vertices(file: typing.BinaryIO, vertices: list[Vertex]) -> None:
+def write_vertices(file: typing.BinaryIO, vertices: list[Vertex], endianness: str) -> None:
     """Write BMF vertices."""
-    file.write(struct.pack('<I', len(vertices)))
+    file.write(struct.pack(endianness + 'I', len(vertices)))
     for vertex in vertices:
         file.write(struct.pack('<3f', *vertex.position))
         file.write(struct.pack('<3f', *vertex.normal))
@@ -147,14 +147,14 @@ class Mesh:
     blend_vertices: list[Vertex]
 
 
-def read_mesh(stream: typing.BinaryIO) -> Mesh:
+def read_mesh(stream: typing.BinaryIO, endianness: str) -> Mesh:
     """Read mesh from a stream."""
-    bones = read_bones(stream)
-    faces = read_faces(stream)
-    bone_bindings = read_bone_bindings(stream)
-    uvs = read_uvs(stream)
-    blends = read_blends(stream)
-    struct.unpack('<I', stream.read(4))  # total vertex count
+    bones = read_bones(stream, endianness)
+    faces = read_faces(stream, endianness)
+    bone_bindings = read_bone_bindings(stream, endianness)
+    uvs = read_uvs(stream, endianness)
+    blends = read_blends(stream, endianness)
+    struct.unpack(endianness + 'I', stream.read(4))  # total vertex count
     vertices = [read_vertex(stream) for _ in range(len(uvs))]
     blend_vertices = [read_vertex(stream) for _ in range(len(blends))]
 
@@ -169,14 +169,14 @@ def read_mesh(stream: typing.BinaryIO) -> Mesh:
     )
 
 
-def write_mesh(stream: typing.BinaryIO, mesh: Mesh) -> None:
+def write_mesh(stream: typing.BinaryIO, mesh: Mesh, endianness: str) -> None:
     """Write a mesh to a stream."""
-    write_bones(stream, mesh.bones)
-    write_faces(stream, mesh.faces)
-    write_bone_bindings(stream, mesh.bone_bindings)
-    write_uvs(stream, mesh.uvs)
-    write_blends(stream, mesh.blends)
-    write_vertices(stream, mesh.vertices + mesh.blend_vertices)
+    write_bones(stream, mesh.bones, endianness)
+    write_faces(stream, mesh.faces, endianness)
+    write_bone_bindings(stream, mesh.bone_bindings, endianness)
+    write_uvs(stream, mesh.uvs, endianness)
+    write_blends(stream, mesh.blends, endianness)
+    write_vertices(stream, mesh.vertices + mesh.blend_vertices, endianness)
 
 
 @dataclasses.dataclass
@@ -193,7 +193,7 @@ def read_bmf(file: typing.BinaryIO) -> Bmf:
     return Bmf(
         pascal_string.read_string(file),
         pascal_string.read_string(file),
-        read_mesh(file),
+        read_mesh(file, '<'),
     )
 
 
@@ -201,7 +201,7 @@ def write_bmf(file: typing.BinaryIO, bmf: Bmf) -> None:
     """Write BMF."""
     pascal_string.write_string(file, bmf.skin_name)
     pascal_string.write_string(file, bmf.default_texture_name)
-    write_mesh(file, bmf.mesh)
+    write_mesh(file, bmf.mesh, '<')
 
 
 def read_file(file_path: pathlib.Path) -> Bmf:
