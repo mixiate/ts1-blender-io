@@ -147,8 +147,6 @@ def export_skin(directory: pathlib.Path, mesh_format: str, obj: bpy.types.Object
 
             blended_vertices += vertex_group_vertices
 
-    vertices += blended_vertices
-
     faces = [
         (
             vertex_index_map.index(face[2]),
@@ -171,6 +169,7 @@ def export_skin(directory: pathlib.Path, mesh_format: str, obj: bpy.types.Object
         uvs,
         blends,
         vertices,
+        blended_vertices,
     )
 
     if apply_modifiers:

@@ -104,19 +104,13 @@ def write_blends(file: typing.TextIO, blends: list[bmf.Blend]) -> None:
     file.writelines(f"{blend.vertex_index} {blend.weight}\n" for blend in blends)
 
 
-def read_vertices(file: typing.TextIO) -> list[bmf.Vertex]:
-    """Read SKN vertices."""
-    count = int(file.readline())
-    vertices = []
-    for _ in range(count):
-        values = file.readline().split(" ")
-        vertices.append(
-            bmf.Vertex(
-                (float(values[0]), float(values[1]), float(values[2])),
-                (float(values[3]), float(values[4]), float(values[5])),
-            ),
-        )
-    return vertices
+def read_vertex(stream: typing.TextIO) -> bmf.Vertex:
+    """Read a vertex from a stream."""
+    values = stream.readline().split(" ")
+    return bmf.Vertex(
+        (float(values[0]), float(values[1]), float(values[2])),
+        (float(values[3]), float(values[4]), float(values[5])),
+    )
 
 
 def write_vertices(file: typing.TextIO, vertices: list[bmf.Vertex]) -> None:
@@ -129,15 +123,27 @@ def write_vertices(file: typing.TextIO, vertices: list[bmf.Vertex]) -> None:
 
 def read_skn(file: typing.TextIO) -> bmf.Bmf:
     """Read SKN."""
+    skin_name = file.readline().strip()
+    default_texture_name = file.readline().strip()
+    bones = read_bones(file)
+    faces = read_faces(file)
+    bone_bindings = read_bone_bindings(file)
+    uvs = read_uvs(file)
+    blends = read_blends(file)
+    file.readline()  # total vertex count
+    vertices = [read_vertex(file) for _ in range(len(uvs))]
+    blend_vertices = [read_vertex(file) for _ in range(len(blends))]
+
     return bmf.Bmf(
-        file.readline().strip(),
-        file.readline().strip(),
-        read_bones(file),
-        read_faces(file),
-        read_bone_bindings(file),
-        read_uvs(file),
-        read_blends(file),
-        read_vertices(file),
+        skin_name,
+        default_texture_name,
+        bones,
+        faces,
+        bone_bindings,
+        uvs,
+        blends,
+        vertices,
+        blend_vertices,
     )
 
 
@@ -150,7 +156,7 @@ def write_skn(file: typing.TextIO, bmf: bmf.Bmf) -> None:
     write_bone_bindings(file, bmf.bone_bindings)
     write_uvs(file, bmf.uvs)
     write_blends(file, bmf.blends)
-    write_vertices(file, bmf.vertices)
+    write_vertices(file, bmf.vertices + bmf.blend_vertices)
 
 
 def read_file(file_path: pathlib.Path) -> bmf.Bmf:

@@ -118,16 +118,12 @@ class Vertex:
     normal: tuple[float, float, float]
 
 
-def read_vertices(file: typing.BinaryIO) -> list[Vertex]:
-    """Read BMF vertices."""
-    count = struct.unpack('<I', file.read(4))[0]
-    return [
-        Vertex(
-            struct.unpack('<3f', file.read(4 * 3)),
-            struct.unpack('<3f', file.read(4 * 3)),
-        )
-        for _ in range(count)
-    ]
+def read_vertex(stream: typing.BinaryIO) -> Vertex:
+    """Read a vertex from a stream."""
+    return Vertex(
+        struct.unpack('<3f', stream.read(4 * 3)),
+        struct.unpack('<3f', stream.read(4 * 3)),
+    )
 
 
 def write_vertices(file: typing.BinaryIO, vertices: list[Vertex]) -> None:
@@ -150,19 +146,32 @@ class Bmf:
     uvs: list[tuple[float, float]]
     blends: list[Blend]
     vertices: list[Vertex]
+    blend_vertices: list[Vertex]
 
 
 def read_bmf(file: typing.BinaryIO) -> Bmf:
     """Read BMF."""
+    skin_name = pascal_string.read_string(file)
+    default_texture_name = pascal_string.read_string(file)
+    bones = read_bones(file)
+    faces = read_faces(file)
+    bone_bindings = read_bone_bindings(file)
+    uvs = read_uvs(file)
+    blends = read_blends(file)
+    struct.unpack('<I', file.read(4))  # total vertex count
+    vertices = [read_vertex(file) for _ in range(len(uvs))]
+    blend_vertices = [read_vertex(file) for _ in range(len(blends))]
+
     return Bmf(
-        pascal_string.read_string(file),
-        pascal_string.read_string(file),
-        read_bones(file),
-        read_faces(file),
-        read_bone_bindings(file),
-        read_uvs(file),
-        read_blends(file),
-        read_vertices(file),
+        skin_name,
+        default_texture_name,
+        bones,
+        faces,
+        bone_bindings,
+        uvs,
+        blends,
+        vertices,
+        blend_vertices,
     )
 
 
@@ -175,7 +184,7 @@ def write_bmf(file: typing.BinaryIO, bmf: Bmf) -> None:
     write_bone_bindings(file, bmf.bone_bindings)
     write_uvs(file, bmf.uvs)
     write_blends(file, bmf.blends)
-    write_vertices(file, bmf.vertices)
+    write_vertices(file, bmf.vertices + bmf.blend_vertices)
 
 
 def read_file(file_path: pathlib.Path) -> Bmf:
