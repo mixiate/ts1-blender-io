@@ -223,12 +223,12 @@ class TS1IOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
         col.prop(self, "compress_cfp")
 
 
-def menu_import(self: bpy.types.TOPBAR_MT_file_import, _: bpy.context) -> None:
+def ts1_menu_import(self: bpy.types.TOPBAR_MT_file_import, _: bpy.context) -> None:
     """Add an entry to the import menu."""
     self.layout.operator(TS1IOImport.bl_idname, text="The Sims 1 (.cmx/.bcf)")
 
 
-def menu_export(self: bpy.types.TOPBAR_MT_file_export, _: bpy.context) -> None:
+def ts1_menu_export(self: bpy.types.TOPBAR_MT_file_export, _: bpy.context) -> None:
     """Add an entry to the export menu."""
     self.layout.operator(TS1IOExport.bl_idname, text="The Sims 1 (.cmx/.bcf)")
 
@@ -250,10 +250,65 @@ class TS1IOAddonPreferences(bpy.types.AddonPreferences):
         self.layout.prop(self, "file_search_directory")
 
 
+class TSOIOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
+    """Import The Sims Online files."""
+
+    bl_idname: str = "tsoblenderio.import"
+    bl_label: str = "The Sims Online (.skel)"
+    bl_description: str = "Import a skel file from The Sims Online"
+    bl_options: typing.ClassVar[set[str]] = {'UNDO'}
+
+    filter_glob: bpy.props.StringProperty(  # type: ignore[valid-type]
+        default="*.skel",
+        options={'HIDDEN'},
+    )
+    files: bpy.props.CollectionProperty(  # type: ignore[valid-type]
+        name="File Path",
+        type=bpy.types.OperatorFileListElement,
+    )
+    directory: bpy.props.StringProperty(  # type: ignore[valid-type]
+        subtype='DIR_PATH',
+    )
+
+    def execute(self, context: bpy.context) -> set[str]:
+        """Execute the importing function."""
+        import io  # noqa: PLC0415
+        import logging  # noqa: PLC0415
+        import pathlib  # noqa: PLC0415
+
+        from . import import_tso  # noqa: PLC0415
+
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.DEBUG)
+        log_stream = io.StringIO()
+        logger.addHandler(logging.StreamHandler(stream=log_stream))
+
+        directory = pathlib.Path(self.directory)
+        paths = [directory / file.name for file in self.files]
+
+        import_tso.import_files(
+            context,
+            logger,
+            paths,
+        )
+
+        log_output = log_stream.getvalue()
+        if log_output != "":
+            self.report({"ERROR"}, log_output)
+
+        return {'FINISHED'}
+
+
+def tso_menu_import(self: bpy.types.TOPBAR_MT_file_import, _: bpy.context) -> None:
+    """Add an entry to the import menu."""
+    self.layout.operator(TSOIOImport.bl_idname)
+
+
 classes = (
     TS1IOImport,
     TS1IOExport,
     TS1IOAddonPreferences,
+    TSOIOImport,
 )
 
 
@@ -262,8 +317,10 @@ def register() -> None:
     for cls in classes:
         bpy.utils.register_class(cls)
 
-    bpy.types.TOPBAR_MT_file_import.append(menu_import)
-    bpy.types.TOPBAR_MT_file_export.append(menu_export)
+    bpy.types.TOPBAR_MT_file_import.append(ts1_menu_import)
+    bpy.types.TOPBAR_MT_file_export.append(ts1_menu_export)
+
+    bpy.types.TOPBAR_MT_file_import.append(tso_menu_import)
 
 
 def unregister() -> None:
@@ -271,8 +328,8 @@ def unregister() -> None:
     for cls in classes:
         bpy.utils.unregister_class(cls)
 
-    bpy.types.TOPBAR_MT_file_import.remove(menu_import)
-    bpy.types.TOPBAR_MT_file_export.remove(menu_export)
+    bpy.types.TOPBAR_MT_file_import.remove(ts1_menu_import)
+    bpy.types.TOPBAR_MT_file_export.remove(ts1_menu_export)
 
 
 if __name__ == "__main__":
