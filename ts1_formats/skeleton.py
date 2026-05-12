@@ -4,7 +4,7 @@ import dataclasses
 import struct
 import typing
 
-from . import pascal_string, property_list
+from . import error, pascal_string, property_list
 
 
 @dataclasses.dataclass
@@ -23,24 +23,36 @@ class Bone:
     wiggle_power: float
 
 
+def read_bone(stream: typing.BinaryIO, endianness: str, *, skel_format: bool) -> Bone:
+    """Read a bone from a stream."""
+    if skel_format:
+        version = struct.unpack(endianness + 'I', stream.read(4))[0]
+        if version != 1:
+            raise error.FileReadError
+
+    name = pascal_string.read_string(stream)
+    parent = pascal_string.read_string(stream)
+
+    has_properties = bool(struct.unpack('B', stream.read(1))[0]) if skel_format else True
+
+    return Bone(
+        name,
+        parent,
+        property_list.read_property_lists(stream, endianness) if has_properties else [],
+        struct.unpack('<3f', stream.read(12)),
+        struct.unpack('<4f', stream.read(16)),
+        bool(struct.unpack(endianness + 'I', stream.read(4))[0]),
+        bool(struct.unpack(endianness + 'I', stream.read(4))[0]),
+        bool(struct.unpack(endianness + 'I', stream.read(4))[0]),
+        struct.unpack('<f', stream.read(4))[0],
+        struct.unpack('<f', stream.read(4))[0],
+    )
+
+
 def read_bones(stream: typing.BinaryIO, endianness: str) -> list[Bone]:
     """Read bones from a stream."""
     count = struct.unpack(endianness + 'I', stream.read(4))[0]
-    return [
-        Bone(
-            pascal_string.read_string(stream),
-            pascal_string.read_string(stream),
-            property_list.read_property_lists(stream, endianness),
-            struct.unpack(endianness + '3f', stream.read(12)),
-            struct.unpack(endianness + '4f', stream.read(16)),
-            bool(struct.unpack(endianness + 'I', stream.read(4))[0]),
-            bool(struct.unpack(endianness + 'I', stream.read(4))[0]),
-            bool(struct.unpack(endianness + 'I', stream.read(4))[0]),
-            struct.unpack(endianness + 'f', stream.read(4))[0],
-            struct.unpack(endianness + 'f', stream.read(4))[0],
-        )
-        for _ in range(count)
-    ]
+    return [read_bone(stream, endianness, skel_format=False) for _ in range(count)]
 
 
 def write_bones(stream: typing.BinaryIO, bones: list[Bone], endianness: str) -> None:
