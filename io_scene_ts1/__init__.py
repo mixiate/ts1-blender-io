@@ -254,12 +254,12 @@ class TSOIOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     """Import The Sims Online files."""
 
     bl_idname: str = "tsoblenderio.import"
-    bl_label: str = "The Sims Online (.skel/.mesh)"
-    bl_description: str = "Import a skel or mesh file from The Sims Online"
+    bl_label: str = "The Sims Online (.skel/.mesh/.anim)"
+    bl_description: str = "Import a skel, mesh or anim file from The Sims Online"
     bl_options: typing.ClassVar[set[str]] = {'UNDO'}
 
     filter_glob: bpy.props.StringProperty(  # type: ignore[valid-type]
-        default="*.skel;*.mesh",
+        default="*.skel;*.mesh;*.anim",
         options={'HIDDEN'},
     )
     files: bpy.props.CollectionProperty(  # type: ignore[valid-type]

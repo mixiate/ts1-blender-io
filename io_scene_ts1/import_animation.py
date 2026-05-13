@@ -12,6 +12,14 @@ from .ts1_formats import bcf, cfp
 
 
 @dataclasses.dataclass
+class AnimData:
+    """Anim format translations and rotations."""
+
+    translations: list[tuple[float, float, float]]
+    rotations: list[tuple[float, float, float, float]]
+
+
+@dataclasses.dataclass
 class Animation:
     """An animation.
 
@@ -23,7 +31,27 @@ class Animation:
     duration: float
     distance: float
     motions: list[bcf.Motion]
-    data: cfp.Cfp
+    data: cfp.Cfp | AnimData
+
+
+def get_translation_matrix(data: cfp.Cfp | AnimData, index: int) -> mathutils.Matrix:
+    """Get the translation matrix from the animation data."""
+    match data:
+        case cfp.Cfp(positions_x, positions_y, positions_z):
+            vector = (positions_x[index], positions_z[index], positions_y[index])
+        case AnimData(translations):
+            vector = (translations[index][0], translations[index][2], translations[index][1])
+    return mathutils.Matrix.Translation(mathutils.Vector(vector) / utils.BONE_SCALE)
+
+
+def get_rotation_matrix(data: cfp.Cfp | AnimData, index: int) -> mathutils.Matrix:
+    """Get the rotation matrix from the animation data."""
+    match data:
+        case cfp.Cfp(_, _, _, rotations_x, rotations_y, rotations_z, rotations_w):
+            quat = (rotations_w[index], rotations_x[index], rotations_z[index], rotations_y[index])
+        case AnimData(_, rotations):
+            quat = (rotations[index][3], rotations[index][0], rotations[index][2], rotations[index][1])
+    return mathutils.Quaternion(quat).to_matrix().to_4x4()
 
 
 def create_fcurve_data(
@@ -92,30 +120,11 @@ def import_animation(
         for frame in range(motion.frame_count):
             translation = mathutils.Matrix()
             if motion.positions_used_flag:
-                translation = mathutils.Matrix.Translation(
-                    mathutils.Vector(
-                        (
-                            animation.data.positions_x[motion.position_offset + frame] / utils.BONE_SCALE,
-                            animation.data.positions_z[motion.position_offset + frame] / utils.BONE_SCALE,
-                            animation.data.positions_y[motion.position_offset + frame] / utils.BONE_SCALE,
-                        ),
-                    ),
-                )
+                translation = get_translation_matrix(animation.data, motion.position_offset + frame)
 
             rotation = mathutils.Matrix()
             if motion.rotations_used_flag:
-                rotation = (
-                    mathutils.Quaternion(
-                        (
-                            animation.data.rotations_w[motion.rotation_offset + frame],
-                            animation.data.rotations_x[motion.rotation_offset + frame],
-                            animation.data.rotations_z[motion.rotation_offset + frame],
-                            animation.data.rotations_y[motion.rotation_offset + frame],
-                        ),
-                    )
-                    .to_matrix()
-                    .to_4x4()
-                )
+                rotation = get_rotation_matrix(animation.data, motion.rotation_offset + frame)
 
             bone_matrix = parent_bone_matrix @ (translation @ rotation)
             bone_matrix = bone.bone.convert_local_to_pose(

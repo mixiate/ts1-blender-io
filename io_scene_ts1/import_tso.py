@@ -5,9 +5,61 @@ import pathlib
 
 import bpy
 
-from . import import_mesh, import_skeleton
-from .ts1_formats import mesh, skel
+from . import import_animation, import_mesh, import_skeleton
+from .ts1_formats import anim, bcf, mesh, property_list, skel
 from .ts1_formats.error import FileReadError
+
+
+def anim_motion_to_bcf_motion(motion: anim.Motion) -> bcf.Motion:
+    """Convert an anim format motion to a bcf format motion."""
+    time_properties = []
+    for time_property_list in motion.time_property_lists:
+        for time_property in time_property_list.time_properties:
+            for prop_list in time_property.property_lists:
+                time_properties.append(property_list.TimeProperty(time_property.time, prop_list.properties))  #  noqa: PERF401
+
+    return bcf.Motion(
+        motion.bone_name,
+        motion.frame_count,
+        motion.duration,
+        motion.uses_positions,
+        motion.uses_rotations,
+        motion.position_offset,
+        motion.rotation_offset,
+        motion.property_lists,
+        [bcf.TimePropertyList(time_properties)],
+    )
+
+
+def import_animations(file_paths: list[pathlib.Path], context: bpy.types.Context, logger: logging.Logger) -> None:
+    """Import all the anim files in the list of files."""
+    active_object = context.view_layer.objects.active
+
+    anim_file_paths = [x for x in file_paths if x.suffix.lower() == ".anim"]
+    if anim_file_paths and (active_object is None or active_object.type != 'ARMATURE'):
+        logger.info("Please select an armature to apply the animation to.")
+        return
+
+    for file_path in anim_file_paths:
+        try:
+            anim_file = anim.read_file(file_path)
+
+            animation = import_animation.Animation(
+                anim_file.name,
+                anim_file.name,
+                anim_file.duration,
+                anim_file.distance,
+                [anim_motion_to_bcf_motion(x) for x in anim_file.motions],
+                import_animation.AnimData(
+                    anim_file.translations,
+                    anim_file.rotations,
+                ),
+            )
+
+            import_animation.import_animation(context, logger, active_object, animation)
+
+        except FileReadError as _:  # noqa: PERF203
+            logger.info("Could not import %s.", file_path)
 
 
 def import_files(
@@ -60,3 +112,5 @@ def import_files(
         bpy.ops.object.select_all(action='DESELECT')
 
         context.view_layer.objects.active = previous_active_object
+
+    import_animations(file_paths, context, logger)
