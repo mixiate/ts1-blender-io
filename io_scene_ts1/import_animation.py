@@ -160,7 +160,7 @@ def import_animation(
             create_fcurve_data(action, channelbag, rotation_data_path, 3, 1, [1.0, 0.0])
 
     if ignored_bone_count > 0:
-        logger.info(f"Skipped {ignored_bone_count} unknown bones in {animation.skill_name}.")  # noqa: G004
+        logger.info("Skipped %i unknown bones in %s.", ignored_bone_count, animation.skill_name)
 
     for motion in animation.motions:
         for time_property_list in motion.time_property_lists:
