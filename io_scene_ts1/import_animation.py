@@ -34,12 +34,14 @@ class Animation:
     data: cfp.Cfp | AnimData
 
 
-def get_translation_matrix(data: cfp.Cfp | AnimData, index: int) -> mathutils.Matrix:
+def get_translation_matrix(data: cfp.Cfp | AnimData, index: int) -> mathutils.Matrix | None:
     """Get the translation matrix from the animation data."""
     match data:
         case cfp.Cfp(positions_x, positions_y, positions_z):
             vector = (positions_x[index], positions_z[index], positions_y[index])
         case AnimData(translations):
+            if index >= len(translations):
+                return None
             vector = (translations[index][0], translations[index][2], translations[index][1])
     return mathutils.Matrix.Translation(mathutils.Vector(vector) / utils.BONE_SCALE)
 
@@ -121,6 +123,11 @@ def import_animation(
             translation = mathutils.Matrix()
             if motion.positions_used_flag:
                 translation = get_translation_matrix(animation.data, motion.position_offset + frame)
+                if translation is None:
+                    logger.info("Could not import %s, invalid translation index.", animation.skill_name)
+                    anim_data.action = None
+                    bpy.data.actions.remove(action)
+                    return
 
             rotation = mathutils.Matrix()
             if motion.rotations_used_flag:
