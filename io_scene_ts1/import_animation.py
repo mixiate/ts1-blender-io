@@ -11,18 +11,14 @@ from .ts1_formats import bcf, cfp
 
 
 def create_fcurve_data(
-    action: bpy.types.Action,
-    channelbag,  #  noqa: ANN001
+    fcurves,  #  noqa: ANN001
     data_path: str,
     index: int,
     count: int,
     data: list[float],
 ) -> None:
     """Create the fcurve data for all frames at once."""
-    if bpy.app.version[0] >= 5:
-        f_curve = channelbag.fcurves.new(data_path, index=index)
-    else:
-        f_curve = action.fcurves.new(data_path, index=index)
+    f_curve = fcurves.new(data_path, index=index)
     f_curve.keyframe_points.add(count=count)
     f_curve.keyframe_points.foreach_set("co", data)
     f_curve.update()
@@ -46,10 +42,13 @@ def import_animation(
 
     action = bpy.data.actions.new(name=animation.skill_name)
     anim_data.action = action
-    channelbag = None
+    fcurves = None
     if bpy.app.version[0] >= 5:
         anim_data.action_slot = action.slots.new(id_type='OBJECT', name="slot")
         channelbag = bpy_extras.anim_utils.action_ensure_channelbag_for_slot(anim_data.action, anim_data.action_slot)
+        fcurves = channelbag.fcurves
+    else:
+        fcurves = action.fcurves
 
     action.frame_range = (1.0, animation.motions[0].frame_count)
 
@@ -126,38 +125,34 @@ def import_animation(
 
         if motion.positions_used_flag:
             data_path = bone.path_from_id("location")
-            create_fcurve_data(action, channelbag, data_path, 0, motion.frame_count, positions_x)
-            create_fcurve_data(action, channelbag, data_path, 1, motion.frame_count, positions_y)
-            create_fcurve_data(action, channelbag, data_path, 2, motion.frame_count, positions_z)
+            create_fcurve_data(fcurves, data_path, 0, motion.frame_count, positions_x)
+            create_fcurve_data(fcurves, data_path, 1, motion.frame_count, positions_y)
+            create_fcurve_data(fcurves, data_path, 2, motion.frame_count, positions_z)
 
         if motion.rotations_used_flag:
             data_path = bone.path_from_id("rotation_quaternion")
-            create_fcurve_data(action, channelbag, data_path, 0, motion.frame_count, rotations_w)
-            create_fcurve_data(action, channelbag, data_path, 1, motion.frame_count, rotations_x)
-            create_fcurve_data(action, channelbag, data_path, 2, motion.frame_count, rotations_y)
-            create_fcurve_data(action, channelbag, data_path, 3, motion.frame_count, rotations_z)
+            create_fcurve_data(fcurves, data_path, 0, motion.frame_count, rotations_w)
+            create_fcurve_data(fcurves, data_path, 1, motion.frame_count, rotations_x)
+            create_fcurve_data(fcurves, data_path, 2, motion.frame_count, rotations_y)
+            create_fcurve_data(fcurves, data_path, 3, motion.frame_count, rotations_z)
 
     # create a single default keyframe for any locations or rotations not used by the animation
     for bone in armature.pose.bones:
         location_data_path = bone.path_from_id("location")
         rotation_data_path = bone.path_from_id("rotation_quaternion")
 
-        if channelbag:
-            location_fcurve = channelbag.fcurves.find(location_data_path)
-            rotation_fcurve = channelbag.fcurves.find(rotation_data_path)
-        else:
-            location_fcurve = action.fcurves.find(location_data_path)
-            rotation_fcurve = action.fcurves.find(rotation_data_path)
+        location_fcurve = fcurves.find(location_data_path)
+        rotation_fcurve = fcurves.find(rotation_data_path)
 
         if not location_fcurve:
-            create_fcurve_data(action, channelbag, location_data_path, 0, 1, [1.0, 0.0])
-            create_fcurve_data(action, channelbag, location_data_path, 1, 1, [1.0, 0.0])
-            create_fcurve_data(action, channelbag, location_data_path, 2, 1, [1.0, 0.0])
+            create_fcurve_data(fcurves, location_data_path, 0, 1, [1.0, 0.0])
+            create_fcurve_data(fcurves, location_data_path, 1, 1, [1.0, 0.0])
+            create_fcurve_data(fcurves, location_data_path, 2, 1, [1.0, 0.0])
         if not rotation_fcurve:
-            create_fcurve_data(action, channelbag, rotation_data_path, 0, 1, [1.0, 1.0])
-            create_fcurve_data(action, channelbag, rotation_data_path, 1, 1, [1.0, 0.0])
-            create_fcurve_data(action, channelbag, rotation_data_path, 2, 1, [1.0, 0.0])
-            create_fcurve_data(action, channelbag, rotation_data_path, 3, 1, [1.0, 0.0])
+            create_fcurve_data(fcurves, rotation_data_path, 0, 1, [1.0, 1.0])
+            create_fcurve_data(fcurves, rotation_data_path, 1, 1, [1.0, 0.0])
+            create_fcurve_data(fcurves, rotation_data_path, 2, 1, [1.0, 0.0])
+            create_fcurve_data(fcurves, rotation_data_path, 3, 1, [1.0, 0.0])
 
     if ignored_bone_count > 0:
         logger.info("Skipped %i unknown bones in %s.", ignored_bone_count, animation.skill_name)
