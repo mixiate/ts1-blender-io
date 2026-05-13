@@ -10,7 +10,7 @@ import mathutils
 from bpy_extras import anim_utils
 
 from . import utils
-from .ts1_formats import bcf, bmf, cfp, cmx, skn
+from .ts1_formats import bcf, bmf, cfp, cmx, property_list, skn
 
 if TYPE_CHECKING:
     from .ts1_formats.skeleton import Skeleton
@@ -387,7 +387,7 @@ def export_skills(
                             if event_components[0] != bone.name:
                                 continue
                             events.append(
-                                bcf.Property(
+                                property_list.Property(
                                     event_components[1],
                                     event_components[2],
                                 ),
