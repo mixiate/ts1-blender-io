@@ -169,7 +169,10 @@ def list_npc_head_texture_variants(skin_name: str, preferred_skin_color: str) ->
     skin_colors = ["drk", "med", "lgt"]
     skin_colors = [preferred_skin_color] + [x for x in skin_colors if x != preferred_skin_color]
 
-    split_skin_name = re.search("(?<=xskin-).*(?=-head-head)", skin_name.lower()).group(0).split("_", 1)
+    search = re.search("(?<=xskin-).*(?=-head-head)", skin_name.lower())
+    if search is None:
+        return []
+    split_skin_name = search.group(0).split("_", 1)
     skin_type = split_skin_name[0]
     name = split_skin_name[1]
 
@@ -183,7 +186,10 @@ def list_age_weight_npc_head_texture_variants(skin_name: str, preferred_skin_col
 
     texture_names = []
 
-    split_skin_name = re.search("(?<=xskin-).*(?=-head-head)", skin_name.lower()).group(0).split("_", 1)
+    search = re.search("(?<=xskin-).*(?=-head-head)", skin_name.lower())
+    if search is None:
+        return []
+    split_skin_name = search.group(0).split("_", 1)
     skin_type = split_skin_name[0]
     name = split_skin_name[1]
 
@@ -202,7 +208,10 @@ def list_npc_body_texture_variants(skin_name: str, preferred_skin_color: str) ->
     texture_names = []
 
     split_skin_name = skin_name.lower().removeprefix("xskin-").removesuffix("-pelvis-body")
-    sex_age_weight_span = re.search("(f|m|u)(a|c|)(skn|fit|fat|chd)_", split_skin_name.lower()).span()
+    search = re.search("(f|m|u)(a|c|)(skn|fit|fat|chd)_", split_skin_name.lower())
+    if search is None:
+        return []
+    sex_age_weight_span = search.span()
     skin_type = split_skin_name[: sex_age_weight_span[1] - 1]
     name = split_skin_name[sex_age_weight_span[1] :]
 
