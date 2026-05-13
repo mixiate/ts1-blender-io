@@ -306,9 +306,66 @@ class TSOIOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
         return {'FINISHED'}
 
 
+class TSOIOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
+    """Export The Sims Online files."""
+
+    bl_idname = "ts1blenderio.exporttso"
+    bl_label = "The Sims Online (.mesh)"
+    bl_description = "Export mesh files for The Sims Online"
+
+    directory: bpy.props.StringProperty(  # type: ignore[valid-type]
+        name="Output Directory Path",
+        description="Output Directory Path",
+        subtype='DIR_PATH',
+    )
+
+    filter_folder: bpy.props.BoolProperty(  # type: ignore[valid-type]
+        default=True, options={"HIDDEN"}
+    )
+
+    export_meshes: bpy.props.BoolProperty(  # type: ignore[valid-type]
+        name="Export Meshes",
+        default=True,
+    )
+
+    apply_modifiers: bpy.props.BoolProperty(  # type: ignore[valid-type]
+        name="Apply Modifiers",
+        description="Apply modifiers to meshes before exporting",
+        default=True,
+    )
+
+    def execute(self, context: bpy.context) -> set[str]:
+        """Execute the exporting function."""
+        import pathlib  # noqa: PLC0415
+
+        from . import export_tso, utils  # noqa: PLC0415
+
+        try:
+            export_tso.export_files(
+                context,
+                pathlib.Path(self.properties.filepath),
+                export_meshes=self.export_meshes,
+                apply_modifiers=self.apply_modifiers,
+            )
+        except utils.ExportError as exception:
+            self.report({"ERROR"}, exception.args[0])
+
+        return {'FINISHED'}
+
+    def invoke(self, context: bpy.context, _: bpy.types.Event) -> set[str]:
+        """Invoke the file selection window."""
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+
 def tso_menu_import(self: bpy.types.TOPBAR_MT_file_import, _: bpy.context) -> None:
     """Add an entry to the import menu."""
     self.layout.operator(TSOIOImport.bl_idname)
+
+
+def tso_menu_export(self: bpy.types.TOPBAR_MT_file_export, _: bpy.context) -> None:
+    """Add an entry to the export menu."""
+    self.layout.operator(TSOIOExport.bl_idname)
 
 
 classes = (
@@ -316,6 +373,7 @@ classes = (
     TS1IOExport,
     TS1IOAddonPreferences,
     TSOIOImport,
+    TSOIOExport,
 )
 
 
@@ -328,6 +386,7 @@ def register() -> None:
     bpy.types.TOPBAR_MT_file_export.append(ts1_menu_export)
 
     bpy.types.TOPBAR_MT_file_import.append(tso_menu_import)
+    bpy.types.TOPBAR_MT_file_export.append(tso_menu_export)
 
 
 def unregister() -> None:
@@ -337,6 +396,9 @@ def unregister() -> None:
 
     bpy.types.TOPBAR_MT_file_import.remove(ts1_menu_import)
     bpy.types.TOPBAR_MT_file_export.remove(ts1_menu_export)
+
+    bpy.types.TOPBAR_MT_file_import.remove(tso_menu_import)
+    bpy.types.TOPBAR_MT_file_export.remove(tso_menu_export)
 
 
 if __name__ == "__main__":
