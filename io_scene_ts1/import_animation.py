@@ -1,5 +1,6 @@
 """Import The Sims animations in to Blender."""
 
+import dataclasses
 import logging
 
 import bpy
@@ -8,6 +9,21 @@ import mathutils
 
 from . import utils
 from .ts1_formats import bcf, cfp
+
+
+@dataclasses.dataclass
+class Animation:
+    """An animation.
+
+    Intermediate form between file formats and importing/exporting
+    """
+
+    skill_name: str
+    animation_name: str
+    duration: float
+    distance: float
+    motions: list[bcf.Motion]
+    data: cfp.Cfp
 
 
 def create_fcurve_data(
@@ -31,8 +47,7 @@ def import_animation(
     context: bpy.types.Context,
     logger: logging.Logger,
     armature: bpy.types.Object,
-    animation: bcf.Skill,
-    cfp_data: cfp.Cfp,
+    animation: Animation,
 ) -> None:
     """Create a mesh object for the mesh."""
     if animation.skill_name in bpy.data.actions:
@@ -80,9 +95,9 @@ def import_animation(
                 translation = mathutils.Matrix.Translation(
                     mathutils.Vector(
                         (
-                            cfp_data.positions_x[motion.position_offset + frame] / utils.BONE_SCALE,
-                            cfp_data.positions_z[motion.position_offset + frame] / utils.BONE_SCALE,  # swap y and z
-                            cfp_data.positions_y[motion.position_offset + frame] / utils.BONE_SCALE,
+                            animation.data.positions_x[motion.position_offset + frame] / utils.BONE_SCALE,
+                            animation.data.positions_z[motion.position_offset + frame] / utils.BONE_SCALE,
+                            animation.data.positions_y[motion.position_offset + frame] / utils.BONE_SCALE,
                         ),
                     ),
                 )
@@ -92,10 +107,10 @@ def import_animation(
                 rotation = (
                     mathutils.Quaternion(
                         (
-                            cfp_data.rotations_w[motion.rotation_offset + frame],
-                            cfp_data.rotations_x[motion.rotation_offset + frame],
-                            cfp_data.rotations_z[motion.rotation_offset + frame],  # swap y and z
-                            cfp_data.rotations_y[motion.rotation_offset + frame],
+                            animation.data.rotations_w[motion.rotation_offset + frame],
+                            animation.data.rotations_x[motion.rotation_offset + frame],
+                            animation.data.rotations_z[motion.rotation_offset + frame],
+                            animation.data.rotations_y[motion.rotation_offset + frame],
                         ),
                     )
                     .to_matrix()

@@ -246,7 +246,16 @@ def import_skill(
 
     armature_object = bpy.data.objects[armature.name]
 
-    import_animation.import_animation(context, logger, armature_object, skill, cfp_file)
+    animation = import_animation.Animation(
+        skill.skill_name,
+        skill.animation_name,
+        skill.duration,
+        skill.distance,
+        skill.motions,
+        cfp_file,
+    )
+
+    import_animation.import_animation(context, logger, armature_object, animation)
 
 
 def import_files(
