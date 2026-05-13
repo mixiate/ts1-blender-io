@@ -58,3 +58,11 @@ def write_property_lists(file: typing.BinaryIO, property_lists: list[PropertyLis
     file.write(struct.pack(endianness + 'I', len(property_lists)))
     for property_list in property_lists:
         write_properties(file, property_list.properties, endianness)
+
+
+@dataclasses.dataclass
+class TimeProperty:
+    """A time property."""
+
+    time: int
+    events: list[Property]

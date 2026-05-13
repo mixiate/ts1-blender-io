@@ -8,19 +8,11 @@ import typing
 from . import error, pascal_string, property_list, skeleton
 
 
-@dataclasses.dataclass
-class TimeProperty:
-    """A BCF time property."""
-
-    time: int
-    events: list[property_list.Property]
-
-
-def read_time_properties(file: typing.BinaryIO) -> list[TimeProperty]:
+def read_time_properties(file: typing.BinaryIO) -> list[property_list.TimeProperty]:
     """Read BCF time properties from a file."""
     count = struct.unpack('<I', file.read(4))[0]
     return [
-        TimeProperty(
+        property_list.TimeProperty(
             struct.unpack('<I', file.read(4))[0],
             property_list.read_properties(file, '<'),
         )
@@ -28,7 +20,7 @@ def read_time_properties(file: typing.BinaryIO) -> list[TimeProperty]:
     ]
 
 
-def write_time_properties(file: typing.BinaryIO, time_properties: list[TimeProperty]) -> None:
+def write_time_properties(file: typing.BinaryIO, time_properties: list[property_list.TimeProperty]) -> None:
     """Write BCF time properties to a file."""
     file.write(struct.pack('<I', len(time_properties)))
     for time_property in time_properties:
@@ -40,7 +32,7 @@ def write_time_properties(file: typing.BinaryIO, time_properties: list[TimePrope
 class TimePropertyList:
     """A BCF time property list."""
 
-    time_properties: list[TimeProperty]
+    time_properties: list[property_list.TimeProperty]
 
 
 def read_time_property_lists(file: typing.BinaryIO) -> list[TimePropertyList]:

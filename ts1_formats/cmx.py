@@ -44,11 +44,11 @@ def write_property_lists(file: typing.TextIO, property_lists: list[property_list
         write_properties(file, prop_list.properties)
 
 
-def read_time_properties(file: typing.TextIO) -> list[bcf.TimeProperty]:
+def read_time_properties(file: typing.TextIO) -> list[property_list.TimeProperty]:
     """Read BCF time properties from a CMX file."""
     count = int(file.readline())
     return [
-        bcf.TimeProperty(
+        property_list.TimeProperty(
             int(file.readline()),
             read_properties(file),
         )
@@ -56,7 +56,7 @@ def read_time_properties(file: typing.TextIO) -> list[bcf.TimeProperty]:
     ]
 
 
-def write_time_properties(file: typing.TextIO, time_properties: list[bcf.TimeProperty]) -> None:
+def write_time_properties(file: typing.TextIO, time_properties: list[property_list.TimeProperty]) -> None:
     """Write BCF time properties to a CMX file."""
     file.write(str(len(time_properties)) + "\n")
     for time_property in time_properties:

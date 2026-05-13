@@ -244,7 +244,7 @@ def export_skills(
                     if len(events) == 0:
                         continue
 
-                    time_property = bcf.TimeProperty(
+                    time_property = property_list.TimeProperty(
                         time,
                         events,
                     )
