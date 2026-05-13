@@ -33,6 +33,9 @@ def import_mesh(
 
     for bone_binding in sims_mesh.bone_bindings:
         bone_name = sims_mesh.bones[bone_binding.bone_index]
+        if bone_name is None:
+            logger.info("Invalid bone index in %s.", mesh_name)
+            return None
 
         armature_bone = armature.bones[bone_name]
         bone_matrix = armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET_INVERTED

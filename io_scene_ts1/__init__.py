@@ -254,12 +254,12 @@ class TSOIOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     """Import The Sims Online files."""
 
     bl_idname: str = "tsoblenderio.import"
-    bl_label: str = "The Sims Online (.skel)"
-    bl_description: str = "Import a skel file from The Sims Online"
+    bl_label: str = "The Sims Online (.skel/.mesh)"
+    bl_description: str = "Import a skel or mesh file from The Sims Online"
     bl_options: typing.ClassVar[set[str]] = {'UNDO'}
 
     filter_glob: bpy.props.StringProperty(  # type: ignore[valid-type]
-        default="*.skel",
+        default="*.skel;*.mesh",
         options={'HIDDEN'},
     )
     files: bpy.props.CollectionProperty(  # type: ignore[valid-type]
@@ -268,6 +268,12 @@ class TSOIOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
     )
     directory: bpy.props.StringProperty(  # type: ignore[valid-type]
         subtype='DIR_PATH',
+    )
+
+    cleanup_meshes: bpy.props.BoolProperty(  # type: ignore[valid-type]
+        name="Cleanup Meshes (Lossy)",
+        description="Merge the vertices of the mesh, add sharp edges, remove original normals and shade smooth",
+        default=True,
     )
 
     def execute(self, context: bpy.context) -> set[str]:
@@ -290,6 +296,7 @@ class TSOIOImport(bpy.types.Operator, bpy_extras.io_utils.ImportHelper):
             context,
             logger,
             paths,
+            cleanup_meshes=self.cleanup_meshes,
         )
 
         log_output = log_stream.getvalue()
