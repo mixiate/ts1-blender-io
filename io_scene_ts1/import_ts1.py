@@ -372,7 +372,7 @@ def import_skill(
         location_data_path = bone.path_from_id("location")
         rotation_data_path = bone.path_from_id("rotation_quaternion")
 
-        if bpy.app.version[0] >= 5:
+        if channelbag:
             location_fcurve = channelbag.fcurves.find(location_data_path)
             rotation_fcurve = channelbag.fcurves.find(rotation_data_path)
         else:
@@ -380,14 +380,14 @@ def import_skill(
             rotation_fcurve = action.fcurves.find(rotation_data_path)
 
         if not location_fcurve:
-            create_fcurve_data(action, channelbag, location_data_path, 0, 1, (1.0, 0.0))
-            create_fcurve_data(action, channelbag, location_data_path, 1, 1, (1.0, 0.0))
-            create_fcurve_data(action, channelbag, location_data_path, 2, 1, (1.0, 0.0))
+            create_fcurve_data(action, channelbag, location_data_path, 0, 1, [1.0, 0.0])
+            create_fcurve_data(action, channelbag, location_data_path, 1, 1, [1.0, 0.0])
+            create_fcurve_data(action, channelbag, location_data_path, 2, 1, [1.0, 0.0])
         if not rotation_fcurve:
-            create_fcurve_data(action, channelbag, rotation_data_path, 0, 1, (1.0, 1.0))
-            create_fcurve_data(action, channelbag, rotation_data_path, 1, 1, (1.0, 0.0))
-            create_fcurve_data(action, channelbag, rotation_data_path, 2, 1, (1.0, 0.0))
-            create_fcurve_data(action, channelbag, rotation_data_path, 3, 1, (1.0, 0.0))
+            create_fcurve_data(action, channelbag, rotation_data_path, 0, 1, [1.0, 1.0])
+            create_fcurve_data(action, channelbag, rotation_data_path, 1, 1, [1.0, 0.0])
+            create_fcurve_data(action, channelbag, rotation_data_path, 2, 1, [1.0, 0.0])
+            create_fcurve_data(action, channelbag, rotation_data_path, 3, 1, [1.0, 0.0])
 
     if ignored_bone_count > 0:
         logger.info(f"Skipped {ignored_bone_count} unknown bones in {skill.skill_name}.")  # noqa: G004
