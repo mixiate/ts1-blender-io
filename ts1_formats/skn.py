@@ -56,13 +56,11 @@ def write_bone_bindings(file: typing.TextIO, bone_bindings: list[bmf.BoneBinding
     """Write SKN bone bindings."""
     file.write(str(len(bone_bindings)) + "\n")
     file.writelines(
-        "{} {} {} {} {}\n".format(  # noqa: UP032
-            bone_binding.bone_index,
-            bone_binding.vertex_index,
-            bone_binding.vertex_count,
-            bone_binding.blended_vertex_index,
-            bone_binding.blended_vertex_count,
-        )
+        f"{bone_binding.bone_index}"
+        f" {bone_binding.vertex_index}"
+        f" {bone_binding.vertex_count}"
+        f" {bone_binding.blended_vertex_index}"
+        f" {bone_binding.blended_vertex_count}\n"
         for bone_binding in bone_bindings
     )
 
