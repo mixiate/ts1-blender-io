@@ -34,12 +34,12 @@ def export_animation(
             bone.name,
             int(strip.action.frame_end - strip.action.frame_start) + 1,
             skill.duration,
-            0,
-            0,
-            0,
-            0,
-            [],
-            [],
+            uses_positions=False,
+            uses_rotations=False,
+            position_offset=0,
+            rotation_offset=0,
+            property_lists=[],
+            time_property_lists=[],
         )
 
         location_data_path = bone.path_from_id("location")
@@ -51,18 +51,18 @@ def export_animation(
             fcurves = strip.action.fcurves
 
         if fcurves.find(location_data_path):
-            motion.positions_used_flag = 1
+            motion.uses_positions = True
         if fcurves.find(rotation_data_path):
-            motion.rotations_used_flag = 1
+            motion.uses_rotations = True
 
-        if not motion.positions_used_flag and not motion.rotations_used_flag:
+        if not motion.uses_positions and not motion.uses_rotations:
             continue
 
         locations = []
         rotations = []
 
         for frame in range(int(strip.action.frame_start), int(strip.action.frame_end) + 1):
-            if motion.positions_used_flag:
+            if motion.uses_positions:
                 locations.append(
                     mathutils.Vector(
                         (
@@ -73,7 +73,7 @@ def export_animation(
                     )
                 )
 
-            if motion.rotations_used_flag:
+            if motion.uses_rotations:
                 rotations.append(
                     mathutils.Quaternion(
                         (
@@ -86,12 +86,12 @@ def export_animation(
                 )
 
         if all(location == mathutils.Vector() for location in locations):
-            motion.positions_used_flag = False
+            motion.uses_positions = False
 
         if all(rotation == mathutils.Quaternion() for rotation in rotations):
-            motion.rotations_used_flag = False
+            motion.uses_rotations = False
 
-        if not motion.positions_used_flag and not motion.rotations_used_flag:
+        if not motion.uses_positions and not motion.uses_rotations:
             continue
 
         parent_bone_matrix = mathutils.Matrix()
@@ -114,12 +114,12 @@ def export_animation(
             bone_matrix = parent_bone_matrix.inverted() @ bone_matrix
             bone_matrix @= utils.BONE_ROTATION_OFFSET_INVERTED
 
-            if motion.positions_used_flag:
+            if motion.uses_positions:
                 final_translation = bone_matrix.to_translation() * utils.BONE_SCALE
                 cfp_values.positions_x.append(final_translation.x)
                 cfp_values.positions_y.append(final_translation.z)  # swap y and z
                 cfp_values.positions_z.append(final_translation.y)
-            if motion.rotations_used_flag:
+            if motion.uses_rotations:
                 final_rotation = bone_matrix.to_quaternion()
                 cfp_values.rotations_x.append(final_rotation.x)
                 cfp_values.rotations_y.append(final_rotation.z)  # swap y and z
@@ -170,10 +170,10 @@ def export_animation(
     position_offset = 0
     rotation_offset = 0
     for motion in skill.motions:
-        if motion.positions_used_flag:
+        if motion.uses_positions:
             motion.position_offset = position_offset
             position_offset += motion.frame_count
-        if motion.rotations_used_flag:
+        if motion.uses_rotations:
             motion.rotation_offset = rotation_offset
             rotation_offset += motion.frame_count
 

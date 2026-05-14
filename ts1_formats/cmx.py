@@ -90,8 +90,8 @@ def read_motions(file: typing.TextIO) -> list[bcf.Motion]:
             file.readline().strip(),
             int(file.readline()),
             float(file.readline()),
-            int(file.readline()),
-            int(file.readline()),
+            bool(file.readline()),
+            bool(file.readline()),
             int(file.readline()),
             int(file.readline()),
             read_property_lists(file),
@@ -108,8 +108,8 @@ def write_motions(file: typing.TextIO, motions: list[bcf.Motion]) -> None:
         file.write(motion.bone_name + "\n")
         file.write(str(motion.frame_count) + "\n")
         file.write(str(motion.duration) + "\n")
-        file.write(str(motion.positions_used_flag) + "\n")
-        file.write(str(motion.rotations_used_flag) + "\n")
+        file.write(str(int(motion.uses_positions)) + "\n")
+        file.write(str(int(motion.uses_rotations)) + "\n")
         file.write(str(motion.position_offset) + "\n")
         file.write(str(motion.rotation_offset) + "\n")
         write_property_lists(file, motion.property_lists)

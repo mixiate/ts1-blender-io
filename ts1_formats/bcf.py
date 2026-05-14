@@ -60,8 +60,8 @@ class Motion:
     bone_name: str
     frame_count: int
     duration: float
-    positions_used_flag: int
-    rotations_used_flag: int
+    uses_positions: bool
+    uses_rotations: bool
     position_offset: int
     rotation_offset: int
     property_lists: list[property_list.PropertyList]
@@ -76,8 +76,8 @@ def read_motions(file: typing.BinaryIO) -> list[Motion]:
             pascal_string.read_string(file),
             struct.unpack('<I', file.read(4))[0],
             struct.unpack('<f', file.read(4))[0],
-            struct.unpack('<I', file.read(4))[0],
-            struct.unpack('<I', file.read(4))[0],
+            struct.unpack('<I', file.read(4))[0] != 0,
+            struct.unpack('<I', file.read(4))[0] != 0,
             struct.unpack('<i', file.read(4))[0],
             struct.unpack('<i', file.read(4))[0],
             property_list.read_property_lists(file, '<'),
@@ -94,8 +94,8 @@ def write_motions(file: typing.BinaryIO, motions: list[Motion]) -> None:
         pascal_string.write_string(file, motion.bone_name)
         file.write(struct.pack('<I', motion.frame_count))
         file.write(struct.pack('<f', motion.duration))
-        file.write(struct.pack('<I', motion.positions_used_flag))
-        file.write(struct.pack('<I', motion.rotations_used_flag))
+        file.write(struct.pack('<I', motion.uses_positions))
+        file.write(struct.pack('<I', motion.uses_rotations))
         file.write(struct.pack('<i', motion.position_offset))
         file.write(struct.pack('<i', motion.rotation_offset))
         property_list.write_property_lists(file, motion.property_lists, '<')
