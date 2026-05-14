@@ -1,8 +1,8 @@
 """The Sims 1 Blender IO."""
 
 bl_info = {
-    "name": "The Sims 1 3D Formats",
-    "description": "Import and export The Sims 1 meshes and animations",
+    "name": "The Sims 1/Online 3D Formats",
+    "description": "Import and export The Sims 1 and The Sims Online meshes and animations",
     "author": "mix",
     "version": (1, 4, 2),
     "blender": (4, 1, 0),
@@ -239,7 +239,7 @@ class TS1IOAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __name__
 
     file_search_directory: bpy.props.StringProperty(  # type: ignore[valid-type]
-        name="File Search Directory",
+        name="The Sims 1 File Search Directory",
         description="Directory that will be recursively searched to find referenced files",
         subtype='DIR_PATH',
         default="",
