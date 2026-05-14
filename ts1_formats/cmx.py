@@ -125,7 +125,7 @@ def read_skills(file: typing.TextIO) -> list[bcf.Skill]:
             file.readline().strip(),
             float(file.readline()),
             float(file.readline()),
-            int(file.readline()),
+            bool(file.readline()),
             int(file.readline()),
             int(file.readline()),
             read_motions(file),
@@ -142,7 +142,7 @@ def write_skills(file: typing.TextIO, skills: list[bcf.Skill]) -> None:
         file.write(skill.animation_name + "\n")
         file.write(str(skill.duration) + "\n")
         file.write(str(skill.distance) + "\n")
-        file.write(str(skill.moving_flag) + "\n")
+        file.write(str(int(skill.moves)) + "\n")
         file.write(str(skill.position_count) + "\n")
         file.write(str(skill.rotation_count) + "\n")
         write_motions(file, skill.motions)

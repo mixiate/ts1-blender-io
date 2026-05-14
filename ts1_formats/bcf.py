@@ -110,7 +110,7 @@ class Skill:
     animation_name: str
     duration: float
     distance: float
-    moving_flag: int
+    moves: bool
     position_count: int
     rotation_count: int
     motions: list[Motion]
@@ -125,7 +125,7 @@ def read_skills(file: typing.BinaryIO) -> list[Skill]:
             pascal_string.read_string(file),
             struct.unpack('<f', file.read(4))[0],
             struct.unpack('<f', file.read(4))[0],
-            struct.unpack('<I', file.read(4))[0],
+            struct.unpack('<I', file.read(4))[0] != 0,
             struct.unpack('<I', file.read(4))[0],
             struct.unpack('<I', file.read(4))[0],
             read_motions(file),
@@ -142,7 +142,7 @@ def write_skills(file: typing.BinaryIO, skills: list[Skill]) -> None:
         pascal_string.write_string(file, skill.animation_name)
         file.write(struct.pack('<f', skill.duration))
         file.write(struct.pack('<f', skill.distance))
-        file.write(struct.pack('<I', skill.moving_flag))
+        file.write(struct.pack('<I', skill.moves))
         file.write(struct.pack('<I', skill.position_count))
         file.write(struct.pack('<I', skill.rotation_count))
         write_motions(file, skill.motions)
