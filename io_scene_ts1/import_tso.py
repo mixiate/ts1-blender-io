@@ -99,10 +99,12 @@ def import_files(
         try:
             sims_mesh = mesh.read_file(file_path)
             mesh_object = import_mesh.import_mesh(logger, file_path.stem, active_object, sims_mesh)
+            if mesh_object is None:
+                continue
             context.collection.objects.link(mesh_object)
             mesh_objects.append(mesh_object)
 
-        except FileReadError as _:  # noqa: PERF203
+        except FileReadError as _:
             logger.info("Could not import %s.", file_path)
 
     mesh_objects = [obj for obj in mesh_objects if obj is not None]
