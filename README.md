@@ -1,6 +1,6 @@
 ![TS1 Blender IO Header Image](https://github.com/mixiate/ts1-blender-io/assets/167040362/5949ba35-d256-4bb1-88e0-44ba96dac84e)
 
-TS1 Blender IO is an add-on for [Blender](https://www.blender.org/) which allows you to import and export the 3D file formats from The Sims 1.
+TS1 Blender IO is an add-on for [Blender](https://www.blender.org/) which allows you to import and export the 3D file formats from The Sims 1 and The Sims Online.
 
 Blender 4.1, 4.2, 4.3, 4.4, 4.5, 5.0 and 5.1 are supported.
 
@@ -16,7 +16,7 @@ Blender 4.1, 4.2, 4.3, 4.4, 4.5, 5.0 and 5.1 are supported.
 - Animation events
 - CFP file compression
 - Mesh cleanup option
-- Cross compatible with The Sims Online skeletons, meshes and animations imported with [TSO Blender IO](https://github.com/mixiate/tso-blender-io)
+- The Sims Online SKEL, MESH and ANIM support
 
 You can find out how to use the add-on in the [wiki](https://github.com/mixiate/ts1-blender-io/wiki).
 
