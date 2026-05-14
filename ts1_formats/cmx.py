@@ -90,8 +90,8 @@ def read_motions(file: typing.TextIO) -> list[bcf.Motion]:
             file.readline().strip(),
             int(file.readline()),
             float(file.readline()),
-            bool(file.readline()),
-            bool(file.readline()),
+            bool(int(file.readline())),
+            bool(int(file.readline())),
             int(file.readline()),
             int(file.readline()),
             read_property_lists(file),
@@ -125,7 +125,7 @@ def read_skills(file: typing.TextIO) -> list[bcf.Skill]:
             file.readline().strip(),
             float(file.readline()),
             float(file.readline()),
-            bool(file.readline()),
+            bool(int(file.readline())),
             int(file.readline()),
             int(file.readline()),
             read_motions(file),
@@ -206,9 +206,9 @@ def read_bones(file: typing.TextIO) -> list[skeleton.Bone]:
         properties = read_property_lists(file)
         position = file.readline().strip().split("|")[1].strip().split(" ")
         rotation = file.readline().strip().split("|")[1].strip().split(" ")
-        translate = bool(file.readline())
-        rotate = bool(file.readline())
-        blend = bool(file.readline())
+        translate = bool(int(file.readline()))
+        rotate = bool(int(file.readline()))
+        blend = bool(int(file.readline()))
         wiggle_value = float(file.readline())
         wiggle_power = float(file.readline())
         bones.append(
