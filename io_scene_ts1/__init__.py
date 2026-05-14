@@ -310,8 +310,8 @@ class TSOIOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
     """Export The Sims Online files."""
 
     bl_idname = "ts1blenderio.exporttso"
-    bl_label = "The Sims Online (.mesh)"
-    bl_description = "Export mesh files for The Sims Online"
+    bl_label = "The Sims Online (.mesh/.anim)"
+    bl_description = "Export mesh and animation files for The Sims Online"
 
     directory: bpy.props.StringProperty(  # type: ignore[valid-type]
         name="Output Directory Path",
@@ -325,6 +325,11 @@ class TSOIOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
 
     export_meshes: bpy.props.BoolProperty(  # type: ignore[valid-type]
         name="Export Meshes",
+        default=True,
+    )
+
+    export_animations: bpy.props.BoolProperty(  # type: ignore[valid-type]
+        name="Export Animations",
         default=True,
     )
 
@@ -345,6 +350,7 @@ class TSOIOExport(bpy.types.Operator, bpy_extras.io_utils.ExportHelper):
                 context,
                 pathlib.Path(self.properties.filepath),
                 export_meshes=self.export_meshes,
+                export_animations=self.export_animations,
                 apply_modifiers=self.apply_modifiers,
             )
         except utils.ExportError as exception:
