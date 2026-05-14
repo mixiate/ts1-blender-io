@@ -42,21 +42,24 @@ def import_animations(file_paths: list[pathlib.Path], context: bpy.types.Context
 
     for file_path in anim_file_paths:
         try:
-            anim_file = anim.read_file(file_path)
+            animation = anim.read_file(file_path)
 
-            animation = import_animation.Animation(
-                anim_file.name,
-                anim_file.name,
-                anim_file.duration,
-                anim_file.distance,
-                [anim_motion_to_bcf_motion(x) for x in anim_file.motions],
-                import_animation.AnimData(
-                    anim_file.translations,
-                    anim_file.rotations,
-                ),
+            skill = bcf.Skill(
+                animation.name,
+                animation.name,
+                animation.duration,
+                animation.distance,
+                animation.moves,
+                len(animation.translations),
+                len(animation.rotations),
+                [anim_motion_to_bcf_motion(x) for x in animation.motions],
+            )
+            animation_data = import_animation.AnimData(
+                animation.translations,
+                animation.rotations,
             )
 
-            import_animation.import_animation(context, logger, active_object, animation)
+            import_animation.import_animation(context, logger, active_object, skill, animation_data)
 
         except FileReadError as _:  # noqa: PERF203
             logger.info("Could not import %s.", file_path)

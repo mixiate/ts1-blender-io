@@ -19,21 +19,6 @@ class AnimData:
     rotations: list[tuple[float, float, float, float]]
 
 
-@dataclasses.dataclass
-class Animation:
-    """An animation.
-
-    Intermediate form between file formats and importing/exporting
-    """
-
-    skill_name: str
-    animation_name: str
-    duration: float
-    distance: float
-    motions: list[bcf.Motion]
-    data: cfp.Cfp | AnimData
-
-
 def get_translation_matrix(data: cfp.Cfp | AnimData, index: int) -> mathutils.Matrix | None:
     """Get the translation matrix from the animation data."""
     match data:
@@ -77,7 +62,8 @@ def import_animation(
     context: bpy.types.Context,
     logger: logging.Logger,
     armature: bpy.types.Object,
-    animation: Animation,
+    animation: bcf.Skill,
+    translations_rotations: cfp.Cfp | AnimData,
 ) -> None:
     """Create a mesh object for the mesh."""
     if animation.skill_name in bpy.data.actions:
@@ -122,7 +108,7 @@ def import_animation(
         for frame in range(motion.frame_count):
             translation = mathutils.Matrix()
             if motion.positions_used_flag:
-                translation = get_translation_matrix(animation.data, motion.position_offset + frame)
+                translation = get_translation_matrix(translations_rotations, motion.position_offset + frame)
                 if translation is None:
                     logger.info("Could not import %s, invalid translation index.", animation.skill_name)
                     anim_data.action = None
@@ -131,7 +117,7 @@ def import_animation(
 
             rotation = mathutils.Matrix()
             if motion.rotations_used_flag:
-                rotation = get_rotation_matrix(animation.data, motion.rotation_offset + frame)
+                rotation = get_rotation_matrix(translations_rotations, motion.rotation_offset + frame)
 
             bone_matrix = parent_bone_matrix @ (translation @ rotation)
             bone_matrix = bone.bone.convert_local_to_pose(
