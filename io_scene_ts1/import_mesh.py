@@ -61,9 +61,22 @@ def import_mesh(
         bone_name = sims_mesh.bones[bone_binding.bone_index]
         vertex_group = obj.vertex_groups[bone_name]
 
+        armature_bone = armature.bones[bone_name]
+        bone_matrix = armature_bone.matrix_local @ utils.BONE_ROTATION_OFFSET_INVERTED
+
         blend_index_start = bone_binding.blended_vertex_index
         blend_index_end = blend_index_start + bone_binding.blended_vertex_count
-        for blend in sims_mesh.blends[blend_index_start:blend_index_end]:
+        for blend_index, blend in enumerate(sims_mesh.blends[blend_index_start:blend_index_end]):
+            weight = float(blend.weight) * math.pow(2, -15)
+
+            vertex_position = b_mesh.verts[blend.vertex_index].co
+            blend_position = sims_mesh.blend_vertices[blend_index_start + blend_index].position
+            blend_position = mathutils.Vector(blend_position).xzy / utils.BONE_SCALE
+            blend_position = bone_matrix @ blend_position
+            vertex_position *= 1 - weight
+            blend_position *= weight
+            b_mesh.verts[blend.vertex_index].co = vertex_position + blend_position
+
             for inner_bone_binding in sims_mesh.bone_bindings:
                 vertex_index_start = inner_bone_binding.vertex_index
                 vertex_index_end = vertex_index_start + inner_bone_binding.vertex_count
@@ -71,7 +84,6 @@ def import_mesh(
                     original_bone_name = sims_mesh.bones[inner_bone_binding.bone_index]
 
             original_vertex_group = obj.vertex_groups[original_bone_name]
-            weight = float(blend.weight) * math.pow(2, -15)
             b_mesh.verts[blend.vertex_index][deform_layer][original_vertex_group.index] = 1 - weight
             b_mesh.verts[blend.vertex_index][deform_layer][vertex_group.index] = weight
 
