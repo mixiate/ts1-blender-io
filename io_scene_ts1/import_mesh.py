@@ -31,6 +31,7 @@ def import_mesh(
     normals = []
     deform_layer = b_mesh.verts.layers.deform.verify()
 
+    # create the vertices
     for bone_binding in sims_mesh.bone_bindings:
         if bone_binding.bone_index >= len(sims_mesh.bones):
             logger.info("Invalid bone index in %s.", mesh_name)
@@ -57,6 +58,7 @@ def import_mesh(
     b_mesh.verts.ensure_lookup_table()
     b_mesh.verts.index_update()
 
+    # handle blended vertices
     for bone_binding in sims_mesh.bone_bindings:
         bone_name = sims_mesh.bones[bone_binding.bone_index]
         vertex_group = obj.vertex_groups[bone_name]
@@ -69,6 +71,7 @@ def import_mesh(
         for blend_index, blend in enumerate(sims_mesh.blends[blend_index_start:blend_index_end]):
             weight = float(blend.weight) * math.pow(2, -15)
 
+            # recalculate the final vertex position based on the blended vertex
             vertex_position = b_mesh.verts[blend.vertex_index].co
             blend_position = sims_mesh.blend_vertices[blend_index_start + blend_index].position
             blend_position = mathutils.Vector(blend_position).xzy / utils.BONE_SCALE
@@ -77,6 +80,7 @@ def import_mesh(
             blend_position *= weight
             b_mesh.verts[blend.vertex_index].co = vertex_position + blend_position
 
+            # set the vertex weights
             for inner_bone_binding in sims_mesh.bone_bindings:
                 vertex_index_start = inner_bone_binding.vertex_index
                 vertex_index_end = vertex_index_start + inner_bone_binding.vertex_count
@@ -87,6 +91,7 @@ def import_mesh(
             b_mesh.verts[blend.vertex_index][deform_layer][original_vertex_group.index] = 1 - weight
             b_mesh.verts[blend.vertex_index][deform_layer][vertex_group.index] = weight
 
+    # create the faces
     invalid_face_count = 0
     for face in sims_mesh.faces:
         try:
@@ -97,6 +102,7 @@ def import_mesh(
     if invalid_face_count > 0:
         logger.info(f"Skipped {invalid_face_count} invalid faces in mesh {mesh_name}")  # noqa: G004
 
+    # create the uvs
     uv_layer = b_mesh.loops.layers.uv.verify()
     for face in b_mesh.faces:
         for loop in face.loops:
